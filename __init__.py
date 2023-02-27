@@ -1,4 +1,5 @@
 import asyncio
+from typing import List
 
 from fastapi import APIRouter
 from starlette.staticfiles import StaticFiles
@@ -9,9 +10,9 @@ from lnbits.tasks import catch_everything_and_restart
 
 db = Database("ext_nostrmarket")
 
-market_ext: APIRouter = APIRouter(prefix="/nostrmarket", tags=["nostrmarket"])
+nostrmarket_ext: APIRouter = APIRouter(prefix="/nostrmarket", tags=["nostrmarket"])
 
-market_static_files = [
+nostrmarket_static_files = [
     {
         "path": "/nostrmarket/static",
         "app": StaticFiles(directory="lnbits/extensions/nostrmarket/static"),
