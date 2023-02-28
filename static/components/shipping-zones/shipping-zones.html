@@ -1,0 +1,31 @@
+<div>
+  <q-btn-dropdown
+    split
+    unelevated
+    color="primary"
+    icon="public"
+    label="Shipping Zones"
+    @click="createShippingZone"
+  >
+    <q-list>
+      <q-item clickable v-close-popup @click="createShippingZone">
+        <q-item-section>
+          <q-item-label>New Shipping Zone</q-item-label>
+          <q-item-label caption>Create a new shipping zone</q-item-label>
+        </q-item-section>
+      </q-item>
+      <q-item
+        v-for="zone of zones"
+        :key="zone.id"
+        clickable
+        v-close-popup
+        @click="editShippingZone"
+      >
+        <q-item-section>
+          <q-item-label>XXX</q-item-label>
+          <q-item-label caption>xxxxxxxxxxxxx</q-item-label>
+        </q-item-section>
+      </q-item>
+    </q-list></q-btn-dropdown
+  >
+</div>

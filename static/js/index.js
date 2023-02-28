@@ -3,6 +3,7 @@ const merchant = async () => {
 
   await stallDetails('static/components/stall-details/stall-details.html')
   await keyPair('static/components/key-pair/key-pair.html')
+  await shippingZones('static/components/shipping-zones/shipping-zones.html')
 
   const nostr = window.NostrTools
 
@@ -12,6 +13,7 @@ const merchant = async () => {
     data: function () {
       return {
         merchant: {},
+        shippingZones: [],
         showKeys: false
       }
     },

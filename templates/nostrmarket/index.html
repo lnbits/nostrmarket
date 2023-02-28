@@ -61,12 +61,15 @@
       <q-card>
         <q-card-section>
           <div class="row">
-            <div class="col-12">
+            <div class="col-6"></div>
+            <div class="col-4">
+              <shipping-zones></shipping-zones>
+            </div>
+            <div class="col-2">
               <q-btn
                 @click="showKeys = !showKeys"
                 :label="showKeys ? 'Hide Keys' : 'Show Keys'"
                 color="primary"
-                class="float-right"
               >
                 <q-tooltip> Show Public or Private keys </q-tooltip>
               </q-btn>
@@ -103,6 +106,7 @@
 <script src="{{ url_for('nostrmarket_static', path='js/utils.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/stall-details/stall-details.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/key-pair/key-pair.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/shipping-zones/shipping-zones.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/index.js') }}"></script>
 
 {% endblock %}
