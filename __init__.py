@@ -21,7 +21,7 @@ nostrmarket_static_files = [
 ]
 
 
-def market_renderer():
+def nostrmarket_renderer():
     return template_renderer(["lnbits/extensions/nostrmarket/templates"])
 
 

@@ -1,7 +1,8 @@
 import json
 from http import HTTPStatus
 
-from fastapi import Depends, Request, HTMLResponse
+from fastapi import Depends, Request
+from starlette.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from loguru import logger
 
