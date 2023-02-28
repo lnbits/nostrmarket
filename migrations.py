@@ -59,8 +59,9 @@ async def m001_initial(db):
             id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL,
             name TEXT NOT NULL,
+            currency TEXT NOT NULL,
             cost REAL NOT NULL,
-            countries TEXT NOT NULL
+            regions TEXT NOT NULL DEFAULT '[]'
         );
         """
     )

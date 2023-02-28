@@ -63,7 +63,10 @@
           <div class="row">
             <div class="col-6"></div>
             <div class="col-4">
-              <shipping-zones></shipping-zones>
+              <shipping-zones
+                :inkey="g.user.wallets[0].inkey"
+                :adminkey="g.user.wallets[0].adminkey"
+              ></shipping-zones>
             </div>
             <div class="col-2">
               <q-btn

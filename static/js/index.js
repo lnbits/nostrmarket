@@ -42,9 +42,9 @@ const merchant = async () => {
       getMerchant: async function () {
         try {
           const {data} = await LNbits.api.request(
-            'get',
+            'GET',
             '/nostrmarket/api/v1/merchant',
-            this.g.user.wallets[0].adminkey
+            this.g.user.wallets[0].inkey
           )
           this.merchant = data
         } catch (error) {
