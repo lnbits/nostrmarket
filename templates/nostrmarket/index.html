@@ -2,7 +2,7 @@
 %} {% block page %}
 <div class="row q-col-gutter-md">
   <div class="col-12 col-md-7 q-gutter-y-md">
-    <q-card>
+    <q-card v-if="!merchant">
       <q-card-section>
         <span class="text-h4">Wellcome to Nostr Market!</span><br />
         In Nostr Market, merchant and customer communicate via NOSTR relays, so
@@ -41,15 +41,14 @@
               disabled
               label="Import Key"
               color="primary"
-              @click="importKey"
               class="float-left"
             >
               <q-tooltip> Use an existing private key (hex or npub) </q-tooltip>
             </q-btn>
             <q-btn
-              label="Create New Key"
+              label="Generate New Key"
               color="green"
-              @click="generateKey"
+              @click="generateKeys"
               class="float-right"
             >
               <q-tooltip> A new key pair will be generated for you </q-tooltip>
@@ -58,6 +57,11 @@
         </div>
       </q-card-section>
     </q-card>
+    <div v-else>
+      <q-card>
+        <q-card-section> Merchant Exists </q-card-section>
+      </q-card>
+    </div>
   </div>
 
   <div class="col-12 col-md-5 q-gutter-y-md">
@@ -75,6 +79,8 @@
   </div>
 </div>
 {% endblock%}{% block scripts %} {{ window_vars(user) }}
+<script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+
 <script src="{{ url_for('nostrmarket_static', path='js/utils.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/stall-details/stall-details.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/index.js') }}"></script>

@@ -7,9 +7,10 @@ async def m001_initial(db):
         """
         CREATE TABLE nostrmarket.merchants (
             user_id TEXT NOT NULL,
+            id TEXT PRIMARY KEY,
             private_key TEXT NOT NULL,
             public_key TEXT NOT NULL,
-            config TEXT NOT NULL
+            meta TEXT NOT NULL DEFAULT '{}'
         );
         """
     )
