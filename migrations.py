@@ -39,7 +39,7 @@ async def m001_initial(db):
         CREATE TABLE nostrmarket.products (
             id TEXT PRIMARY KEY,
             stall_id TEXT NOT NULL,
-            product TEXT NOT NULL,
+            name TEXT NOT NULL,
             categories TEXT,
             description TEXT,
             image TEXT,
