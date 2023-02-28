@@ -1,0 +1,44 @@
+<div>
+  <q-separator></q-separator>
+  <div class="row q-mt-md">
+    <div class="col-6 q-pl-xl">Public Key</div>
+    <div class="col-6">
+      <q-toggle v-model="showPrivateKey" class="q-pl-xl" color="secodary">
+        Show Private Key
+      </q-toggle>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-6">
+      <div class="text-center q-mb-lg cursor-pointer">
+        <q-responsive :ratio="1" class="q-mx-xl" @click="copyText(publicKey)">
+          <qrcode
+            :value="publicKey"
+            :options="{width: 250}"
+            class="rounded-borders"
+          ></qrcode>
+        </q-responsive>
+        <small><span v-text="publicKey"></span><br />Click to copy</small>
+      </div>
+    </div>
+    <div class="col-6 cursor-pointer">
+      <div v-if="showPrivateKey">
+        <div class="text-center q-mb-lg">
+          <q-responsive
+            :ratio="1"
+            class="q-mx-xl"
+            @click="copyText(privateKey)"
+          >
+            <qrcode
+              :value="privateKey"
+              :options="{width: 250}"
+              class="rounded-borders"
+            ></qrcode>
+          </q-responsive>
+          <small><span v-text="privateKey"></span><br />Click to copy</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

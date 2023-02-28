@@ -2,6 +2,7 @@ const merchant = async () => {
   Vue.component(VueQrcode.name, VueQrcode)
 
   await stallDetails('static/components/stall-details/stall-details.html')
+  await keyPair('static/components/key-pair/key-pair.html')
 
   const nostr = window.NostrTools
 
@@ -10,7 +11,8 @@ const merchant = async () => {
     mixins: [windowMixin],
     data: function () {
       return {
-        merchant: null
+        merchant: {},
+        showKeys: false
       }
     },
     methods: {
@@ -20,7 +22,7 @@ const merchant = async () => {
 
         const data = {private_key: privkey, public_key: pubkey, config: {}}
         try {
-          const resp = await LNbits.api.request(
+          await LNbits.api.request(
             'POST',
             '/nostrmarket/api/v1/merchant',
             this.g.user.wallets[0].adminkey,
