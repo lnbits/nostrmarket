@@ -1,6 +1,6 @@
 {% extends "public.html" %} {% block page %}
-<q-layout view="hHh lpR fFf">
-  <q-drawer v-model="drawer" side="left" overlay elevated>
+<q-layout view="hHh Lpr lff">
+  <q-drawer v-model="drawer" side="left">
     <q-toolbar class="bg-primary text-white shadow-2">
       <q-toolbar-title>Settings</q-toolbar-title>
     </q-toolbar>
@@ -47,6 +47,7 @@
                       dense
                       round
                       icon="delete"
+                      @click="removePubkey(pub)"
                     />
                   </q-item-section>
                   {%endraw%}
@@ -87,6 +88,7 @@
                       dense
                       round
                       icon="delete"
+                      @click="removeRelay(url)"
                     />
                   </q-item-section>
                   {%endraw%}
@@ -212,7 +214,7 @@
       </div>
     </div>
   </q-page-container>
-  <q-page-sticky position="bottom-left" :offset="[18, 18]">
+  <q-page-sticky position="bottom-right" :offset="[18, 18]">
     <q-btn fab @click="drawer = !drawer" icon="menu" color="accent"></q-btn>
   </q-page-sticky>
 </q-layout>
@@ -247,9 +249,9 @@
     mixins: [windowMixin],
     data: function () {
       return {
-        drawer: true,
+        drawer: false,
         pubkeys: new Set(),
-        relays: new Set(defaultRelays),
+        relays: new Set(),
         stalls: [],
         products: [],
         events: [],
@@ -269,6 +271,9 @@
             p.categories.includes(this.searchText)
           )
         })
+      },
+      relayList() {
+        return Array.from(this.relays)
       }
     },
     async created() {
@@ -276,12 +281,12 @@
       this.pubkeys.add(
         '855ea22a88d7df7ccd8497777db81f115575d5362f51df3af02ead383f5eaba2'
       )
-      //await this.initNostr()
+      this.relays = new Set(defaultRelays)
+      await this.initNostr()
     },
     methods: {
       async initNostr() {
         this.pool = new nostr.SimplePool()
-        this.relays = new Set(defaultRelays)
         let sub = await this.pool
           .list(Array.from(this.relays), [
             {
@@ -343,6 +348,12 @@
           console.error(err)
         }
       },
+      removePubkey(pubkey) {
+        // Needs a hack for Vue reactivity
+        let pubkeys = this.pubkeys
+        pubkeys.delete(pubkey)
+        this.pubkeys = new Set(Array.from(pubkeys))
+      },
       addRelay() {
         let relay = String(this.inputRelay).trim()
         if (!relay.startsWith('ws')) {
@@ -351,13 +362,14 @@
         }
         this.relays.add(relay)
         this.inputRelay = null
+      },
+      removeRelay(relay) {
+        // Needs a hack for Vue reactivity
+        let relays = this.relays
+        relays.delete(relay)
+        this.relays = new Set(Array.from(relays))
       }
     }
   })
 </script>
-<style scoped>
-  .truncate-chip-labels > .q-chip {
-    max-width: 200px;
-  }
-</style>
 {% endblock %}
