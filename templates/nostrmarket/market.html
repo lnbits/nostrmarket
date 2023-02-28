@@ -14,10 +14,44 @@
         >
           <q-card>
             <q-card-section>
-              Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quidem,
-              eius reprehenderit eos corrupti commodi magni quaerat ex numquam,
-              dolorum officiis modi facere maiores architecto suscipit iste
-              eveniet doloribus ullam aliquid.
+              <q-input
+                filled
+                v-model="inputPubkey"
+                @keydown.enter="addPubkey"
+                type="text"
+                label="Pubkey/Npub"
+                hint="Add merchants"
+              >
+                <q-btn @click="addPubkey" dense flat icon="add"></q-btn>
+              </q-input>
+              <q-list dense class="q-mt-md">
+                <q-item v-for="pub in Array.from(pubkeys)" :key="pub">
+                  <q-item-section avatar>
+                    <q-avatar>
+                      <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
+                    </q-avatar>
+                  </q-item-section>
+                  {%raw%}
+                  <q-item-section>
+                    <q-item-label
+                      >{{ `${pub.slice(0, 5)}...${pub.slice(-5)}` }}<q-tooltip
+                        >{{ pub }}</q-tooltip
+                      ></q-item-label
+                    >
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-btn
+                      class="gt-xs"
+                      size="12px"
+                      flat
+                      dense
+                      round
+                      icon="delete"
+                    />
+                  </q-item-section>
+                  {%endraw%}
+                </q-item>
+              </q-list>
             </q-card-section>
           </q-card>
         </q-expansion-item>
@@ -29,10 +63,35 @@
         >
           <q-card>
             <q-card-section>
-              Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quidem,
-              eius reprehenderit eos corrupti commodi magni quaerat ex numquam,
-              dolorum officiis modi facere maiores architecto suscipit iste
-              eveniet doloribus ullam aliquid.
+              <q-input
+                filled
+                v-model="inputRelay"
+                @keydown.enter="addRelay"
+                type="text"
+                label="Relay URL"
+                hint="Add relays"
+              >
+                <q-btn @click="" dense flat icon="add"></q-btn>
+              </q-input>
+              <q-list dense class="q-mt-md">
+                <q-item v-for="url in Array.from(relays)" :key="url">
+                  {%raw%}
+                  <q-item-section>
+                    <q-item-label>{{ url }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-btn
+                      class="gt-xs"
+                      size="12px"
+                      flat
+                      dense
+                      round
+                      icon="delete"
+                    />
+                  </q-item-section>
+                  {%endraw%}
+                </q-item>
+              </q-list>
             </q-card-section>
           </q-card>
         </q-expansion-item>
@@ -190,11 +249,14 @@
       return {
         drawer: true,
         pubkeys: new Set(),
+        relays: new Set(defaultRelays),
         stalls: [],
         products: [],
         events: [],
         searchText: null,
-        exchangeRates: null
+        exchangeRates: null,
+        inputPubkey: null,
+        inputRelay: null
       }
     },
     computed: {
@@ -220,7 +282,7 @@
       async initNostr() {
         this.pool = new nostr.SimplePool()
         this.relays = new Set(defaultRelays)
-        await this.pool
+        let sub = await this.pool
           .list(Array.from(this.relays), [
             {
               kinds: [30005],
@@ -236,11 +298,12 @@
               } else {
                 // it's a stall
                 this.stalls.push(e.content)
+                return
               }
             })
-            console.log(this.stalls)
-            console.log(this.products)
           })
+        await Promise.resolve(sub)
+        this.pool.close()
       },
       async getRates() {
         let noFiat = this.stalls.map(s => s.currency).every(c => c == 'sat')
@@ -260,8 +323,41 @@
       },
       getAmountFormated(amount, unit = 'USD') {
         return LNbits.utils.formatCurrency(amount, unit)
+      },
+      addPubkey() {
+        let pubkey = String(this.inputPubkey).trim()
+        let regExp = /^#([0-9a-f]{3}){1,2}$/i
+        if (regExp.test(pubkey)) {
+          return this.pubkeys.add(pubkey)
+        }
+        try {
+          let {type, data} = nostr.nip19.decode(pubkey)
+          if (type === 'npub') pubkey = data
+          else if (type === 'nprofile') {
+            pubkey = data.pubkey
+            givenRelays = data.relays
+          }
+          this.pubkeys.add(pubkey)
+          this.inputPubkey = null
+        } catch (err) {
+          console.error(err)
+        }
+      },
+      addRelay() {
+        let relay = String(this.inputRelay).trim()
+        if (!relay.startsWith('ws')) {
+          console.debug('invalid url')
+          return
+        }
+        this.relays.add(relay)
+        this.inputRelay = null
       }
     }
   })
 </script>
+<style scoped>
+  .truncate-chip-labels > .q-chip {
+    max-width: 200px;
+  }
+</style>
 {% endblock %}
