@@ -6,24 +6,23 @@
 
 In Diagon Alley, `merchant` and `customer` communicate via NOSTR relays, so loss of money, product information, and reputation become far less likely if attacked.
 
-A `merchant` and `customer` both have a NOSTR key-pair that are used to sign notes and subscribe to events. 
+A `merchant` and `customer` both have a NOSTR key-pair that are used to sign notes and subscribe to events.
 
 #### For further information about NOSTR, see https://github.com/nostr-protocol/nostr
 
-
 ## Terms
 
-* `merchant` - seller of products with NOSTR key-pair
-* `customer` - buyer of products with NOSTR key-pair
-* `product` - item for sale by the `merchant`
-* `stall` - list of products controlled by `merchant` (a `merchant` can have multiple stalls)
-* `marketplace` - clientside software for searching `stalls` and purchasing `products`
+- `merchant` - seller of products with NOSTR key-pair
+- `customer` - buyer of products with NOSTR key-pair
+- `product` - item for sale by the `merchant`
+- `stall` - list of products controlled by `merchant` (a `merchant` can have multiple stalls)
+- `marketplace` - clientside software for searching `stalls` and purchasing `products`
 
 ## Diagon Alley Clients
 
 ### Merchant admin
 
-Where the `merchant` creates, updates and deletes `stalls` and `products`, as well as where they manage sales, payments and communication with `customers`. 
+Where the `merchant` creates, updates and deletes `stalls` and `products`, as well as where they manage sales, payments and communication with `customers`.
 
 The `merchant` admin software can be purely clientside, but for `convenience` and uptime, implementations will likely have a server listening for NOSTR events.
 
@@ -39,14 +38,14 @@ The `merchant` event that publishes and updates product lists
 
 The below json goes in `content` of NIP-01.
 
-Data from newer events should replace data from older events.  
+Data from newer events should replace data from older events.
 
 `action` types (used to indicate changes):
-* `update` element has changed
-* `delete` element should be deleted
-* `suspend` element is suspended
-* `unsuspend` element is unsuspended
 
+- `update` element has changed
+- `delete` element should be deleted
+- `suspend` element is suspended
+- `unsuspend` element is unsuspended
 
 ```
 {
@@ -175,7 +174,6 @@ As all elements are optional, an `update` `action` to a `product` `image`, may l
 
 ```
 
-
 ## Checkout events
 
 NIP-04 https://github.com/nostr-protocol/nips/blob/master/04.md, all checkout events are encrypted
@@ -183,7 +181,6 @@ NIP-04 https://github.com/nostr-protocol/nips/blob/master/04.md, all checkout ev
 The below json goes in `content` of NIP-04.
 
 ### Step 1: `customer` order (event)
-
 
 ```
 {
@@ -213,7 +210,7 @@ The below json goes in `content` of NIP-04.
             "quantity": <String, stall name>,
             "message": <String, special request>
         }
-    
+
 }
 
 ```
@@ -227,10 +224,11 @@ Sent back from the merchant for payment. Any payment option is valid that the me
 The below json goes in `content` of NIP-04.
 
 `payment_options`/`type` include:
-* `url` URL to a payment page, stripe, paypal, btcpayserver, etc
-* `btc` onchain bitcoin address
-* `ln` bitcoin lightning invoice
-* `lnurl` bitcoin lnurl-pay  
+
+- `url` URL to a payment page, stripe, paypal, btcpayserver, etc
+- `btc` onchain bitcoin address
+- `ln` bitcoin lightning invoice
+- `lnurl` bitcoin lnurl-pay
 
 ```
 {
@@ -276,6 +274,3 @@ Customer support is handle over whatever communication method was specified. If 
 ## Additional
 
 Standard data models can be found here <a href="models.json">here</a>
-
-
-

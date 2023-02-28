@@ -11,7 +11,6 @@ from lnbits.helpers import url_for
 from lnbits.tasks import register_invoice_listener
 
 
-
 async def wait_for_paid_invoices():
     invoice_queue = asyncio.Queue()
     register_invoice_listener(invoice_queue)
@@ -30,4 +29,3 @@ async def on_invoice_paid(payment: Payment) -> None:
 
 async def subscribe_nostrclient_ws():
     print("### subscribe_nostrclient_ws")
-
