@@ -20,3 +20,21 @@ async def index(request: Request, user: User = Depends(check_user_exists)):
         "nostrmarket/index.html",
         {"request": request, "user": user.dict()},
     )
+
+
+@nostrmarket_ext.get("/market", response_class=HTMLResponse)
+async def market(request: Request):
+    return nostrmarket_renderer().TemplateResponse(
+        "nostrmarket/market.html",
+        {
+            "request": request,
+        },
+    )
+
+
+@nostrmarket_ext.get("/stall/{stall_id}", response_class=HTMLResponse)
+async def stall(request: Request, stall_id: str):
+    return nostrmarket_renderer().TemplateResponse(
+        "nostrmarket/stall.html",
+        {"request": request, "stall_id": stall_id},
+    )
