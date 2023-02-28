@@ -1,113 +1,162 @@
 {% extends "public.html" %} {% block page %}
-<div class="row q-mb-md">
-  <div class="col-12 q-gutter-y-md">
-    <q-toolbar class="row">
-      <div class="col">
-        <q-toolbar-title> Market: </q-toolbar-title>
-      </div>
-      <div class="col q-mx-md">
-        <q-input
-          class="float-left full-width q-ml-md"
-          standout
-          square
-          dense
-          outlined
-          clearable
-          v-model.trim="searchText"
-          label="Search for products"
-        >
-          <template v-slot:append>
-            <q-icon v-if="!searchText" name="search" />
-          </template>
-        </q-input>
-      </div>
+<q-layout view="hHh lpR fFf">
+  <q-drawer v-model="drawer" side="left" overlay elevated>
+    <q-toolbar class="bg-primary text-white shadow-2">
+      <q-toolbar-title>Settings</q-toolbar-title>
     </q-toolbar>
-  </div>
-</div>
-<div class="row q-col-gutter-md">
-  <div
-    class="col-xs-12 col-sm-6 col-md-4 col-lg-3"
-    v-for="item in filterProducts"
-    :key="item.id"
-  >
-    <q-card class="card--product">
-      {% raw %}
-      <q-img
-        :src="item.image ? item.image : '/market/static/images/placeholder.png'"
-        alt="Product Image"
-        loading="lazy"
-        spinner-color="white"
-        fit="contain"
-        height="300px"
-      ></q-img>
-
-      <q-card-section class="q-pb-xs q-pt-md">
-        <div class="row no-wrap items-center">
-          <div class="col text-subtitle2 ellipsis-2-lines">
-            {{ item.product }}
-          </div>
-        </div>
-
-        <!-- <q-rating v-model="stars" color="orange" :max="5" readonly size="17px"></q-rating> -->
-      </q-card-section>
-
-      <q-card-section class="q-py-sm">
-        <div>
-          <div class="text-caption text-weight-bolder">
-            {{ item.stallName }}
-          </div>
-          <span v-if="item.currency == 'sat'">
-            <span class="text-h6">{{ item.price }} sats</span
-            ><span class="q-ml-sm text-grey-6"
-              >BTC {{ (item.price / 1e8).toFixed(8) }}</span
-            >
-          </span>
-          <span v-else>
-            <span class="text-h6"
-              >{{ getAmountFormated(item.price, item.currency) }}</span
-            >
-            <span v-if="exchangeRates" class="q-ml-sm text-grey-6"
-              >({{ getValueInSats(item.price, item.currency) }} sats)</span
-            >
-          </span>
-          <span
-            class="q-ml-md text-caption text-green-8 text-weight-bolder q-mt-md"
-            >{{item.quantity}} left</span
-          >
-        </div>
-        <div v-if="item.categories" class="text-subtitle1">
-          <q-chip v-for="(cat, i) in item.categories.split(',')" :key="i" dense
-            >{{cat}}</q-chip
-          >
-        </div>
-        <div
-          class="text-caption text-grey ellipsis-2-lines"
-          style="min-height: 40px"
+    <div class="q-pa-md">
+      <q-list padding>
+        <q-expansion-item
+          expand-separator
+          icon="perm_identity"
+          label="Merchants"
+          caption="Add/Remove pubkeys"
         >
-          <p v-if="item.description">{{ item.description }}</p>
-        </div>
-      </q-card-section>
-
-      <q-separator></q-separator>
-
-      <q-card-actions>
-        <span>Stall: {{ item.stallName }}</span>
-        <q-btn
-          flat
-          class="text-weight-bold text-capitalize q-ml-auto"
-          dense
-          color="primary"
-          type="a"
-          :href="'/market/stalls/' + item.stall"
-          target="_blank"
+          <q-card>
+            <q-card-section>
+              Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quidem,
+              eius reprehenderit eos corrupti commodi magni quaerat ex numquam,
+              dolorum officiis modi facere maiores architecto suscipit iste
+              eveniet doloribus ullam aliquid.
+            </q-card-section>
+          </q-card>
+        </q-expansion-item>
+        <q-expansion-item
+          expand-separator
+          icon="perm_identity"
+          label="Relays"
+          caption="Add/Remove relays"
         >
-          Visit Stall
-        </q-btn>
-      </q-card-actions>
-      {% endraw %}
-    </q-card>
-  </div>
-</div>
+          <q-card>
+            <q-card-section>
+              Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quidem,
+              eius reprehenderit eos corrupti commodi magni quaerat ex numquam,
+              dolorum officiis modi facere maiores architecto suscipit iste
+              eveniet doloribus ullam aliquid.
+            </q-card-section>
+          </q-card>
+        </q-expansion-item>
+      </q-list>
+    </div>
+  </q-drawer>
+  <q-page-container>
+    <div class="row q-mb-md">
+      <div class="col-12 q-gutter-y-md">
+        <q-toolbar class="row">
+          <div class="col">
+            <q-toolbar-title> Market: </q-toolbar-title>
+          </div>
+          <div class="col q-mx-md">
+            <q-input
+              class="float-left full-width q-ml-md"
+              standout
+              square
+              dense
+              outlined
+              clearable
+              v-model.trim="searchText"
+              label="Search for products"
+            >
+              <template v-slot:append>
+                <q-icon v-if="!searchText" name="search" />
+              </template>
+            </q-input>
+          </div>
+        </q-toolbar>
+      </div>
+    </div>
+    <div class="row q-col-gutter-md">
+      <div
+        class="col-xs-12 col-sm-6 col-md-4 col-lg-3"
+        v-for="item in filterProducts"
+        :key="item.id"
+      >
+        <q-card class="card--product">
+          {% raw %}
+          <q-img
+            :src="item.image ? item.image : '/market/static/images/placeholder.png'"
+            alt="Product Image"
+            loading="lazy"
+            spinner-color="white"
+            fit="contain"
+            height="300px"
+          ></q-img>
+
+          <q-card-section class="q-pb-xs q-pt-md">
+            <div class="row no-wrap items-center">
+              <div class="col text-subtitle2 ellipsis-2-lines">
+                {{ item.product }}
+              </div>
+            </div>
+
+            <!-- <q-rating v-model="stars" color="orange" :max="5" readonly size="17px"></q-rating> -->
+          </q-card-section>
+
+          <q-card-section class="q-py-sm">
+            <div>
+              <div class="text-caption text-weight-bolder">
+                {{ item.stallName }}
+              </div>
+              <span v-if="item.currency == 'sat'">
+                <span class="text-h6">{{ item.price }} sats</span
+                ><span class="q-ml-sm text-grey-6"
+                  >BTC {{ (item.price / 1e8).toFixed(8) }}</span
+                >
+              </span>
+              <span v-else>
+                <span class="text-h6"
+                  >{{ getAmountFormated(item.price, item.currency) }}</span
+                >
+                <span v-if="exchangeRates" class="q-ml-sm text-grey-6"
+                  >({{ getValueInSats(item.price, item.currency) }} sats)</span
+                >
+              </span>
+              <span
+                class="q-ml-md text-caption text-green-8 text-weight-bolder q-mt-md"
+                >{{item.quantity}} left</span
+              >
+            </div>
+            <div v-if="item.categories" class="text-subtitle1">
+              <q-chip
+                v-for="(cat, i) in item.categories.split(',')"
+                :key="i"
+                dense
+                >{{cat}}</q-chip
+              >
+            </div>
+            <div
+              class="text-caption text-grey ellipsis-2-lines"
+              style="min-height: 40px"
+            >
+              <p v-if="item.description">{{ item.description }}</p>
+            </div>
+          </q-card-section>
+
+          <q-separator></q-separator>
+
+          <q-card-actions>
+            <span>Stall: {{ item.stallName }}</span>
+            <q-btn
+              flat
+              class="text-weight-bold text-capitalize q-ml-auto"
+              dense
+              color="primary"
+              type="a"
+              :href="'/market/stalls/' + item.stall"
+              target="_blank"
+            >
+              Visit Stall
+            </q-btn>
+          </q-card-actions>
+          {% endraw %}
+        </q-card>
+      </div>
+    </div>
+  </q-page-container>
+  <q-page-sticky position="bottom-left" :offset="[18, 18]">
+    <q-btn fab @click="drawer = !drawer" icon="menu" color="accent"></q-btn>
+  </q-page-sticky>
+</q-layout>
 {% endblock %} {% block scripts %}
 <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
 <script>
@@ -126,16 +175,24 @@
     'wss://nostr.zebedee.cloud',
     'wss://nostr.rocks'
   ]
-  console.log
+  const eventToObj = event => {
+    event.content = JSON.parse(event.content)
+    return {
+      ...event,
+      ...Object.fromEntries(event.tags)
+    }
+  }
   Vue.component(VueQrcode.name, VueQrcode)
   new Vue({
     el: '#vue',
     mixins: [windowMixin],
     data: function () {
       return {
+        drawer: true,
         pubkeys: new Set(),
-        stalls: null,
+        stalls: [],
         products: [],
+        events: [],
         searchText: null,
         exchangeRates: null
       }
@@ -153,29 +210,38 @@
       }
     },
     async created() {
-      // Hardcode pubkey for test
+      // Hardcode pubkey for testing
       this.pubkeys.add(
         '855ea22a88d7df7ccd8497777db81f115575d5362f51df3af02ead383f5eaba2'
       )
-      await this.initNostr()
+      //await this.initNostr()
     },
     methods: {
       async initNostr() {
         this.pool = new nostr.SimplePool()
         this.relays = new Set(defaultRelays)
-        console.log(Array.from(this.relays))
         await this.pool
           .list(Array.from(this.relays), [
             {
               kinds: [30005],
-              authors: [Array.from(this.pubkeys)]
+              authors: Array.from(this.pubkeys)
             }
           ])
-          .then(event => {
-            console.log(event)
+          .then(events => {
+            this.events = events || []
+            this.events.map(eventToObj).map(e => {
+              if (e.content.stall) {
+                //it's a product
+                this.products.push(e.content)
+              } else {
+                // it's a stall
+                this.stalls.push(e.content)
+              }
+            })
+            console.log(this.stalls)
+            console.log(this.products)
           })
-      }
-      /*  
+      },
       async getRates() {
         let noFiat = this.stalls.map(s => s.currency).every(c => c == 'sat')
         if (noFiat) return
@@ -195,7 +261,6 @@
       getAmountFormated(amount, unit = 'USD') {
         return LNbits.utils.formatCurrency(amount, unit)
       }
-      */
     }
   })
 </script>
