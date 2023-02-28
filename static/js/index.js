@@ -20,14 +20,19 @@ const merchant = async () => {
         const privkey = nostr.generatePrivateKey()
         const pubkey = nostr.getPublicKey(privkey)
 
-        const data = {private_key: privkey, public_key: pubkey, config: {}}
+        const payload = {private_key: privkey, public_key: pubkey, config: {}}
         try {
-          await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'POST',
             '/nostrmarket/api/v1/merchant',
             this.g.user.wallets[0].adminkey,
-            data
+            payload
           )
+          this.merchant = data
+          this.$q.notify({
+            type: 'positive',
+            message: 'Keys generated!'
+          })
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
