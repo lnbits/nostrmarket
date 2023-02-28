@@ -1,0 +1,98 @@
+<div>
+  <q-btn-dropdown
+    split
+    unelevated
+    color="primary"
+    icon="public"
+    label="Shipping Zones"
+    @click="openZoneDialog()"
+  >
+    <q-list>
+      <q-item clickable v-close-popup @click="openZoneDialog()">
+        <q-item-section>
+          <q-item-label>New Shipping Zone</q-item-label>
+          <q-item-label caption>Create a new shipping zone</q-item-label>
+        </q-item-section>
+      </q-item>
+      <q-item
+        v-for="zone of zones"
+        :key="zone.id"
+        clickable
+        v-close-popup
+        @click="openZoneDialog(zone)"
+      >
+        <q-item-section>
+          <q-item-label>{{zone.name}}</q-item-label>
+          <q-item-label caption>{{zone.countries.join(", ")}}</q-item-label>
+        </q-item-section>
+      </q-item>
+    </q-list></q-btn-dropdown
+  >
+
+  <q-dialog v-model="zoneDialog.showDialog" position="top">
+    <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+      <q-form @submit="sendZoneFormData" class="q-gutter-md">
+        <q-input
+          filled
+          dense
+          label="Zone Name"
+          type="text"
+          v-model.trim="zoneDialog.data.name"
+        ></q-input>
+        <q-select
+          filled
+          dense
+          multiple
+          :options="shippingZoneOptions"
+          label="Countries"
+          v-model="zoneDialog.data.countries"
+        ></q-select>
+        <q-select
+          v-if="zoneDialog.data.id"
+          style="width: 100px"
+          filled
+          dense
+          v-model="zoneDialog.data.currency"
+          type="text"
+          label="Unit"
+          :options="currencies"
+        ></q-select>
+        <q-input
+          filled
+          dense
+          :label="'Amount (' + zoneDialog.data.currency + ') *'"
+          fill-mask="0"
+          reverse-fill-mask
+          :step="zoneDialog.data.currency != 'sat' ? '0.01' : '1'"
+          type="number"
+          v-model.trim="zoneDialog.data.cost"
+        ></q-input>
+        <div class="row q-mt-lg">
+          <div v-if="zoneDialog.data.id">
+            <q-btn unelevated color="primary" type="submit">Update</q-btn>
+            <q-btn
+              @click="deleteShippingZone()"
+              class="q-ml-md"
+              unelevated
+              color="pink"
+              >Delete</q-btn
+            >
+          </div>
+          <div v-else>
+            <q-btn
+              unelevated
+              color="primary"
+              :disable="!zoneDialog.data.countries || !zoneDialog.data.countries.length"
+              type="submit"
+              >Create Shipping Zone</q-btn
+            >
+          </div>
+
+          <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+            >Cancel</q-btn
+          >
+        </div>
+      </q-form>
+    </q-card>
+  </q-dialog>
+</div>

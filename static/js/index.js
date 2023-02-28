@@ -3,6 +3,7 @@ const merchant = async () => {
 
   await stallDetails('static/components/stall-details/stall-details.html')
   await keyPair('static/components/key-pair/key-pair.html')
+  await shippingZones('static/components/shipping-zones/shipping-zones.html')
 
   const nostr = window.NostrTools
 
@@ -12,6 +13,7 @@ const merchant = async () => {
     data: function () {
       return {
         merchant: {},
+        shippingZones: [],
         showKeys: false
       }
     },
@@ -40,9 +42,9 @@ const merchant = async () => {
       getMerchant: async function () {
         try {
           const {data} = await LNbits.api.request(
-            'get',
+            'GET',
             '/nostrmarket/api/v1/merchant',
-            this.g.user.wallets[0].adminkey
+            this.g.user.wallets[0].inkey
           )
           this.merchant = data
         } catch (error) {
