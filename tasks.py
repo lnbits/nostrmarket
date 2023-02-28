@@ -21,7 +21,7 @@ async def wait_for_paid_invoices():
 
 
 async def on_invoice_paid(payment: Payment) -> None:
-    if payment.extra.get("tag") != "market":
+    if payment.extra.get("tag") != "nostrmarket":
         return
 
     print("### on_invoice_paid")

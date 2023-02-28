@@ -2,9 +2,66 @@
 %} {% block page %}
 <div class="row q-col-gutter-md">
   <div class="col-12 col-md-7 q-gutter-y-md">
-    <q-card>
-      <q-card-section> section </q-card-section>
+    <q-card v-if="!merchant">
+      <q-card-section>
+        <span class="text-h4">Wellcome to Nostr Market!</span><br />
+        In Nostr Market, merchant and customer communicate via NOSTR relays, so
+        loss of money, product information, and reputation become far less
+        likely if attacked.
+      </q-card-section>
+      <q-card-section>
+        <span class="text-h4">Terms</span><br />
+        <ul>
+          <li>
+            <span class="text-bold">merchant</span> - seller of products with
+            NOSTR key-pair
+          </li>
+          <li>
+            <span class="text-bold">customer</span> - buyer of products with
+            NOSTR key-pair
+          </li>
+          <li>
+            <span class="text-bold">product</span> - item for sale by the
+            merchant
+          </li>
+          <li>
+            <span class="text-bold">stall</span> - list of products controlled
+            by merchant (a merchant can have multiple stalls)
+          </li>
+          <li>
+            <span class="text-bold">marketplace</span> - clientside software for
+            searching stalls and purchasing products
+          </li>
+        </ul>
+      </q-card-section>
+      <q-card-section>
+        <div class="row">
+          <div class="col-12">
+            <q-btn
+              disabled
+              label="Import Key"
+              color="primary"
+              class="float-left"
+            >
+              <q-tooltip> Use an existing private key (hex or npub) </q-tooltip>
+            </q-btn>
+            <q-btn
+              label="Generate New Key"
+              color="green"
+              @click="generateKeys"
+              class="float-right"
+            >
+              <q-tooltip> A new key pair will be generated for you </q-tooltip>
+            </q-btn>
+          </div>
+        </div>
+      </q-card-section>
     </q-card>
+    <div v-else>
+      <q-card>
+        <q-card-section> Merchant Exists </q-card-section>
+      </q-card>
+    </div>
   </div>
 
   <div class="col-12 col-md-5 q-gutter-y-md">
@@ -22,6 +79,8 @@
   </div>
 </div>
 {% endblock%}{% block scripts %} {{ window_vars(user) }}
+<script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+
 <script src="{{ url_for('nostrmarket_static', path='js/utils.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/stall-details/stall-details.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/index.js') }}"></script>
