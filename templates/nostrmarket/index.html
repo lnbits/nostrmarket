@@ -59,7 +59,26 @@
     </q-card>
     <div v-else>
       <q-card>
-        <q-card-section> Merchant Exists </q-card-section>
+        <q-card-section>
+          <div class="row">
+            <div class="col-12">
+              <q-btn
+                @click="showKeys = !showKeys"
+                :label="showKeys ? 'Hide Keys' : 'Show Keys'"
+                color="primary"
+                class="float-right"
+              >
+                <q-tooltip> Show Public or Private keys </q-tooltip>
+              </q-btn>
+            </div>
+          </div>
+        </q-card-section>
+        <q-card-section v-if="showKeys">
+          <key-pair
+            :public-key="merchant.public_key"
+            :private-key="merchant.private_key"
+          ></key-pair>
+        </q-card-section>
       </q-card>
     </div>
   </div>
@@ -83,6 +102,7 @@
 
 <script src="{{ url_for('nostrmarket_static', path='js/utils.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/stall-details/stall-details.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/key-pair/key-pair.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/index.js') }}"></script>
 
 {% endblock %}
