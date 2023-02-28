@@ -24,20 +24,31 @@
               >
                 <q-btn @click="addPubkey" dense flat icon="add"></q-btn>
               </q-input>
-              <q-list dense class="q-mt-md">
+              <q-list class="q-mt-md">
                 <q-item v-for="pub in Array.from(pubkeys)" :key="pub">
+                  {%raw%}
                   <q-item-section avatar>
                     <q-avatar>
-                      <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
+                      <img
+                        v-if="profiles.get(pub) && profiles.get(pub).picture"
+                        :src="profiles.get(pub).picture"
+                      />
+                      <img
+                        v-else
+                        src="/nostrmarket/static/images/blank-avatar.webp"
+                      />
                     </q-avatar>
                   </q-item-section>
-                  {%raw%}
                   <q-item-section>
                     <q-item-label
-                      >{{ `${pub.slice(0, 5)}...${pub.slice(-5)}` }}<q-tooltip
-                        >{{ pub }}</q-tooltip
-                      ></q-item-label
+                      v-if="profiles.get(pub) && profiles.get(pub).name"
+                      >{{ profiles.get(pub).name }}</q-item-label
                     >
+                    <q-item-label v-else
+                      >{{ `${pub.slice(0, 5)}...${pub.slice(-5)}`
+                      }}</q-item-label
+                    >
+                    <q-tooltip>{{ pub }}</q-tooltip>
                   </q-item-section>
                   <q-item-section side>
                     <q-btn
@@ -135,7 +146,7 @@
         <q-card class="card--product">
           {% raw %}
           <q-img
-            :src="item.image ? item.image : '/market/static/images/placeholder.png'"
+            :src="item.image ? item.image : '/nostrmarket/static/images/placeholder.png'"
             alt="Product Image"
             loading="lazy"
             spinner-color="white"
@@ -252,9 +263,10 @@
         drawer: false,
         pubkeys: new Set(),
         relays: new Set(),
-        stalls: [],
-        products: [],
         events: [],
+        stalls: new Map(),
+        products: [],
+        profiles: new Map(),
         searchText: null,
         exchangeRates: null,
         inputPubkey: null,
@@ -271,44 +283,55 @@
             p.categories.includes(this.searchText)
           )
         })
-      },
-      relayList() {
-        return Array.from(this.relays)
       }
     },
     async created() {
-      // Hardcode pubkey for testing
+      // Hardcode pubkeys for testing
       this.pubkeys.add(
         '855ea22a88d7df7ccd8497777db81f115575d5362f51df3af02ead383f5eaba2'
       )
+      this.pubkeys.add(
+        '8f69ac99b96f7c4ad58b98cc38fe5d35ce02daefae7d1609c797ce3b4f92f5fd'
+      )
+      this.$q.loading.show()
       this.relays = new Set(defaultRelays)
       await this.initNostr()
+      this.$q.loading.hide()
     },
     methods: {
       async initNostr() {
-        this.pool = new nostr.SimplePool()
-        let sub = await this.pool
-          .list(Array.from(this.relays), [
+        const pool = new nostr.SimplePool()
+        let relays = Array.from(this.relays)
+        let products = new Map()
+        let stalls = new Map()
+        // Get metadata and market data from the pubkeys
+        let sub = await pool
+          .list(relays, [
             {
-              kinds: [30005],
+              kinds: [0, 30005],
               authors: Array.from(this.pubkeys)
             }
           ])
           .then(events => {
             this.events = events || []
             this.events.map(eventToObj).map(e => {
-              if (e.content.stall) {
-                //it's a product
-                this.products.push(e.content)
+              if (e.kind == 0) {
+                this.profiles.set(e.pubkey, e.content)
+                return
+              } else if (e.content.stall) {
+                //it's a product `d` is the prod. id
+                products.set(e.d, e.content)
               } else {
-                // it's a stall
-                this.stalls.push(e.content)
+                // it's a stall `d` is the stall id
+                stalls.set(e.d, e.content)
                 return
               }
             })
           })
         await Promise.resolve(sub)
-        this.pool.close()
+        this.products = Array.from(products.values())
+        this.stalls = Array.from(stalls.values())
+        pool.close(relays)
       },
       async getRates() {
         let noFiat = this.stalls.map(s => s.currency).every(c => c == 'sat')
@@ -329,32 +352,36 @@
       getAmountFormated(amount, unit = 'USD') {
         return LNbits.utils.formatCurrency(amount, unit)
       },
-      addPubkey() {
+      async addPubkey() {
         let pubkey = String(this.inputPubkey).trim()
         let regExp = /^#([0-9a-f]{3}){1,2}$/i
-        if (regExp.test(pubkey)) {
-          return this.pubkeys.add(pubkey)
-        }
-        try {
-          let {type, data} = nostr.nip19.decode(pubkey)
-          if (type === 'npub') pubkey = data
-          else if (type === 'nprofile') {
-            pubkey = data.pubkey
-            givenRelays = data.relays
+        if (pubkey.startsWith('n')) {
+          try {
+            let {type, data} = nostr.nip19.decode(pubkey)
+            if (type === 'npub') pubkey = data
+            else if (type === 'nprofile') {
+              pubkey = data.pubkey
+              givenRelays = data.relays
+            }
+            this.pubkeys.add(pubkey)
+            this.inputPubkey = null
+          } catch (err) {
+            console.error(err)
           }
-          this.pubkeys.add(pubkey)
-          this.inputPubkey = null
-        } catch (err) {
-          console.error(err)
+        } else if (regExp.test(pubkey)) {
+          pubkey = pubkey
         }
+        this.pubkeys.add(pubkey)
+        await this.initNostr()
       },
       removePubkey(pubkey) {
         // Needs a hack for Vue reactivity
         let pubkeys = this.pubkeys
         pubkeys.delete(pubkey)
+        this.profiles.delete(pubkey)
         this.pubkeys = new Set(Array.from(pubkeys))
       },
-      addRelay() {
+      async addRelay() {
         let relay = String(this.inputRelay).trim()
         if (!relay.startsWith('ws')) {
           console.debug('invalid url')
@@ -362,6 +389,7 @@
         }
         this.relays.add(relay)
         this.inputRelay = null
+        await this.initNostr()
       },
       removeRelay(relay) {
         // Needs a hack for Vue reactivity
