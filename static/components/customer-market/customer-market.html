@@ -1,0 +1,83 @@
+<div class="row q-col-gutter-md">
+  <div
+    class="col-xs-12 col-sm-6 col-md-4 col-lg-3"
+    v-for="item in products"
+    :key="item.id"
+  >
+    <q-card class="card--product">
+      <q-img
+        :src="item.image ? item.image : '/nostrmarket/static/images/placeholder.png'"
+        alt="Product Image"
+        loading="lazy"
+        spinner-color="white"
+        fit="contain"
+        height="300px"
+      ></q-img>
+
+      <q-card-section class="q-pb-xs q-pt-md">
+        <div class="row no-wrap items-center">
+          <div class="col text-subtitle2 ellipsis-2-lines">
+            {{ item.product }}
+          </div>
+        </div>
+
+        <!-- <q-rating v-model="stars" color="orange" :max="5" readonly size="17px"></q-rating> -->
+      </q-card-section>
+
+      <q-card-section class="q-py-sm">
+        <div>
+          <div class="text-caption text-weight-bolder">
+            {{ item.stallName }}
+          </div>
+          <span v-if="item.currency == 'sat'">
+            <span class="text-h6">{{ item.price }} sats</span
+            ><span class="q-ml-sm text-grey-6"
+              >BTC {{ (item.price / 1e8).toFixed(8) }}</span
+            >
+          </span>
+          <span v-else>
+            <span class="text-h6">{{ item.formatedPrice }}</span>
+            <span v-if="exchangeRates" class="q-ml-sm text-grey-6"
+              >({{ item.priceInSats }} sats)</span
+            >
+          </span>
+          <span
+            class="q-ml-md text-caption text-green-8 text-weight-bolder q-mt-md"
+            >{{ item.amount }} left</span
+          >
+        </div>
+        <div v-if="item.categories" class="text-subtitle1">
+          <q-chip v-for="(cat, i) in item.categories.split(',')" :key="i" dense
+            >{{cat}}</q-chip
+          >
+        </div>
+        <div
+          class="text-caption text-grey ellipsis-2-lines"
+          style="min-height: 40px"
+        >
+          <p v-if="item.description">{{ item.description }}</p>
+        </div>
+      </q-card-section>
+
+      <q-separator></q-separator>
+
+      <q-card-actions>
+        <span>Stall: {{ item.stallName }}</span>
+        <div class="q-ml-auto">
+          <q-btn flat dense>See product</q-btn>
+          <q-btn
+            flat
+            class="text-weight-bold text-capitalize q-ml-auto"
+            dense
+            color="primary"
+            type="a"
+            :href="'/market/stalls/' + item.stall"
+            target="_blank"
+          >
+            Visit Stall
+          </q-btn>
+        </div>
+      </q-card-actions>
+    </q-card>
+  </div>
+</div>

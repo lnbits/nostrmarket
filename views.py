@@ -1,7 +1,7 @@
 import json
 from http import HTTPStatus
 
-from fastapi import Depends, Request
+from fastapi import Depends, Request, Query
 from fastapi.templating import Jinja2Templates
 from loguru import logger
 from starlette.responses import HTMLResponse
@@ -23,12 +23,12 @@ async def index(request: Request, user: User = Depends(check_user_exists)):
 
 
 @nostrmarket_ext.get("/market", response_class=HTMLResponse)
-async def market(request: Request):
+async def market(
+    request: Request, stall_id: str = Query(None), product_id: str = Query(None)
+):
     return nostrmarket_renderer().TemplateResponse(
         "nostrmarket/market.html",
-        {
-            "request": request,
-        },
+        {"request": request, "stall_id": stall_id, "product_id": product_id},
     )
 
 

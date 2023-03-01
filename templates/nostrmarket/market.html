@@ -3,6 +3,7 @@
   <q-drawer v-model="drawer" side="left">
     <q-toolbar class="bg-primary text-white shadow-2">
       <q-toolbar-title>Settings</q-toolbar-title>
+      <q-btn flat round dense icon="close" @click="drawer = !drawer"></q-btn>
     </q-toolbar>
     <div class="q-pa-md">
       <q-list padding>
@@ -83,7 +84,7 @@
                 label="Relay URL"
                 hint="Add relays"
               >
-                <q-btn @click="" dense flat icon="add"></q-btn>
+                <q-btn @click="addRelay" dense flat icon="add"></q-btn>
               </q-input>
               <q-list dense class="q-mt-md">
                 <q-item v-for="url in Array.from(relays)" :key="url">
@@ -114,123 +115,42 @@
   <q-page-container>
     <div class="row q-mb-md">
       <div class="col-12 q-gutter-y-md">
-        <q-toolbar class="row">
-          <div class="col">
-            <q-toolbar-title> Market: </q-toolbar-title>
-          </div>
-          <div class="col q-mx-md">
-            <q-input
-              class="float-left full-width q-ml-md"
-              standout
-              square
-              dense
-              outlined
-              clearable
-              v-model.trim="searchText"
-              label="Search for products"
-            >
-              <template v-slot:append>
-                <q-icon v-if="!searchText" name="search" />
-              </template>
-            </q-input>
-          </div>
+        <q-toolbar>
+          <q-btn flat round dense icon="menu" @click="drawer = !drawer"></q-btn>
+          {%raw%}
+          <q-toolbar-title style="text-transform: capitalize">
+            {{ activePage }}
+          </q-toolbar-title>
+          {%endraw%}
+          <q-input
+            class="float-left q-ml-md"
+            standout
+            square
+            dense
+            outlined
+            clearable
+            v-model.trim="searchText"
+            label="Search for products"
+          >
+            <template v-slot:append>
+              <q-icon v-if="!searchText" name="search" />
+            </template>
+          </q-input>
         </q-toolbar>
       </div>
     </div>
-    <div class="row q-col-gutter-md">
-      <div
-        class="col-xs-12 col-sm-6 col-md-4 col-lg-3"
-        v-for="item in filterProducts"
-        :key="item.id"
-      >
-        <q-card class="card--product">
-          {% raw %}
-          <q-img
-            :src="item.image ? item.image : '/nostrmarket/static/images/placeholder.png'"
-            alt="Product Image"
-            loading="lazy"
-            spinner-color="white"
-            fit="contain"
-            height="300px"
-          ></q-img>
-
-          <q-card-section class="q-pb-xs q-pt-md">
-            <div class="row no-wrap items-center">
-              <div class="col text-subtitle2 ellipsis-2-lines">
-                {{ item.product }}
-              </div>
-            </div>
-
-            <!-- <q-rating v-model="stars" color="orange" :max="5" readonly size="17px"></q-rating> -->
-          </q-card-section>
-
-          <q-card-section class="q-py-sm">
-            <div>
-              <div class="text-caption text-weight-bolder">
-                {{ item.stallName }}
-              </div>
-              <span v-if="item.currency == 'sat'">
-                <span class="text-h6">{{ item.price }} sats</span
-                ><span class="q-ml-sm text-grey-6"
-                  >BTC {{ (item.price / 1e8).toFixed(8) }}</span
-                >
-              </span>
-              <span v-else>
-                <span class="text-h6"
-                  >{{ getAmountFormated(item.price, item.currency) }}</span
-                >
-                <span v-if="exchangeRates" class="q-ml-sm text-grey-6"
-                  >({{ getValueInSats(item.price, item.currency) }} sats)</span
-                >
-              </span>
-              <span
-                class="q-ml-md text-caption text-green-8 text-weight-bolder q-mt-md"
-                >{{item.quantity}} left</span
-              >
-            </div>
-            <div v-if="item.categories" class="text-subtitle1">
-              <q-chip
-                v-for="(cat, i) in item.categories.split(',')"
-                :key="i"
-                dense
-                >{{cat}}</q-chip
-              >
-            </div>
-            <div
-              class="text-caption text-grey ellipsis-2-lines"
-              style="min-height: 40px"
-            >
-              <p v-if="item.description">{{ item.description }}</p>
-            </div>
-          </q-card-section>
-
-          <q-separator></q-separator>
-
-          <q-card-actions>
-            <span>Stall: {{ item.stallName }}</span>
-            <q-btn
-              flat
-              class="text-weight-bold text-capitalize q-ml-auto"
-              dense
-              color="primary"
-              type="a"
-              :href="'/market/stalls/' + item.stall"
-              target="_blank"
-            >
-              Visit Stall
-            </q-btn>
-          </q-card-actions>
-          {% endraw %}
-        </q-card>
-      </div>
-    </div>
+    <customer-market
+      v-if="activePage == 'market'"
+      :products="filterProducts"
+      :exchange-rates="exchangeRates"
+    ></customer-market>
   </q-page-container>
-  <q-page-sticky position="bottom-right" :offset="[18, 18]">
-    <q-btn fab @click="drawer = !drawer" icon="menu" color="accent"></q-btn>
-  </q-page-sticky>
 </q-layout>
 {% endblock %} {% block scripts %}
 <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+
+<script src="{{ url_for('nostrmarket_static', path='js/utils.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/customer-market/customer-market.js') }}"></script>
 <script>
   const nostr = window.NostrTools
   const defaultRelays = [
@@ -254,7 +174,13 @@
       ...Object.fromEntries(event.tags)
     }
   }
+
   Vue.component(VueQrcode.name, VueQrcode)
+
+  Promise.all([
+    customerMarket('static/components/customer-market/customer-market.html')
+  ])
+
   new Vue({
     el: '#vue',
     mixins: [windowMixin],
@@ -270,7 +196,8 @@
         searchText: null,
         exchangeRates: null,
         inputPubkey: null,
-        inputRelay: null
+        inputRelay: null,
+        activePage: 'market'
       }
     },
     computed: {
@@ -293,6 +220,16 @@
       this.pubkeys.add(
         '8f69ac99b96f7c4ad58b98cc38fe5d35ce02daefae7d1609c797ce3b4f92f5fd'
       )
+      // What component to render on start
+      let stall_id = JSON.parse('{{ stall_id | tojson }}')
+      let product_id = JSON.parse('{{ product_id | tojson }}')
+      if (stall_id) {
+        if (product_id) {
+          this.activePage = 'product'
+        } else {
+          this.activePage = 'stall'
+        }
+      }
       this.$q.loading.show()
       this.relays = new Set(defaultRelays)
       await this.initNostr()
@@ -320,17 +257,28 @@
                 return
               } else if (e.content.stall) {
                 //it's a product `d` is the prod. id
-                products.set(e.d, e.content)
+                products.set(e.d, {...e.content, id: e.d})
               } else {
                 // it's a stall `d` is the stall id
-                stalls.set(e.d, e.content)
+                stalls.set(e.d, {...e.content, id: e.d})
                 return
               }
             })
           })
         await Promise.resolve(sub)
-        this.products = Array.from(products.values())
-        this.stalls = Array.from(stalls.values())
+        this.stalls = await Array.from(stalls.values())
+
+        this.products = Array.from(products.values()).map(obj => {
+          obj.currency = 'EUR' // placeholder for testing/dev
+          let stall = this.stalls.find(s => s.id == obj.stall)
+          obj.stallName = stall.name
+          if (obj.currency != 'sat') {
+            obj.formatedPrice = this.getAmountFormated(obj.price, obj.currency)
+            obj.priceInSats = this.getValueInSats(obj.price, obj.currency)
+          }
+          return obj
+        })
+
         pool.close(relays)
       },
       async getRates() {
