@@ -44,7 +44,7 @@ async def m001_initial(db):
             name TEXT NOT NULL,
             categories TEXT,
             description TEXT,
-            image_urls TEXT NOT NULL DEFAULT '[]',
+            images TEXT NOT NULL DEFAULT '[]',
             price REAL NOT NULL,
             quantity INTEGER NOT NULL
         );
