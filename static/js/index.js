@@ -1,9 +1,10 @@
 const merchant = async () => {
   Vue.component(VueQrcode.name, VueQrcode)
 
-  await stallDetails('static/components/stall-details/stall-details.html')
   await keyPair('static/components/key-pair/key-pair.html')
   await shippingZones('static/components/shipping-zones/shipping-zones.html')
+  await stallDetails('static/components/stall-details/stall-details.html')
+  await stallList('static/components/stall-list/stall-list.html')
 
   const nostr = window.NostrTools
 

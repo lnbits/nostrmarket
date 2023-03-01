@@ -4,7 +4,7 @@ from typing import List, Optional
 from lnbits.helpers import urlsafe_short_hash
 
 from . import db
-from .models import Merchant, PartialMerchant, PartialZone, Zone
+from .models import Merchant, PartialMerchant, PartialStall, PartialZone, Stall, Zone
 
 ######################################## MERCHANT ########################################
 
@@ -105,3 +105,64 @@ async def get_zones(user_id: str) -> List[Zone]:
 
 async def delete_zone(zone_id: str) -> None:
     await db.execute("DELETE FROM nostrmarket.zones WHERE id = ?", (zone_id,))
+
+
+######################################## STALL ########################################
+
+
+async def create_stall(user_id: str, data: PartialStall) -> Stall:
+    stall_id = urlsafe_short_hash()
+    await db.execute(
+        f"""
+        INSERT INTO nostrmarket.stalls (user_id, id, wallet, name, currency, zones, meta)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            user_id,
+            stall_id,
+            data.wallet,
+            data.name,
+            data.currency,
+            json.dumps(data.shipping_zones),
+            json.dumps(dict(data.config)),
+        ),
+    )
+
+    stall = await get_stall(user_id, stall_id)
+    assert stall, "Newly created stall couldn't be retrieved"
+    return stall
+
+
+async def get_stall(user_id: str, stall_id: str) -> Optional[Stall]:
+    row = await db.fetchone(
+        "SELECT * FROM nostrmarket.stalls WHERE user_id = ? AND id = ?",
+        (
+            user_id,
+            stall_id,
+        ),
+    )
+    return Stall.from_row(row) if row else None
+
+
+async def get_stalls(user_id: str) -> List[Stall]:
+    rows = await db.fetchone(
+        "SELECT * FROM nostrmarket.stalls WHERE user_id = ?",
+        (user_id,),
+    )
+    return [Stall.from_row(row) for row in rows]
+
+
+async def update_stall(user_id: str, stall_id: str, **kwargs) -> Optional[Stall]:
+    q = ", ".join([f"{field[0]} = ?" for field in kwargs.items()])
+    await db.execute(
+        f"UPDATE market.stalls SET {q} WHERE user_id = ? AND id = ?",
+        (*kwargs.values(), user_id, stall_id),
+    )
+    row = await db.fetchone(
+        "SELECT * FROM market.stalls WHERE  user_id =? AND id = ?",
+        (
+            user_id,
+            stall_id,
+        ),
+    )
+    return Stall.from_row(row) if row else None

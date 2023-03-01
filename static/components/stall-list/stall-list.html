@@ -1,0 +1,157 @@
+<div>
+  <div class="row items-center no-wrap q-mb-md">
+    <div class="col q-pr-lg">
+      <q-btn
+        @click="stallDialog.show = true"
+        unelevated
+        color="green"
+        class="float-left"
+        >New Stall</q-btn
+      >
+      <q-input
+        borderless
+        dense
+        debounce="300"
+        v-model="filter"
+        placeholder="Search"
+        class="float-right"
+      >
+        <template v-slot:append>
+          <q-icon name="search"></q-icon>
+        </template>
+      </q-input>
+    </div>
+    <!-- <div class="col-auto">
+        <q-btn outline color="grey" label="...">
+          <q-menu auto-close>
+            <q-list style="min-width: 100px">
+              <q-item clickable>
+                <q-item-section @click="exportrelayCSV"
+                  >Export to CSV</q-item-section
+                >
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
+      </div> -->
+  </div>
+  <!--
+    <q-table
+      flat
+      dense
+      :data="stalls"
+      row-key="id"
+      :columns="relaysTable.columns"
+      :pagination.sync="relaysTable.pagination"
+      :filter="filter"
+    >
+      <template v-slot:body="props">
+        <q-tr :props="props">
+          <q-td auto-width>
+            <q-btn
+              size="sm"
+              color="accent"
+              round
+              dense
+              @click="props.row.expanded= !props.row.expanded"
+              :icon="props.row.expanded? 'remove' : 'add'"
+            />
+          </q-td>
+
+          <q-td key="id" :props="props">
+            <a style="color: unset" :href="props.row.id" target="_blank">
+              {{props.row.id}}</a
+            >
+          </q-td>
+          <q-td key="toggle" :props="props">
+            <q-toggle
+              size="sm"
+              color="secodary"
+              v-model="props.row.active"
+              @input="showToggleRelayDialog(props.row)"
+            ></q-toggle>
+          </q-td>
+          <q-td auto-width> {{props.row.name}} </q-td>
+          <q-td key="description" :props="props">
+            {{props.row.description}}
+          </q-td>
+          <q-td key="pubkey" :props="props">
+            <div>{{props.row.pubkey}}</div>
+          </q-td>
+          <q-td key="contact" :props="props">
+            <div>{{props.row.contact}}</div>
+          </q-td>
+        </q-tr>
+        <q-tr v-if="props.row.expanded" :props="props">
+          <q-td colspan="100%">
+            <div class="row items-center q-mb-lg">
+              <div class="col-12">
+                <relay-details
+                  :relay-id="props.row.id"
+                  :adminkey="g.user.wallets[0].adminkey"
+                  :inkey="g.user.wallets[0].inkey"
+                  :wallet-options="g.user.walletOptions"
+                  @relay-deleted="handleRelayDeleted"
+                  @relay-updated="handleRelayUpdated"
+                ></relay-details>
+              </div>
+            </div>
+          </q-td>
+        </q-tr>
+      </template>
+      {% endraw %}
+    </q-table>
+    -->
+  <div>
+    <q-dialog v-model="stallDialog.show" position="top">
+      <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+        <q-form @submit="sendStallFormData" class="q-gutter-md">
+          <q-input
+            filled
+            dense
+            v-model.trim="stallDialog.data.name"
+            label="Name"
+          ></q-input>
+          <q-select
+            filled
+            dense
+            emit-value
+            v-model="stallDialog.data.wallet"
+            :options="walletOptions"
+            label="Wallet *"
+          >
+          </q-select>
+          <q-select
+            filled
+            dense
+            v-model="stallDialog.data.currency"
+            type="text"
+            label="Unit"
+            :options="currencies"
+          ></q-select>
+          <q-select
+            :options="zoneOptions"
+            filled
+            dense
+            multiple
+            v-model.trim="stallDialog.data.shippingZones"
+            label="Shipping Zones"
+          ></q-select>
+
+          <div class="row q-mt-lg">
+            <q-btn
+              unelevated
+              color="primary"
+              :disable="stallDialog.data.wallet == null"
+              type="submit"
+              >Create Stall</q-btn
+            >
+            <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+              >Cancel</q-btn
+            >
+          </div>
+        </q-form>
+      </q-card>
+    </q-dialog>
+  </div>
+</div>

@@ -86,15 +86,16 @@
           ></key-pair>
         </q-card-section>
       </q-card>
+      <q-card class="q-mt-lg">
+        <q-card-section>
+          <stall-list
+            :adminkey="g.user.wallets[0].adminkey"
+            :inkey="g.user.wallets[0].inkey"
+            :wallet-options="g.user.walletOptions"
+          ></stall-list>
+        </q-card-section>
+      </q-card>
     </div>
-    <q-card>
-      <q-card-section>
-        <div class="row">
-          <div class="col-6"></div>
-          <div class="col-6"></div>
-        </div>
-      </q-card-section>
-    </q-card>
   </div>
 
   <div class="col-12 col-md-5 q-gutter-y-md">
@@ -115,9 +116,10 @@
 <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
 
 <script src="{{ url_for('nostrmarket_static', path='js/utils.js') }}"></script>
-<script src="{{ url_for('nostrmarket_static', path='components/stall-details/stall-details.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/key-pair/key-pair.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/shipping-zones/shipping-zones.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/stall-details/stall-details.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/stall-list/stall-list.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/index.js') }}"></script>
 
 {% endblock %}

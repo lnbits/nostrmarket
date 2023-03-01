@@ -43,3 +43,30 @@ class Zone(PartialZone):
         zone = cls(**dict(row))
         zone.countries = json.loads(row["regions"])
         return zone
+
+
+######################################## STALLS ########################################
+
+
+class StallConfig(BaseModel):
+    image_url: Optional[str]
+    fiat_base_multiplier: int = 1  # todo: reminder wht is this for?
+
+
+class PartialStall(BaseModel):
+    wallet: str
+    name: str
+    currency: str = "sat"
+    shipping_zones: List[str] = []
+    config: StallConfig = StallConfig()
+
+
+class Stall(PartialStall):
+    id: str
+
+    @classmethod
+    def from_row(cls, row: Row) -> "Stall":
+        stall = cls(**dict(row))
+        stall.config = StallConfig(**json.loads(row["meta"]))
+        stall.shipping_zones = json.loads(row["zones"])
+        return stall
