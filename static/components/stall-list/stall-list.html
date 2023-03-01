@@ -2,7 +2,7 @@
   <div class="row items-center no-wrap q-mb-md">
     <div class="col q-pr-lg">
       <q-btn
-        @click="stallDialog.show = true"
+        @click="openCreateStallDialog"
         unelevated
         color="green"
         class="float-left"
@@ -142,7 +142,11 @@
             <q-btn
               unelevated
               color="primary"
-              :disable="stallDialog.data.wallet == null"
+              :disable="!stallDialog.data.name 
+              || !stallDialog.data.currency 
+              || !stallDialog.data.wallet 
+              || !stallDialog.data.shippingZones 
+              || !stallDialog.data.shippingZones.length"
               type="submit"
               >Create Stall</q-btn
             >

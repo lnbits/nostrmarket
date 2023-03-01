@@ -35,7 +35,6 @@ async function stallList(path) {
         })
       },
       createStall: async function (stall) {
-        console.log('### createStall', stall)
         try {
           const {data} = await LNbits.api.request(
             'POST',
@@ -43,6 +42,11 @@ async function stallList(path) {
             this.adminkey,
             stall
           )
+          this.stallDialog.show = false
+          this.$q.notify({
+            type: 'positive',
+            message: 'Stall created!'
+          })
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -74,6 +78,17 @@ async function stallList(path) {
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
+      },
+      openCreateStallDialog: async function () {
+        await this.getCurrencies()
+        await this.getZones()
+        this.stallDialog.data = {
+          name: '',
+          wallet: null,
+          currency: 'sat',
+          shippingZones: []
+        }
+        this.stallDialog.show = true
       }
     },
     created: async function () {
