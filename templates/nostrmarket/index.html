@@ -38,7 +38,7 @@
         <div class="row">
           <div class="col-12">
             <q-btn
-              disabled
+              @click="showImportKeysDialog"
               label="Import Key"
               color="primary"
               class="float-left"
@@ -61,20 +61,22 @@
       <q-card>
         <q-card-section>
           <div class="row">
-            <div class="col-6"></div>
-            <div class="col-4">
+            <div class="col-8"></div>
+            <div class="col-2">
               <shipping-zones
                 :inkey="g.user.wallets[0].inkey"
                 :adminkey="g.user.wallets[0].adminkey"
+                class="float-right"
               ></shipping-zones>
             </div>
             <div class="col-2">
               <q-btn
                 @click="showKeys = !showKeys"
-                :label="showKeys ? 'Hide Keys' : 'Show Keys'"
+                icon="vpn_key"
                 color="primary"
+                class="float-right"
               >
-                <q-tooltip> Show Public or Private keys </q-tooltip>
+                <q-tooltip> Show Public and Private keys </q-tooltip>
               </q-btn>
             </div>
           </div>
@@ -84,6 +86,15 @@
             :public-key="merchant.public_key"
             :private-key="merchant.private_key"
           ></key-pair>
+        </q-card-section>
+      </q-card>
+      <q-card class="q-mt-lg">
+        <q-card-section>
+          <stall-list
+            :adminkey="g.user.wallets[0].adminkey"
+            :inkey="g.user.wallets[0].inkey"
+            :wallet-options="g.user.walletOptions"
+          ></stall-list>
         </q-card-section>
       </q-card>
     </div>
@@ -102,14 +113,43 @@
       </q-card-section>
     </q-card>
   </div>
+  <div>
+    <q-dialog v-model="importKeyDialog.show" position="top">
+      <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+        <q-form @submit="importKeys" class="q-gutter-md">
+          <q-input
+            filled
+            dense
+            v-model.trim="importKeyDialog.data.privateKey"
+            label="Private Key (hex or nsec)"
+          ></q-input>
+          <div class="row q-mt-lg">
+            <q-btn
+              unelevated
+              color="primary"
+              :disable="!importKeyDialog.data.privateKey"
+              type="submit"
+              >Import</q-btn
+            >
+            <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+              >Cancel</q-btn
+            >
+          </div>
+        </q-form>
+      </q-card>
+    </q-dialog>
+  </div>
 </div>
 {% endblock%}{% block scripts %} {{ window_vars(user) }}
+<!-- todo: serve locally -->
 <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pica@6.1.1/dist/pica.min.js"></script>
 
 <script src="{{ url_for('nostrmarket_static', path='js/utils.js') }}"></script>
-<script src="{{ url_for('nostrmarket_static', path='components/stall-details/stall-details.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/key-pair/key-pair.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/shipping-zones/shipping-zones.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/stall-details/stall-details.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/stall-list/stall-list.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/index.js') }}"></script>
 
 {% endblock %}

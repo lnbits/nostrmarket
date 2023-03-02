@@ -1,10 +1,20 @@
 import json
+import time
 from typing import List, Optional
 
 from lnbits.helpers import urlsafe_short_hash
 
 from . import db
-from .models import Merchant, PartialMerchant, PartialZone, Zone
+from .models import (
+    Merchant,
+    PartialMerchant,
+    PartialProduct,
+    PartialStall,
+    PartialZone,
+    Product,
+    Stall,
+    Zone,
+)
 
 ######################################## MERCHANT ########################################
 
@@ -51,15 +61,7 @@ async def create_zone(user_id: str, data: PartialZone) -> Zone:
     zone_id = urlsafe_short_hash()
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.zones (
-            id,
-            user_id,
-            name,
-            currency,
-            cost,
-            regions
-
-        )
+        INSERT INTO nostrmarket.zones (id, user_id, name, currency, cost, regions)
         VALUES (?, ?, ?, ?, ?, ?)
         """,
         (
@@ -104,4 +106,166 @@ async def get_zones(user_id: str) -> List[Zone]:
 
 
 async def delete_zone(zone_id: str) -> None:
+    # todo: add user_id
     await db.execute("DELETE FROM nostrmarket.zones WHERE id = ?", (zone_id,))
+
+
+######################################## STALL ########################################
+
+
+async def create_stall(user_id: str, data: PartialStall) -> Stall:
+    stall_id = urlsafe_short_hash()
+
+    await db.execute(
+        f"""
+        INSERT INTO nostrmarket.stalls (user_id, id, wallet, name, currency, zones, meta)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            user_id,
+            stall_id,
+            data.wallet,
+            data.name,
+            data.currency,
+            json.dumps(
+                [z.dict() for z in data.shipping_zones]
+            ),  # todo: cost is float. should be int for sats
+            json.dumps(data.config.dict()),
+        ),
+    )
+
+    stall = await get_stall(user_id, stall_id)
+    assert stall, "Newly created stall couldn't be retrieved"
+    return stall
+
+
+async def get_stall(user_id: str, stall_id: str) -> Optional[Stall]:
+    row = await db.fetchone(
+        "SELECT * FROM nostrmarket.stalls WHERE user_id = ? AND id = ?",
+        (
+            user_id,
+            stall_id,
+        ),
+    )
+    return Stall.from_row(row) if row else None
+
+
+async def get_stalls(user_id: str) -> List[Stall]:
+    rows = await db.fetchall(
+        "SELECT * FROM nostrmarket.stalls WHERE user_id = ?",
+        (user_id,),
+    )
+    return [Stall.from_row(row) for row in rows]
+
+
+async def update_stall(user_id: str, stall: Stall) -> Optional[Stall]:
+    await db.execute(
+        f"""
+            UPDATE nostrmarket.stalls SET wallet = ?, name = ?, currency = ?, zones = ?, meta = ?
+            WHERE user_id = ? AND id = ?
+        """,
+        (
+            stall.wallet,
+            stall.name,
+            stall.currency,
+            json.dumps(
+                [z.dict() for z in stall.shipping_zones]
+            ),  # todo: cost is float. should be int for sats
+            json.dumps(stall.config.dict()),
+            user_id,
+            stall.id,
+        ),
+    )
+    return await get_stall(user_id, stall.id)
+
+
+async def delete_stall(user_id: str, stall_id: str) -> None:
+    await db.execute(
+        "DELETE FROM nostrmarket.stalls WHERE user_id =? AND id = ?",
+        (
+            user_id,
+            stall_id,
+        ),
+    )
+
+
+######################################## STALL ########################################
+
+
+async def create_product(user_id: str, data: PartialProduct) -> Product:
+    product_id = urlsafe_short_hash()
+
+    await db.execute(
+        f"""
+        INSERT INTO nostrmarket.products (user_id, id, stall_id, name, category_list, description, images, price, quantity)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            user_id,
+            product_id,
+            data.stall_id,
+            data.name,
+            json.dumps(data.categories),
+            data.description,
+            data.image,
+            data.price,
+            data.quantity,
+        ),
+    )
+    product = await get_product(user_id, product_id)
+    assert product, "Newly created product couldn't be retrieved"
+
+    return product
+
+
+async def update_product(user_id: str, product: Product) -> Product:
+
+    await db.execute(
+        f"""
+        UPDATE nostrmarket.products set name = ?, category_list = ?, description = ?, images = ?, price = ?, quantity = ?
+        WHERE user_id = ? AND id = ?
+        """,
+        (
+            product.name,
+            json.dumps(product.categories),
+            product.description,
+            product.image,
+            product.price,
+            product.quantity,
+            user_id,
+            product.id,
+        ),
+    )
+    updated_product = await get_product(user_id, product.id)
+    assert updated_product, "Updated product couldn't be retrieved"
+
+    return updated_product
+
+
+async def get_product(user_id: str, product_id: str) -> Optional[Product]:
+    row = await db.fetchone(
+        "SELECT * FROM nostrmarket.products WHERE user_id =? AND id = ?",
+        (
+            user_id,
+            product_id,
+        ),
+    )
+    return Product.from_row(row) if row else None
+
+
+async def get_products(user_id: str, stall_id: str) -> List[Product]:
+    rows = await db.fetchall(
+        "SELECT * FROM nostrmarket.products WHERE user_id = ? AND stall_id = ?",
+        (user_id, stall_id),
+    )
+    return [Product.from_row(row) for row in rows]
+
+
+async def delete_product(user_id: str, product_id: str) -> None:
+    await db.execute(
+        "DELETE FROM nostrmarket.products WHERE user_id =? AND id = ?",
+        (
+            user_id,
+            product_id,
+        ),
+    )

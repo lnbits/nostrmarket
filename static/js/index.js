@@ -1,9 +1,10 @@
 const merchant = async () => {
   Vue.component(VueQrcode.name, VueQrcode)
 
-  await stallDetails('static/components/stall-details/stall-details.html')
   await keyPair('static/components/key-pair/key-pair.html')
   await shippingZones('static/components/shipping-zones/shipping-zones.html')
+  await stallDetails('static/components/stall-details/stall-details.html')
+  await stallList('static/components/stall-list/stall-list.html')
 
   const nostr = window.NostrTools
 
@@ -14,16 +15,49 @@ const merchant = async () => {
       return {
         merchant: {},
         shippingZones: [],
-        showKeys: false
+        showKeys: false,
+        importKeyDialog: {
+          show: false,
+          data: {
+            privateKey: null
+          }
+        }
       }
     },
     methods: {
       generateKeys: async function () {
-        const privkey = nostr.generatePrivateKey()
-        const pubkey = nostr.getPublicKey(privkey)
-
-        const payload = {private_key: privkey, public_key: pubkey, config: {}}
+        const privateKey = nostr.generatePrivateKey()
+        await this.createMerchant(privateKey)
+      },
+      importKeys: async function () {
+        this.importKeyDialog.show = false
+        let privateKey = this.importKeyDialog.data.privateKey
+        if (!privateKey) {
+          return
+        }
         try {
+          if (privateKey.toLowerCase().startsWith('nsec')) {
+            privateKey = nostr.nip19.decode(privateKey).data
+          }
+        } catch (error) {
+          this.$q.notify({
+            type: 'negative',
+            message: `${error}`
+          })
+        }
+        await this.createMerchant(privateKey)
+      },
+      showImportKeysDialog: async function () {
+        this.importKeyDialog.show = true
+      },
+      createMerchant: async function (privateKey) {
+        try {
+          const pubkey = nostr.getPublicKey(privateKey)
+          const payload = {
+            private_key: privateKey,
+            public_key: pubkey,
+            config: {}
+          }
           const {data} = await LNbits.api.request(
             'POST',
             '/nostrmarket/api/v1/merchant',
@@ -33,10 +67,13 @@ const merchant = async () => {
           this.merchant = data
           this.$q.notify({
             type: 'positive',
-            message: 'Keys generated!'
+            message: 'Merchant Created!'
           })
         } catch (error) {
-          LNbits.utils.notifyApiError(error)
+          this.$q.notify({
+            type: 'negative',
+            message: `${error}`
+          })
         }
       },
       getMerchant: async function () {

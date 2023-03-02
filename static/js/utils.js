@@ -16,3 +16,12 @@ function loadTemplateAsync(path) {
 
   return result
 }
+
+function imgSizeFit(img, maxWidth = 1024, maxHeight = 768) {
+  let ratio = Math.min(
+    1,
+    maxWidth / img.naturalWidth,
+    maxHeight / img.naturalHeight
+  )
+  return {width: img.naturalWidth * ratio, height: img.naturalHeight * ratio}
+}

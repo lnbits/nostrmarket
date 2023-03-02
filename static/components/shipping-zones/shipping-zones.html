@@ -4,7 +4,6 @@
     unelevated
     color="primary"
     icon="public"
-    label="Shipping Zones"
     @click="openZoneDialog()"
   >
     <q-list>
@@ -48,8 +47,8 @@
           v-model="zoneDialog.data.countries"
         ></q-select>
         <q-select
-          v-if="!zoneDialog.data.id"
-          style="width: 100px"
+          :disabled="!!zoneDialog.data.id"
+          :readonly="!!zoneDialog.data.id"
           filled
           dense
           v-model="zoneDialog.data.currency"
@@ -60,7 +59,7 @@
         <q-input
           filled
           dense
-          :label="'Amount (' + zoneDialog.data.currency + ') *'"
+          :label="'Cost of Shipping (' + zoneDialog.data.currency + ') *'"
           fill-mask="0"
           reverse-fill-mask
           :step="zoneDialog.data.currency != 'sat' ? '0.01' : '1'"

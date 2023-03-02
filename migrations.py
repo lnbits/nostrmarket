@@ -18,15 +18,17 @@ async def m001_initial(db):
     """
     Initial stalls table.
     """
+    # user_id, id, wallet, name, currency, zones, meta
     await db.execute(
         """
         CREATE TABLE nostrmarket.stalls (
+            user_id TEXT NOT NULL,
             id TEXT PRIMARY KEY,
             wallet TEXT NOT NULL,
             name TEXT NOT NULL,
             currency TEXT,
-            shipping_zones TEXT NOT NULL,
-            rating REAL DEFAULT 0
+            zones TEXT NOT NULL DEFAULT '[]',
+            meta TEXT NOT NULL DEFAULT '{}'
         );
         """
     )
@@ -37,15 +39,15 @@ async def m001_initial(db):
     await db.execute(
         f"""
         CREATE TABLE nostrmarket.products (
+            user_id TEXT NOT NULL,
             id TEXT PRIMARY KEY,
             stall_id TEXT NOT NULL,
             name TEXT NOT NULL,
-            categories TEXT,
+            category_list TEXT DEFAULT '[]',
             description TEXT,
-            image TEXT,
+            images TEXT DEFAULT '[]',
             price REAL NOT NULL,
-            quantity INTEGER NOT NULL,
-            rating REAL DEFAULT 0
+            quantity INTEGER NOT NULL
         );
         """
     )

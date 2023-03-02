@@ -1,3 +1,4 @@
+import json
 from http import HTTPStatus
 from typing import List, Optional
 
@@ -16,14 +17,33 @@ from lnbits.utils.exchange_rates import currencies
 from . import nostrmarket_ext
 from .crud import (
     create_merchant,
+    create_product,
+    create_stall,
     create_zone,
+    delete_product,
+    delete_stall,
     delete_zone,
     get_merchant_for_user,
+    get_products,
+    get_stall,
+    get_stalls,
     get_zone,
     get_zones,
+    update_product,
+    update_stall,
     update_zone,
 )
-from .models import Merchant, PartialMerchant, PartialZone, Zone
+from .models import (
+    Merchant,
+    PartialMerchant,
+    PartialProduct,
+    PartialStall,
+    PartialZone,
+    Product,
+    Stall,
+    Zone,
+)
+from .nostr.nostr_client import publish_nostr_event
 
 ######################################## MERCHANT ########################################
 
@@ -136,6 +156,230 @@ async def api_delete_zone(zone_id, wallet: WalletTypeInfo = Depends(require_admi
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create merchant",
         )
+
+
+######################################## STALLS ########################################
+
+
+@nostrmarket_ext.post("/api/v1/stall")
+async def api_create_stall(
+    data: PartialStall,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> Stall:
+    try:
+        data.validate_stall()
+
+        print("### stall", json.dumps(data.dict()))
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Cannot find merchat for stall"
+
+        stall = await create_stall(wallet.wallet.user, data=data)
+
+        event = stall.to_nostr_event(merchant.public_key)
+        event.sig = merchant.sign_hash(bytes.fromhex(event.id))
+        await publish_nostr_event(event)
+
+        stall.config.event_id = event.id
+        await update_stall(wallet.wallet.user, stall)
+
+        return stall
+    except ValueError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot create stall",
+        )
+
+
+@nostrmarket_ext.put("/api/v1/stall/{stall_id}")
+async def api_update_stall(
+    data: Stall,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> Stall:
+    try:
+        data.validate_stall()
+
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Cannot find merchat for stall"
+
+        event = data.to_nostr_event(merchant.public_key)
+        event.sig = merchant.sign_hash(bytes.fromhex(event.id))
+
+        data.config.event_id = event.id
+        # data.config.event_created_at =
+        stall = await update_stall(wallet.wallet.user, data)
+        assert stall, "Cannot update stall"
+
+        await publish_nostr_event(event)
+
+        return stall
+    except HTTPException as ex:
+        raise ex
+    except ValueError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot update stall",
+        )
+
+
+@nostrmarket_ext.get("/api/v1/stall/{stall_id}")
+async def api_get_stall(stall_id: str, wallet: WalletTypeInfo = Depends(get_key_type)):
+    try:
+        stall = await get_stall(wallet.wallet.user, stall_id)
+        if not stall:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND,
+                detail="Stall does not exist.",
+            )
+        return stall
+    except HTTPException as ex:
+        raise ex
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot get stall",
+        )
+
+
+@nostrmarket_ext.get("/api/v1/stall")
+async def api_get_stalls(wallet: WalletTypeInfo = Depends(get_key_type)):
+    try:
+        stalls = await get_stalls(wallet.wallet.user)
+        return stalls
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot get stalls",
+        )
+
+
+@nostrmarket_ext.delete("/api/v1/stall/{stall_id}")
+async def api_delete_stall(
+    stall_id: str, wallet: WalletTypeInfo = Depends(require_admin_key)
+):
+    try:
+        stall = await get_stall(wallet.wallet.user, stall_id)
+        if not stall:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND,
+                detail="Stall does not exist.",
+            )
+
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Cannot find merchat for stall"
+
+        await delete_stall(wallet.wallet.user, stall_id)
+
+        delete_event = stall.to_nostr_delete_event(merchant.public_key)
+        delete_event.sig = merchant.sign_hash(bytes.fromhex(delete_event.id))
+
+        await publish_nostr_event(delete_event)
+
+    except HTTPException as ex:
+        raise ex
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot delete stall",
+        )
+
+
+######################################## PRODUCTS ########################################
+
+
+@nostrmarket_ext.post("/api/v1/product")
+async def api_create_product(
+    data: PartialProduct,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> Product:
+    try:
+        data.validate_product()
+        product = await create_product(wallet.wallet.user, data=data)
+
+        return product
+    except ValueError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot create product",
+        )
+
+
+@nostrmarket_ext.patch("/api/v1/product/{product_id}")
+async def api_update_product(
+    product_id: str,
+    product: Product,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> Product:
+    try:
+        product.validate_product()
+        product = await update_product(wallet.wallet.user, product)
+
+        return product
+    except ValueError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot update product",
+        )
+
+
+@nostrmarket_ext.get("/api/v1/product/{stall_id}")
+async def api_get_product(
+    stall_id: str,
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
+):
+    try:
+        products = await get_products(wallet.wallet.user, stall_id)
+        return products
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot get product",
+        )
+
+
+@nostrmarket_ext.delete("/api/v1/product/{product_id}")
+async def api_delete_product(
+    product_id: str,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+):
+    try:
+        await delete_product(wallet.wallet.user, product_id)
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot delete product",
+        )
+
+
+######################################## OTHER ########################################
 
 
 @nostrmarket_ext.get("/api/v1/currencies")
