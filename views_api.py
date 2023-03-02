@@ -23,6 +23,7 @@ from .crud import (
     delete_stall,
     delete_zone,
     get_merchant_for_user,
+    get_products,
     get_stall,
     get_stalls,
     get_zone,
@@ -299,9 +300,9 @@ async def api_delete_stall(
 
 
 @nostrmarket_ext.post("/api/v1/product")
-async def api_market_product_create(
+async def api_create_product(
     data: PartialProduct,
-    wallet: WalletTypeInfo = Depends(require_invoice_key),
+    wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Product:
     try:
         data.validate_product()
@@ -321,14 +322,20 @@ async def api_market_product_create(
         )
 
 
-# @nostrmarket_ext.get("/api/v1/product/{stall_id}")
-# async def api_market_products(
-#    stall_id: str, wallet: WalletTypeInfo = Depends(require_invoice_key),
-# ):
-#     wallet_ids = [wallet.wallet.id]
-
-
-#     return [product.dict() for product in await get_products(stalls)]
+@nostrmarket_ext.get("/api/v1/product/{stall_id}")
+async def api_get_product(
+    stall_id: str,
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
+):
+    try:
+        products = await get_products(wallet.wallet.user, stall_id)
+        return products
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot get product",
+        )
 
 
 # @market_ext.delete("/api/v1/products/{product_id}")

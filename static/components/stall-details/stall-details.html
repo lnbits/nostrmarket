@@ -115,6 +115,59 @@
           <div class="col-6 col-sm-8 q-pr-lg"></div>
           <div class="col-3 col-sm-1"></div>
         </div>
+
+        <div class="row items-center no-wrap q-mb-md">
+          <div class="col-12">
+            <q-table
+              flat
+              dense
+              :data="products"
+              row-key="id"
+              :columns="productsTable.columns"
+              :pagination.sync="productsTable.pagination"
+              :filter="productsFilter"
+            >
+              <template v-slot:body="props">
+                <q-tr :props="props">
+                  <q-td auto-width>
+                    <q-btn
+                      size="sm"
+                      color="pink"
+                      dense
+                      @click="props.row.expanded= !props.row.expanded"
+                      icon="delete"
+                    />
+                  </q-td>
+                  <q-td auto-width>
+                    <q-btn
+                      size="sm"
+                      color="accent"
+                      dense
+                      @click="props.row.expanded= !props.row.expanded"
+                      icon="edit"
+                    />
+                  </q-td>
+
+                  <q-td key="id" :props="props"> {{props.row.id}} </q-td>
+                  <q-td key="name" :props="props"> {{props.row.name}} </q-td>
+                  <q-td key="price" :props="props"> {{props.row.price}} </q-td>
+                  <q-td key="quantity" :props="props">
+                    {{props.row.quantity}}
+                  </q-td>
+
+                  <q-td key="categories" :props="props">
+                    <div>
+                      {{props.row.categories.filter(c => c).join(', ')}}
+                    </div>
+                  </q-td>
+                  <q-td key="description" :props="props">
+                    {{props.row.description}}
+                  </q-td>
+                </q-tr>
+              </template>
+            </q-table>
+          </div>
+        </div>
       </div>
     </q-tab-panel>
     <q-tab-panel name="orders">

@@ -228,3 +228,11 @@ async def get_product(user_id: str, product_id: str) -> Optional[Product]:
     product = Product.from_row(row) if row else None
 
     return product
+
+
+async def get_products(user_id: str, stall_id: str) -> List[Product]:
+    rows = await db.fetchall(
+        "SELECT * FROM nostrmarket.products WHERE user_id = ? AND stall_id = ?",
+        (user_id, stall_id),
+    )
+    return [Product.from_row(row) for row in rows]

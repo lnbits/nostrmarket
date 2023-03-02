@@ -32,6 +32,63 @@ async function stallDetails(path) {
             price: 0,
             quantity: 0
           }
+        },
+        productsFilter: '',
+        productsTable: {
+          columns: [
+            {
+              name: 'delete',
+              align: 'left',
+              label: '',
+              field: ''
+            },
+            {
+              name: 'edit',
+              align: 'left',
+              label: '',
+              field: ''
+            },
+
+            {
+              name: 'id',
+              align: 'left',
+              label: 'ID',
+              field: 'id'
+            },
+            {
+              name: 'name',
+              align: 'left',
+              label: 'Name',
+              field: 'name'
+            },
+            {
+              name: 'price',
+              align: 'left',
+              label: 'Price',
+              field: 'price'
+            },
+            {
+              name: 'quantity',
+              align: 'left',
+              label: 'Quantity',
+              field: 'quantity'
+            },
+            {
+              name: 'categories',
+              align: 'left',
+              label: 'Categories',
+              field: 'categories'
+            },
+            {
+              name: 'description',
+              align: 'left',
+              label: 'Description',
+              field: 'description'
+            }
+          ],
+          pagination: {
+            rowsPerPage: 10
+          }
         }
       }
     },
@@ -129,6 +186,20 @@ async function stallDetails(path) {
         this.productDialog.data.image = null
         this.productDialog = {...this.productDialog}
       },
+      getProducts: async function () {
+        try {
+          const {data} = await LNbits.api.request(
+            'GET',
+            '/nostrmarket/api/v1/product/' + this.stall.id,
+            this.inkey
+          )
+          this.products = data
+
+          console.log('### this.products', this.products)
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        }
+      },
       sendProductFormData: function () {
         var data = {
           stall_id: this.stall.id,
@@ -206,6 +277,7 @@ async function stallDetails(path) {
     },
     created: async function () {
       await this.getStall()
+      await this.getProducts()
     }
   })
 }
