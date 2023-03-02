@@ -154,6 +154,8 @@ async def api_create_stall(
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Stall:
     try:
+        data.validate_stall()
+
         print("### stall", json.dumps(data.dict()))
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Cannot find merchat for stall"
@@ -182,6 +184,8 @@ async def api_update_stall(
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Stall:
     try:
+        data.validate_stall()
+
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Cannot find merchat for stall"
 

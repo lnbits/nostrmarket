@@ -69,6 +69,13 @@ class PartialStall(BaseModel):
     shipping_zones: List[PartialZone] = []
     config: StallConfig = StallConfig()
 
+    def validate_stall(self):
+        for z in self.shipping_zones:
+            if z.currency != self.currency:
+                raise ValueError(
+                    f"Sipping zone '{z.name}' has different currency than stall."
+                )
+
 
 class Stall(PartialStall):
     id: str
