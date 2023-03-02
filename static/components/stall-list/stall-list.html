@@ -112,6 +112,14 @@
             v-model.trim="stallDialog.data.name"
             label="Name"
           ></q-input>
+          <q-input
+            filled
+            dense
+            v-model.trim="stallDialog.data.description"
+            type="textarea"
+            rows="3"
+            label="Description"
+          ></q-input>
           <q-select
             filled
             dense
@@ -130,7 +138,7 @@
             :options="currencies"
           ></q-select>
           <q-select
-            :options="zoneOptions"
+            :options="filteredZoneOptions"
             filled
             dense
             multiple

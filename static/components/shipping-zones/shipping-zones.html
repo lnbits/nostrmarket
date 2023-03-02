@@ -47,8 +47,8 @@
           v-model="zoneDialog.data.countries"
         ></q-select>
         <q-select
-          v-if="!zoneDialog.data.id"
-          style="width: 100px"
+          :disabled="!!zoneDialog.data.id"
+          :readonly="!!zoneDialog.data.id"
           filled
           dense
           v-model="zoneDialog.data.currency"

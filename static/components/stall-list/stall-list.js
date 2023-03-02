@@ -14,6 +14,7 @@ async function stallList(path) {
           show: false,
           data: {
             name: '',
+            description: '',
             wallet: null,
             currency: 'sat',
             shippingZones: []
@@ -22,16 +23,23 @@ async function stallList(path) {
         zoneOptions: []
       }
     },
+    computed: {
+      filteredZoneOptions: function () {
+        return this.zoneOptions.filter(
+          z => z.currency === this.stallDialog.data.currency
+        )
+      }
+    },
     methods: {
       sendStallFormData: async function () {
-        console.log('### sendStallFormData', this.stallDialog.data)
-
         await this.createStall({
           name: this.stallDialog.data.name,
           wallet: this.stallDialog.data.wallet,
           currency: this.stallDialog.data.currency,
           shipping_zones: this.stallDialog.data.shippingZones,
-          config: {}
+          config: {
+            description: this.stallDialog.data.description
+          }
         })
       },
       createStall: async function (stall) {
@@ -75,7 +83,7 @@ async function stallList(path) {
           this.zoneOptions = data.map(z => ({
             ...z,
             label: z.name
-              ? `${z.name} (${z.countries.join(', ')}})`
+              ? `${z.name} (${z.countries.join(', ')})`
               : z.countries.join(', ')
           }))
           console.log('### this.zoneOptions', this.zoneOptions)
@@ -88,6 +96,7 @@ async function stallList(path) {
         await this.getZones()
         this.stallDialog.data = {
           name: '',
+          description: '',
           wallet: null,
           currency: 'sat',
           shippingZones: []
