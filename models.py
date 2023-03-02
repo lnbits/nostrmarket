@@ -66,7 +66,7 @@ class PartialStall(BaseModel):
     wallet: str
     name: str
     currency: str = "sat"
-    shipping_zones: List[PartialZone] = []
+    shipping_zones: List[Zone] = []
     config: StallConfig = StallConfig()
 
     def validate_stall(self):
@@ -114,5 +114,5 @@ class Stall(PartialStall):
     def from_row(cls, row: Row) -> "Stall":
         stall = cls(**dict(row))
         stall.config = StallConfig(**json.loads(row["meta"]))
-        stall.shipping_zones = [PartialZone(**z) for z in json.loads(row["zones"])]
+        stall.shipping_zones = [Zone(**z) for z in json.loads(row["zones"])]
         return stall
