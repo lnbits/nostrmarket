@@ -75,7 +75,7 @@ async function stallDetails(path) {
           .confirmDialog(
             `
              Products and orders will be deleted also!
-             Are you sure you want to delete this relay?
+             Are you sure you want to delete this stall?
             `
           )
           .onOk(async () => {

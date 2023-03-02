@@ -104,7 +104,7 @@ class Stall(PartialStall):
             created_at=round(time.time()),
             kind=5,
             tags=[["e", self.config.event_id]],
-            content="Stall deleted",
+            content=f"Stall '{self.name}' deleted",
         )
         delete_event.id = delete_event.event_id
 
