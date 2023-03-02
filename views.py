@@ -1,7 +1,7 @@
 import json
 from http import HTTPStatus
 
-from fastapi import Depends, Request, Query
+from fastapi import Depends, Query, Request
 from fastapi.templating import Jinja2Templates
 from loguru import logger
 from starlette.responses import HTMLResponse
@@ -24,17 +24,17 @@ async def index(request: Request, user: User = Depends(check_user_exists)):
 
 @nostrmarket_ext.get("/market", response_class=HTMLResponse)
 async def market(
-    request: Request, stall_id: str = Query(None), product_id: str = Query(None)
+    request: Request,
+    stall_id: str = Query(None),
+    product_id: str = Query(None),
+    merchant_pubkey: str = Query(None),
 ):
     return nostrmarket_renderer().TemplateResponse(
         "nostrmarket/market.html",
-        {"request": request, "stall_id": stall_id, "product_id": product_id},
-    )
-
-
-@nostrmarket_ext.get("/stall/{stall_id}", response_class=HTMLResponse)
-async def stall(request: Request, stall_id: str):
-    return nostrmarket_renderer().TemplateResponse(
-        "nostrmarket/stall.html",
-        {"request": request, "stall_id": stall_id},
+        {
+            "request": request,
+            "stall_id": stall_id,
+            "product_id": product_id,
+            "merchant_pubkey": merchant_pubkey,
+        },
     )
