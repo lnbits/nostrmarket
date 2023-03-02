@@ -137,12 +137,50 @@
             </template>
           </q-input>
         </q-toolbar>
+        <!-- <q-toolbar>
+          <q-breadcrumbs class="cursor">
+            <q-breadcrumbs-el
+              label="Market"
+              icon="home"
+              @click="navigateTo('market')"
+            ></q-breadcrumbs-el>
+            <q-breadcrumbs-el
+              v-if="activeStall"
+              @click="activeProduct && navigateTo('stall', activeStall)"
+              :label="stallName"
+              icon="widgets"
+            ></q-breadcrumbs-el>
+            <q-breadcrumbs-el
+              v-if="activeProduct"
+              :label="productName"
+              icon="navigation"
+            ></q-breadcrumbs-el>
+          </q-breadcrumbs>
+          <q-toolbar-title></q-toolbar-title>
+          <q-btn
+            v-if="activeStall"
+            dense
+            round
+            flat
+            icon="shopping_cart"
+            class="q-ml-md"
+          ></q-btn>
+        </q-toolbar> -->
       </div>
     </div>
-    <customer-market
-      v-if="activePage == 'market'"
+
+    <customer-stall
+      v-if="activeStall"
+      :stall="stalls.find(stall => stall.id == activeStall)"
       :products="filterProducts"
       :exchange-rates="exchangeRates"
+      @change-page="navigateTo"
+    ></customer-stall>
+    <customer-market
+      v-else
+      :products="filterProducts"
+      :exchange-rates="exchangeRates"
+      @change-page="navigateTo"
     ></customer-market>
   </q-page-container>
 </q-layout>
@@ -151,6 +189,7 @@
 
 <script src="{{ url_for('nostrmarket_static', path='js/utils.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/customer-market/customer-market.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/customer-stall/customer-stall.js') }}"></script>
 <script>
   const nostr = window.NostrTools
   const defaultRelays = [
@@ -171,14 +210,18 @@
     event.content = JSON.parse(event.content)
     return {
       ...event,
-      ...Object.fromEntries(event.tags)
+      ...Object.values(event.tags).reduce((acc, tag) => {
+        let [key, value] = tag
+        return {...acc, [key]: [...(acc[key] || []), value]}
+      }, {})
     }
   }
 
   Vue.component(VueQrcode.name, VueQrcode)
 
   Promise.all([
-    customerMarket('static/components/customer-market/customer-market.html')
+    customerMarket('static/components/customer-market/customer-market.html'),
+    customerStall('static/components/customer-stall/customer-stall.html')
   ])
 
   new Vue({
@@ -190,26 +233,40 @@
         pubkeys: new Set(),
         relays: new Set(),
         events: [],
-        stalls: new Map(),
+        stalls: [],
         products: [],
         profiles: new Map(),
         searchText: null,
         exchangeRates: null,
         inputPubkey: null,
         inputRelay: null,
-        activePage: 'market'
+        activePage: 'market',
+        activeStall: null,
+        activeProduct: null
       }
     },
     computed: {
       filterProducts() {
-        if (!this.searchText || this.searchText.length < 2) return this.products
-        return this.products.filter(p => {
+        let products = this.products
+        if (this.activeStall) {
+          products = products.filter(p => p.stall == this.activeStall)
+        }
+        if (!this.searchText || this.searchText.length < 2) return products
+        return products.filter(p => {
           return (
-            p.product.includes(this.searchText) ||
+            p.name.includes(this.searchText) ||
             p.description.includes(this.searchText) ||
             p.categories.includes(this.searchText)
           )
         })
+      },
+      stallName() {
+        return this.stalls.find(s => s.id == this.activeStall)?.name || 'Stall'
+      },
+      productName() {
+        return (
+          this.products.find(p => p.id == this.activeProduct)?.name || 'Product'
+        )
       }
     },
     async created() {
@@ -220,19 +277,38 @@
       this.pubkeys.add(
         '8f69ac99b96f7c4ad58b98cc38fe5d35ce02daefae7d1609c797ce3b4f92f5fd'
       )
+      // stall ids S4hQgtTwiF5kGJZPbqMH9M  jkCbdtkXeMjGBY3LBf8yn4
+      this.$q.loading.show()
+      this.relays = new Set(defaultRelays)
+      // Get notes from Nostr
+      await this.initNostr()
+
       // What component to render on start
+      let merchant_pubkey = JSON.parse('{{ merchant_pubkey | tojson }}')
       let stall_id = JSON.parse('{{ stall_id | tojson }}')
       let product_id = JSON.parse('{{ product_id | tojson }}')
+      if (merchant_pubkey) {
+        this.pubkeys.add(merchant_pubkey)
+        /*LNbits.utils
+          .confirmDialog(
+            `We found a merchant pubkey in your request. Do you want to add it to the merchants list?`
+          )
+          .onCancel(() => {})
+          .onDismiss(() => {})
+          .onOk(() => {
+            this.pubkeys.add(merchant_pubkey)
+          })*/
+      }
       if (stall_id) {
         if (product_id) {
           this.activePage = 'product'
+          this.activeProduct = product_id
         } else {
           this.activePage = 'stall'
+          this.activeStall = stall_id
         }
       }
-      this.$q.loading.show()
-      this.relays = new Set(defaultRelays)
-      await this.initNostr()
+
       this.$q.loading.hide()
     },
     methods: {
@@ -245,11 +321,12 @@
         let sub = await pool
           .list(relays, [
             {
-              kinds: [0, 30005],
+              kinds: [0, 30005], // for production kind is 30017
               authors: Array.from(this.pubkeys)
             }
           ])
           .then(events => {
+            console.log(events)
             this.events = events || []
             this.events.map(eventToObj).map(e => {
               if (e.kind == 0) {
@@ -257,10 +334,10 @@
                 return
               } else if (e.content.stall) {
                 //it's a product `d` is the prod. id
-                products.set(e.d, {...e.content, id: e.d})
+                products.set(e.d, {...e.content, id: e.d, categories: e.t})
               } else {
                 // it's a stall `d` is the stall id
-                stalls.set(e.d, {...e.content, id: e.d})
+                stalls.set(e.d, {...e.content, id: e.d, pubkey: e.pubkey})
                 return
               }
             })
@@ -291,6 +368,44 @@
           LNbits.utils.notifyApiError(error)
         }
       },
+      navigateTo(page, opts = {stall: null, product: null, pubkey: null}) {
+        let {stall, product, pubkey} = opts
+        let url = new URL(window.location)
+
+        if (pubkey) url.searchParams.set('merchant_pubkey', pubkey)
+        if (stall && !pubkey) {
+          pubkey = this.stalls.find(s => s.id == stall).pubkey
+          url.searchParams.set('merchant_pubkey', pubkey)
+        }
+
+        switch (page) {
+          case 'stall':
+            if (stall) {
+              this.activeStall = stall
+              url.searchParams.set('stall_id', stall)
+            }
+            break
+          case 'product':
+            if (stall && product) {
+              this.activeStall = stall
+              this.activeProduct = product
+              url.searchParams.set('stall_id', stall)
+              url.searchParams.set('product_id', product)
+            }
+            break
+          default:
+            this.activeStall = null
+            this.activeProduct = null
+            url.searchParams.delete('merchant_pubkey')
+            url.searchParams.delete('stall_id')
+            url.searchParams.delete('product_id')
+            break
+        }
+
+        window.history.pushState({}, '', url)
+        this.activePage = page
+      },
+
       getValueInSats(amount, unit = 'USD') {
         if (!this.exchangeRates) return 0
         return Math.ceil(
