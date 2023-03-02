@@ -77,6 +77,27 @@
           <div class="col-3 col-sm-1"></div>
         </div>
       </div>
+      <div class="row items-center q-mt-xl">
+        <div class="col-6 q-pr-lg">
+          <q-btn
+            unelevated
+            color="secondary"
+            class="float-left"
+            @click="updateStall()"
+            >Update Stall</q-btn
+          >
+        </div>
+        <div class="col-6">
+          <q-btn
+            unelevated
+            color="pink"
+            icon="cancel"
+            class="float-right"
+            @click="deleteStall()"
+            >Delete Stall</q-btn
+          >
+        </div>
+      </div>
     </q-tab-panel>
     <q-tab-panel name="payment">
       <div v-if="stall"></div>
@@ -85,25 +106,5 @@
       <div v-if="stall"></div>
     </q-tab-panel>
   </q-tab-panels>
-  <div class="row items-center q-mt-md q-mb-lg">
-    <div class="col-6 q-pr-lg">
-      <q-btn
-        unelevated
-        color="secondary"
-        class="float-left"
-        @click="updateStall()"
-        >Update Stall</q-btn
-      >
-    </div>
-    <div class="col-6">
-      <q-btn
-        unelevated
-        color="pink"
-        icon="cancel"
-        class="float-right"
-        @click="deleteStall()"
-        >Delete Stall</q-btn
-      >
-    </div>
-  </div>
+  
 </div>
