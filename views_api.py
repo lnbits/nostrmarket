@@ -29,6 +29,7 @@ from .crud import (
     get_stalls,
     get_zone,
     get_zones,
+    update_product,
     update_stall,
     update_zone,
 )
@@ -320,6 +321,30 @@ async def api_create_product(
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create product",
+        )
+
+
+@nostrmarket_ext.patch("/api/v1/product/{product_id}")
+async def api_update_product(
+    product_id: str,
+    product: Product,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> Product:
+    try:
+        product.validate_product()
+        product = await update_product(wallet.wallet.user, product)
+
+        return product
+    except ValueError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot update product",
         )
 
 

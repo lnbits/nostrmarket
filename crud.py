@@ -218,6 +218,30 @@ async def create_product(user_id: str, data: PartialProduct) -> Product:
     return product
 
 
+async def update_product(user_id: str, product: Product) -> Product:
+
+    await db.execute(
+        f"""
+        UPDATE nostrmarket.products set name = ?, category_list = ?, description = ?, images = ?, price = ?, quantity = ?
+        WHERE user_id = ? AND id = ?
+        """,
+        (
+            product.name,
+            json.dumps(product.categories),
+            product.description,
+            product.image,
+            product.price,
+            product.quantity,
+            user_id,
+            product.id,
+        ),
+    )
+    updated_product = await get_product(user_id, product.id)
+    assert updated_product, "Updated product couldn't be retrieved"
+
+    return updated_product
+
+
 async def get_product(user_id: str, product_id: str) -> Optional[Product]:
     row = await db.fetchone(
         "SELECT * FROM nostrmarket.products WHERE user_id =? AND id = ?",
@@ -226,9 +250,7 @@ async def get_product(user_id: str, product_id: str) -> Optional[Product]:
             product_id,
         ),
     )
-    product = Product.from_row(row) if row else None
-
-    return product
+    return Product.from_row(row) if row else None
 
 
 async def get_products(user_id: str, stall_id: str) -> List[Product]:
