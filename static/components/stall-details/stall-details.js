@@ -27,7 +27,7 @@ async function stallDetails(path) {
       }
     },
     methods: {
-      mapStall: function(stall) {
+      mapStall: function (stall) {
         stall.shipping_zones.forEach(
           z =>
             (z.label = z.name
@@ -44,13 +44,13 @@ async function stallDetails(path) {
             this.inkey
           )
           this.stall = this.mapStall(data)
-          
+
           console.log('### this.stall', this.stall)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
       },
-      updateRelay: async function () {
+      updateStall: async function () {
         try {
           const {data} = await LNbits.api.request(
             'PUT',
@@ -70,7 +70,7 @@ async function stallDetails(path) {
           LNbits.utils.notifyApiError(error)
         }
       },
-      deleteRelay: function () {
+      deleteStall: function () {
         LNbits.utils
           .confirmDialog(
             `
@@ -96,7 +96,7 @@ async function stallDetails(path) {
               LNbits.utils.notifyApiError(error)
             }
           })
-      },
+      }
     },
     created: async function () {
       await this.getStall()

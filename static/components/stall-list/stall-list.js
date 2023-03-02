@@ -88,6 +88,7 @@ async function stallList(path) {
             stall
           )
           this.stallDialog.show = false
+          this.stalls.unshift(data)
           this.$q.notify({
             type: 'positive',
             message: 'Stall created!'
@@ -116,7 +117,6 @@ async function stallList(path) {
             '/nostrmarket/api/v1/stall',
             this.inkey
           )
-          console.log('### stalls', data)
           this.stalls = data.map(s => ({...s, expanded: false}))
         } catch (error) {
           LNbits.utils.notifyApiError(error)
@@ -129,16 +129,26 @@ async function stallList(path) {
             '/nostrmarket/api/v1/zone',
             this.inkey
           )
-          console.log('### zones', data)
           this.zoneOptions = data.map(z => ({
             ...z,
             label: z.name
               ? `${z.name} (${z.countries.join(', ')})`
               : z.countries.join(', ')
           }))
-          console.log('### this.zoneOptions', this.zoneOptions)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
+        }
+      },
+      handleStallDeleted: function (stallId) {
+        this.stalls = _.reject(this.stalls, function (obj) {
+          return obj.id === stallId
+        })
+      },
+      handleStallUpdated: function (stall) {
+        const index = this.stalls.findIndex(r => r.id === stall.id)
+        if (index !== -1) {
+          stall.expanded = true
+          this.stalls.splice(index, 1, stall)
         }
       },
       openCreateStallDialog: async function () {

@@ -93,9 +93,9 @@
                 :wallet-options="walletOptions"
                 :zone-options="zoneOptions"
                 :currencies="currencies"
+                @stall-deleted="handleStallDeleted"
+                @stall-updated="handleStallUpdated"
               ></stall-details>
-              <!-- @stall-deleted="handleRelayDeleted"
-              @stall-updated="handleRelayUpdated" -->
             </div>
           </div>
         </q-td>
