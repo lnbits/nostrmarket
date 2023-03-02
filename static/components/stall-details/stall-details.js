@@ -35,16 +35,20 @@ async function stallDetails(path) {
             this.inkey
           )
           this.stall = data
+          this.stall.shipping_zones.forEach(
+            z =>
+              (z.label = z.name
+                ? `${z.name} (${z.countries.join(', ')})`
+                : z.countries.join(', '))
+          )
           console.log('### this.stall', this.stall)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
       }
-
     },
     created: async function () {
       await this.getStall()
-      console.log('### this.zoneOptions', this.zoneOptions)
     }
   })
 }
