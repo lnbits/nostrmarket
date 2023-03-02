@@ -35,73 +35,65 @@
         </q-btn>
       </div> -->
   </div>
-  <!--
-    <q-table
-      flat
-      dense
-      :data="stalls"
-      row-key="id"
-      :columns="relaysTable.columns"
-      :pagination.sync="relaysTable.pagination"
-      :filter="filter"
-    >
-      <template v-slot:body="props">
-        <q-tr :props="props">
-          <q-td auto-width>
-            <q-btn
-              size="sm"
-              color="accent"
-              round
-              dense
-              @click="props.row.expanded= !props.row.expanded"
-              :icon="props.row.expanded? 'remove' : 'add'"
-            />
-          </q-td>
 
-          <q-td key="id" :props="props">
-            <a style="color: unset" :href="props.row.id" target="_blank">
-              {{props.row.id}}</a
-            >
-          </q-td>
-          <q-td key="toggle" :props="props">
-            <q-toggle
-              size="sm"
-              color="secodary"
-              v-model="props.row.active"
-              @input="showToggleRelayDialog(props.row)"
-            ></q-toggle>
-          </q-td>
-          <q-td auto-width> {{props.row.name}} </q-td>
-          <q-td key="description" :props="props">
-            {{props.row.description}}
-          </q-td>
-          <q-td key="pubkey" :props="props">
-            <div>{{props.row.pubkey}}</div>
-          </q-td>
-          <q-td key="contact" :props="props">
-            <div>{{props.row.contact}}</div>
-          </q-td>
-        </q-tr>
-        <q-tr v-if="props.row.expanded" :props="props">
-          <q-td colspan="100%">
-            <div class="row items-center q-mb-lg">
-              <div class="col-12">
-                <relay-details
-                  :relay-id="props.row.id"
-                  :adminkey="g.user.wallets[0].adminkey"
-                  :inkey="g.user.wallets[0].inkey"
-                  :wallet-options="g.user.walletOptions"
-                  @relay-deleted="handleRelayDeleted"
-                  @relay-updated="handleRelayUpdated"
-                ></relay-details>
-              </div>
+  <q-table
+    flat
+    dense
+    :data="stalls"
+    row-key="id"
+    :columns="stallsTable.columns"
+    :pagination.sync="stallsTable.pagination"
+    :filter="filter"
+  >
+    <template v-slot:body="props">
+      <q-tr :props="props">
+        <q-td auto-width>
+          <q-btn
+            size="sm"
+            color="accent"
+            round
+            dense
+            @click="props.row.expanded= !props.row.expanded"
+            :icon="props.row.expanded? 'remove' : 'add'"
+          />
+        </q-td>
+
+        <q-td key="id" :props="props">
+          <a style="color: unset" :href="props.row.id" target="_blank">
+            {{props.row.name}}</a
+          >
+        </q-td>
+        <!-- <q-td key="toggle" :props="props">
+          <q-toggle
+            size="sm"
+            color="secodary"
+            v-model="props.row.active"
+            @input="showToggleStallDialog(props.row)"
+          ></q-toggle>
+        </q-td> -->
+
+        <q-td key="description" :props="props">
+          {{props.row.config.description}}
+        </q-td>
+        <q-td key="shippingZones" :props="props">
+          <div>
+            {{props.row.shipping_zones.filter(z => !!z.name).map(z =>
+            z.name).join(', ')}}
+          </div>
+        </q-td>
+      </q-tr>
+      <q-tr v-if="props.row.expanded" :props="props">
+        <q-td colspan="100%">
+          <div class="row items-center q-mb-lg">
+            <div class="col-12">
+              <!-- <stall-details></stall-details> -->
             </div>
-          </q-td>
-        </q-tr>
-      </template>
-      {% endraw %}
-    </q-table>
-    -->
+          </div>
+        </q-td>
+      </q-tr>
+    </template>
+  </q-table>
+
   <div>
     <q-dialog v-model="stallDialog.show" position="top">
       <q-card class="q-pa-lg q-pt-xl" style="width: 500px">

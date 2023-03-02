@@ -193,7 +193,7 @@ async def api_update_stall(
         event.sig = merchant.sign_hash(bytes.fromhex(event.id))
 
         data.config.event_id = event.id
-        # data.config.created_at =
+        # data.config.event_created_at =
         stall = await update_stall(wallet.wallet.user, data)
         assert stall, "Cannot update stall"
 
@@ -206,7 +206,7 @@ async def api_update_stall(
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot create stall",
+            detail="Cannot update stall",
         )
 
 
@@ -226,7 +226,7 @@ async def api_get_stall(stall_id: str, wallet: WalletTypeInfo = Depends(get_key_
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot create stall",
+            detail="Cannot get stall",
         )
 
 
@@ -239,7 +239,7 @@ async def api_get_stalls(wallet: WalletTypeInfo = Depends(get_key_type)):
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot create stall",
+            detail="Cannot get stalls",
         )
 
 

@@ -20,7 +20,44 @@ async function stallList(path) {
             shippingZones: []
           }
         },
-        zoneOptions: []
+        zoneOptions: [],
+        stallsTable: {
+          columns: [
+            {
+              name: '',
+              align: 'left',
+              label: '',
+              field: ''
+            },
+            {
+              name: 'id',
+              align: 'left',
+              label: 'Name',
+              field: 'id'
+            },
+            // {
+            //   name: 'toggle',
+            //   align: 'left',
+            //   label: 'Active',
+            //   field: ''
+            // },
+            {
+              name: 'description',
+              align: 'left',
+              label: 'Description',
+              field: 'description'
+            },
+            {
+              name: 'shippingZones',
+              align: 'left',
+              label: 'Shipping Zones',
+              field: 'shippingZones'
+            }
+          ],
+          pagination: {
+            rowsPerPage: 10
+          }
+        }
       }
     },
     computed: {
@@ -72,6 +109,19 @@ async function stallList(path) {
           LNbits.utils.notifyApiError(error)
         }
       },
+      getStalls: async function () {
+        try {
+          const {data} = await LNbits.api.request(
+            'GET',
+            '/nostrmarket/api/v1/stall',
+            this.inkey
+          )
+          console.log('### stalls', data)
+          this.stalls = data.map(s => ({...s, expanded: false}))
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        }
+      },
       getZones: async function () {
         try {
           const {data} = await LNbits.api.request(
@@ -105,6 +155,7 @@ async function stallList(path) {
       }
     },
     created: async function () {
+      await this.getStalls()
       await this.getCurrencies()
       await this.getZones()
     }

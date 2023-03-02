@@ -141,7 +141,7 @@ async def get_stall(user_id: str, stall_id: str) -> Optional[Stall]:
 
 
 async def get_stalls(user_id: str) -> List[Stall]:
-    rows = await db.fetchone(
+    rows = await db.fetchall(
         "SELECT * FROM nostrmarket.stalls WHERE user_id = ?",
         (user_id,),
     )
