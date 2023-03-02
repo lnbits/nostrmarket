@@ -153,6 +153,28 @@ class PartialProduct(BaseModel):
 class Product(PartialProduct):
     id: str
 
+    def to_nostr_event(self, pubkey: str) -> NostrEvent:
+        content = {
+            "stall_id": self.stall_id,
+            "name": self.name,
+            "description": self.description,
+            "image": self.image,
+            "price": self.price,
+            "quantity": self.quantity,
+        }
+        categories = [["t", tag] for tag in self.categories]
+
+        event = NostrEvent(
+            pubkey=pubkey,
+            created_at=round(time.time()),
+            kind=30005,
+            tags=[["d", self.id]] + categories,
+            content=json.dumps(content, separators=(",", ":"), ensure_ascii=False),
+        )
+        event.id = event.event_id
+
+        return event
+
     @classmethod
     def from_row(cls, row: Row) -> "Product":
         product = cls(**dict(row))
