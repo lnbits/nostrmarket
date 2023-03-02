@@ -99,11 +99,153 @@
         </div>
       </div>
     </q-tab-panel>
-    <q-tab-panel name="payment">
-      <div v-if="stall"></div>
+    <q-tab-panel name="products">
+      <div v-if="stall">
+        <div class="row items-center no-wrap q-mb-md">
+          <div class="col-3 q-pr-lg">
+            <q-btn
+              unelevated
+              color="green"
+              icon="plus"
+              class="float-left"
+              @click="showNewProductDialog()"
+              >New Product</q-btn
+            >
+          </div>
+          <div class="col-6 col-sm-8 q-pr-lg"></div>
+          <div class="col-3 col-sm-1"></div>
+        </div>
+      </div>
     </q-tab-panel>
-    <q-tab-panel name="config">
+    <q-tab-panel name="orders">
       <div v-if="stall"></div>
     </q-tab-panel>
   </q-tab-panels>
+  <q-dialog v-model="productDialog.showDialog" position="top">
+    <q-card v-if="stall" class="q-pa-lg q-pt-xl" style="width: 500px">
+      <q-form @submit="sendProductFormData" class="q-gutter-md">
+        <q-input
+          filled
+          dense
+          v-model.trim="productDialog.data.name"
+          label="Name"
+        ></q-input>
+
+        <q-input
+          filled
+          dense
+          v-model.trim="productDialog.data.description"
+          label="Description"
+        ></q-input>
+        <!-- <div class="row"> -->
+        <!-- <div class="col-5">
+              <q-select
+                filled
+                dense
+                multiple
+                v-model.trim="productDialog.data.categories"
+                :options="categories"
+                label="Categories"
+                class="q-pr-sm"
+              ></q-select>
+            </div> -->
+        <!-- <div class="col-7"> -->
+        <q-select
+          filled
+          multiple
+          dense
+          emit-value
+          v-model.trim="productDialog.data.categories"
+          use-input
+          use-chips
+          multiple
+          hide-dropdown-icon
+          input-debounce="0"
+          new-value-mode="add-unique"
+          label="Categories (Hit Enter to add)"
+          placeholder="crafts,robots,etc"
+        ></q-select>
+        <q-toggle
+          :label="`${productDialog.url ? 'Insert image URL' : 'Upload image file'}`"
+          v-model="productDialog.url"
+        ></q-toggle>
+        <q-input
+          v-if="productDialog.url"
+          filled
+          dense
+          v-model.trim="productDialog.data.image"
+          type="url"
+          label="Image URL"
+        ></q-input>
+        <q-file
+          v-else
+          class="q-pr-md"
+          filled
+          dense
+          capture="environment"
+          accept="image/jpeg, image/png"
+          :max-file-size="3*1024**2"
+          label="Small image (optional)"
+          clearable
+          @input="imageAdded"
+          @clear="imageCleared"
+        >
+          <template v-if="productDialog.data.image" v-slot:before>
+            <img style="height: 1em" :src="productDialog.data.image" />
+          </template>
+          <template v-if="productDialog.data.image" v-slot:append>
+            <q-icon
+              name="cancel"
+              @click.stop.prevent="imageCleared"
+              class="cursor-pointer"
+            />
+          </template>
+        </q-file>
+
+        <q-input
+          filled
+          dense
+          v-model.number="productDialog.data.price"
+          type="number"
+          :label="'Price (' + stall.currency + ') *'"
+          :step="stall.currency != 'sat' ? '0.01' : '1'"
+          :mask="stall.currency != 'sat' ? '#.##' : '#'"
+          fill-mask="0"
+          reverse-fill-mask
+        ></q-input>
+        <q-input
+          filled
+          dense
+          v-model.number="productDialog.data.quantity"
+          type="number"
+          label="Quantity"
+        ></q-input>
+
+        <div class="row q-mt-lg">
+          <q-btn
+            v-if="productDialog.data.id"
+            unelevated
+            color="primary"
+            type="submit"
+            >Update Product</q-btn
+          >
+
+          <q-btn
+            v-else
+            unelevated
+            color="primary"
+            :disable="!productDialog.data.price
+                || !productDialog.data.name
+                || !productDialog.data.quantity"
+            type="submit"
+            >Create Product</q-btn
+          >
+
+          <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+            >Cancel</q-btn
+          >
+        </div>
+      </q-form>
+    </q-card>
+  </q-dialog>
 </div>

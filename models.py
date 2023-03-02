@@ -116,3 +116,45 @@ class Stall(PartialStall):
         stall.config = StallConfig(**json.loads(row["meta"]))
         stall.shipping_zones = [Zone(**z) for z in json.loads(row["zones"])]
         return stall
+
+
+######################################## STALLS ########################################
+
+
+class PartialProduct(BaseModel):
+    stall_id: str
+    name: str
+    categories: List[str] = []
+    description: Optional[str]
+    image: Optional[str]
+    price: float
+    quantity: int
+
+    def validate_product(self):
+        if self.image:
+            image_is_url = self.image.startswith("https://") or self.image.startswith(
+                "http://"
+            )
+
+            if not image_is_url:
+
+                def size(b64string):
+                    return int((len(b64string) * 3) / 4 - b64string.count("=", -2))
+
+                image_size = size(self.image) / 1024
+                if image_size > 100:
+                    raise ValueError(
+                        f"""
+                                Image size is too big, {int(image_size)}Kb. 
+                                Max: 100kb, Compress the image at https://tinypng.com, or use an URL."""
+                    )
+
+
+class Product(PartialProduct):
+    id: str
+
+    @classmethod
+    def from_row(cls, row: Row) -> "Product":
+        product = cls(**dict(row))
+        product.categories = json.loads(row["category_list"])
+        return product

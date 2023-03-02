@@ -39,12 +39,13 @@ async def m001_initial(db):
     await db.execute(
         f"""
         CREATE TABLE nostrmarket.products (
+            user_id TEXT NOT NULL,
             id TEXT PRIMARY KEY,
             stall_id TEXT NOT NULL,
             name TEXT NOT NULL,
-            categories TEXT,
+            category_list TEXT DEFAULT '[]',
             description TEXT,
-            images TEXT NOT NULL DEFAULT '[]',
+            images TEXT DEFAULT '[]',
             price REAL NOT NULL,
             quantity INTEGER NOT NULL
         );

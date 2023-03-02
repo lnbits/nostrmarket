@@ -5,7 +5,16 @@ from typing import List, Optional
 from lnbits.helpers import urlsafe_short_hash
 
 from . import db
-from .models import Merchant, PartialMerchant, PartialStall, PartialZone, Stall, Zone
+from .models import (
+    Merchant,
+    PartialMerchant,
+    PartialProduct,
+    PartialStall,
+    PartialZone,
+    Product,
+    Stall,
+    Zone,
+)
 
 ######################################## MERCHANT ########################################
 
@@ -177,3 +186,45 @@ async def delete_stall(user_id: str, stall_id: str) -> None:
             stall_id,
         ),
     )
+
+
+######################################## STALL ########################################
+
+
+async def create_product(user_id: str, data: PartialProduct) -> Product:
+    product_id = urlsafe_short_hash()
+
+    await db.execute(
+        f"""
+        INSERT INTO nostrmarket.products (user_id, id, stall_id, name, category_list, description, images, price, quantity)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            user_id,
+            product_id,
+            data.stall_id,
+            data.name,
+            json.dumps(data.categories),
+            data.description,
+            data.image,
+            data.price,
+            data.quantity,
+        ),
+    )
+    product = await get_product(user_id, product_id)
+    assert product, "Newly created product couldn't be retrieved"
+
+    return product
+
+
+async def get_product(user_id: str, product_id: str) -> Optional[Product]:
+    row = await db.fetchone(
+        "SELECT * FROM nostrmarket.products WHERE user_id =? AND id = ?",
+        (
+            user_id,
+            product_id,
+        ),
+    )
+    product = Product.from_row(row) if row else None
+
+    return product

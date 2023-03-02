@@ -35,12 +35,6 @@ async function stallList(path) {
               label: 'Name',
               field: 'id'
             },
-            // {
-            //   name: 'toggle',
-            //   align: 'left',
-            //   label: 'Active',
-            //   field: ''
-            // },
             {
               name: 'description',
               align: 'left',
@@ -88,6 +82,7 @@ async function stallList(path) {
             stall
           )
           this.stallDialog.show = false
+          data.expanded = false
           this.stalls.unshift(data)
           this.$q.notify({
             type: 'positive',
@@ -154,6 +149,13 @@ async function stallList(path) {
       openCreateStallDialog: async function () {
         await this.getCurrencies()
         await this.getZones()
+        if (!this.zoneOptions || !this.zoneOptions.length) {
+          this.$q.notify({
+            type: 'warning',
+            message: 'Please create a Shipping Zone first!'
+          })
+          return
+        }
         this.stallDialog.data = {
           name: '',
           description: '',

@@ -17,6 +17,7 @@ from lnbits.utils.exchange_rates import currencies
 from . import nostrmarket_ext
 from .crud import (
     create_merchant,
+    create_product,
     create_stall,
     create_zone,
     delete_stall,
@@ -29,7 +30,16 @@ from .crud import (
     update_stall,
     update_zone,
 )
-from .models import Merchant, PartialMerchant, PartialStall, PartialZone, Stall, Zone
+from .models import (
+    Merchant,
+    PartialMerchant,
+    PartialProduct,
+    PartialStall,
+    PartialZone,
+    Product,
+    Stall,
+    Zone,
+)
 from .nostr.nostr_client import publish_nostr_event
 
 ######################################## MERCHANT ########################################
@@ -170,6 +180,11 @@ async def api_create_stall(
         await update_stall(wallet.wallet.user, stall)
 
         return stall
+    except ValueError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -202,6 +217,11 @@ async def api_update_stall(
         return stall
     except HTTPException as ex:
         raise ex
+    except ValueError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -271,8 +291,63 @@ async def api_delete_stall(
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot delte stall",
+            detail="Cannot delete stall",
         )
+
+
+######################################## PRODUCTS ########################################
+
+
+@nostrmarket_ext.post("/api/v1/product")
+async def api_market_product_create(
+    data: PartialProduct,
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
+) -> Product:
+    try:
+        data.validate_product()
+        product = await create_product(wallet.wallet.user, data=data)
+
+        return product
+    except ValueError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot create product",
+        )
+
+
+# @nostrmarket_ext.get("/api/v1/product/{stall_id}")
+# async def api_market_products(
+#    stall_id: str, wallet: WalletTypeInfo = Depends(require_invoice_key),
+# ):
+#     wallet_ids = [wallet.wallet.id]
+
+
+#     return [product.dict() for product in await get_products(stalls)]
+
+
+# @market_ext.delete("/api/v1/products/{product_id}")
+# async def api_market_products_delete(
+#     product_id, wallet: WalletTypeInfo = Depends(require_admin_key)
+# ):
+#     product = await get_market_product(product_id)
+
+#     if not product:
+#         return {"message": "Product does not exist."}
+
+#     stall = await get_market_stall(product.stall)
+#     assert stall
+
+#     if stall.wallet != wallet.wallet.id:
+#         return {"message": "Not your Market."}
+
+#     await delete_market_product(product_id)
+#     raise HTTPException(status_code=HTTPStatus.NO_CONTENT)
 
 
 ######################################## OTHER ########################################

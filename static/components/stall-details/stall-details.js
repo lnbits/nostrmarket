@@ -1,6 +1,8 @@
 async function stallDetails(path) {
   const template = await loadTemplateAsync(path)
 
+  const pica = window.pica()
+
   Vue.component('stall-details', {
     name: 'stall-details',
     template,
@@ -16,8 +18,21 @@ async function stallDetails(path) {
     data: function () {
       return {
         tab: 'info',
-        stall: null
-        // currencies: [],
+        stall: null,
+        products: [],
+        productDialog: {
+          showDialog: false,
+          url: true,
+          data: {
+            id: null,
+            name: '',
+            description: '',
+            categories: [],
+            image: null,
+            price: 0,
+            quantity: 0
+          }
+        }
       }
     },
     computed: {
@@ -96,6 +111,97 @@ async function stallDetails(path) {
               LNbits.utils.notifyApiError(error)
             }
           })
+      },
+      imageAdded(file) {
+        const image = new Image()
+        image.src = URL.createObjectURL(file)
+        image.onload = async () => {
+          let fit = imgSizeFit(image)
+          let canvas = document.createElement('canvas')
+          canvas.setAttribute('width', fit.width)
+          canvas.setAttribute('height', fit.height)
+          output = await pica.resize(image, canvas)
+          this.productDialog.data.image = output.toDataURL('image/jpeg', 0.4)
+          this.productDialog = {...this.productDialog}
+        }
+      },
+      imageCleared() {
+        this.productDialog.data.image = null
+        this.productDialog = {...this.productDialog}
+      },
+      sendProductFormData: function () {
+        var data = {
+          stall_id: this.stall.id,
+          name: this.productDialog.data.name,
+          description: this.productDialog.data.description,
+          categories: this.productDialog.data.categories,
+
+          image: this.productDialog.data.image,
+          price: this.productDialog.data.price,
+          quantity: this.productDialog.data.quantity
+        }
+        this.productDialog.showDialog = false
+        if (this.productDialog.data.id) {
+          this.updateProduct(data)
+        } else {
+          this.createProduct(data)
+        }
+      },
+      updateProduct: function (data) {
+        var self = this
+        let wallet = _.findWhere(this.stalls, {
+          id: self.productDialog.data.stall
+        }).wallet
+        LNbits.api
+          .request(
+            'PUT',
+            '/nostrmarket/api/v1/products/' + data.id,
+            _.findWhere(self.g.user.wallets, {
+              id: wallet
+            }).inkey,
+            data
+          )
+          .then(async function (response) {
+            self.products = _.reject(self.products, function (obj) {
+              return obj.id == data.id
+            })
+            let productData = mapProducts(response.data)
+            self.products.push(productData)
+            //SEND Nostr data
+            try {
+              await self.sendToRelays(productData, 'product', 'update')
+            } catch (e) {
+              console.error(e)
+            }
+            self.resetDialog('productDialog')
+            //self.productDialog.show = false
+            //self.productDialog.data = {}
+          })
+          .catch(function (error) {
+            LNbits.utils.notifyApiError(error)
+          })
+      },
+      createProduct: async function (payload) {
+        try {
+          const {data} = await LNbits.api.request(
+            'POST',
+            '/nostrmarket/api/v1/product',
+            this.adminkey,
+            payload
+          )
+          this.products.unshift(data)
+          this.$q.notify({
+            type: 'positive',
+            message: 'Product Created',
+            timeout: 5000
+          })
+        } catch (error) {
+          console.warn(error)
+          LNbits.utils.notifyApiError(error)
+        }
+      },
+      showNewProductDialog: async function () {
+        this.productDialog.showDialog = true
       }
     },
     created: async function () {
