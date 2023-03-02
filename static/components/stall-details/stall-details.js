@@ -17,7 +17,7 @@ async function stallDetails(path) {
     ],
     data: function () {
       return {
-        tab: 'info',
+        tab: 'products',
         stall: null,
         products: [],
         productDialog: {
@@ -270,6 +270,30 @@ async function stallDetails(path) {
           console.warn(error)
           LNbits.utils.notifyApiError(error)
         }
+      },
+      deleteProduct: async function (productId) {
+        LNbits.utils
+          .confirmDialog('Are you sure you want to delete this product?')
+          .onOk(async () => {
+            try {
+              await LNbits.api.request(
+                'DELETE',
+                '/nostrmarket/api/v1/product/' + productId,
+                this.adminkey
+              )
+              this.products = _.reject(this.products, function (obj) {
+                return obj.id === productId
+              })
+              this.$q.notify({
+                type: 'positive',
+                message: 'Product deleted',
+                timeout: 5000
+              })
+            } catch (error) {
+              console.warn(error)
+              LNbits.utils.notifyApiError(error)
+            }
+          })
       },
       showNewProductDialog: async function () {
         this.productDialog.showDialog = true

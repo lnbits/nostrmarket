@@ -20,6 +20,7 @@ from .crud import (
     create_product,
     create_stall,
     create_zone,
+    delete_product,
     delete_stall,
     delete_zone,
     get_merchant_for_user,
@@ -338,23 +339,19 @@ async def api_get_product(
         )
 
 
-# @market_ext.delete("/api/v1/products/{product_id}")
-# async def api_market_products_delete(
-#     product_id, wallet: WalletTypeInfo = Depends(require_admin_key)
-# ):
-#     product = await get_market_product(product_id)
-
-#     if not product:
-#         return {"message": "Product does not exist."}
-
-#     stall = await get_market_stall(product.stall)
-#     assert stall
-
-#     if stall.wallet != wallet.wallet.id:
-#         return {"message": "Not your Market."}
-
-#     await delete_market_product(product_id)
-#     raise HTTPException(status_code=HTTPStatus.NO_CONTENT)
+@nostrmarket_ext.delete("/api/v1/product/{product_id}")
+async def api_delete_product(
+    product_id: str,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+):
+    try:
+        await delete_product(wallet.wallet.user, product_id)
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot delete product",
+        )
 
 
 ######################################## OTHER ########################################

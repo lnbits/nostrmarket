@@ -106,6 +106,7 @@ async def get_zones(user_id: str) -> List[Zone]:
 
 
 async def delete_zone(zone_id: str) -> None:
+    # todo: add user_id
     await db.execute("DELETE FROM nostrmarket.zones WHERE id = ?", (zone_id,))
 
 
@@ -236,3 +237,13 @@ async def get_products(user_id: str, stall_id: str) -> List[Product]:
         (user_id, stall_id),
     )
     return [Product.from_row(row) for row in rows]
+
+
+async def delete_product(user_id: str, product_id: str) -> None:
+    await db.execute(
+        "DELETE FROM nostrmarket.products WHERE user_id =? AND id = ?",
+        (
+            user_id,
+            product_id,
+        ),
+    )
