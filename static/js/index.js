@@ -15,15 +15,41 @@ const merchant = async () => {
       return {
         merchant: {},
         shippingZones: [],
-        showKeys: false
+        showKeys: false,
+        importKeyDialog: {
+          show: false,
+          data: {
+            privateKey: null
+          }
+        }
       }
     },
     methods: {
       generateKeys: async function () {
-        const privkey = nostr.generatePrivateKey()
-        const pubkey = nostr.getPublicKey(privkey)
-
-        const payload = {private_key: privkey, public_key: pubkey, config: {}}
+        const privateKey = nostr.generatePrivateKey()
+        await this.createMerchant(privateKey)
+      },
+      importKeys: async function () {
+        this.importKeyDialog.show = false
+        let privateKey = this.importKeyDialog.data.privateKey
+        if (!privateKey) {
+          return
+        }
+        if (privateKey.toLowerCase().startsWith('nsec')) {
+          privateKey = nostr.nip19.decode(privateKey)
+        }
+        await this.createMerchant(privateKey.data)
+      },
+      showImportKeysDialog: async function () {
+        this.importKeyDialog.show = true
+      },
+      createMerchant: async function (privateKey) {
+        const pubkey = nostr.getPublicKey(privateKey)
+        const payload = {
+          private_key: privateKey,
+          public_key: pubkey,
+          config: {}
+        }
         try {
           const {data} = await LNbits.api.request(
             'POST',
@@ -54,6 +80,7 @@ const merchant = async () => {
       }
     },
     created: async function () {
+      console.log('### nostr', nostr)
       await this.getMerchant()
     }
   })

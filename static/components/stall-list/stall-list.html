@@ -21,19 +21,6 @@
         </template>
       </q-input>
     </div>
-    <!-- <div class="col-auto">
-        <q-btn outline color="grey" label="...">
-          <q-menu auto-close>
-            <q-list style="min-width: 100px">
-              <q-item clickable>
-                <q-item-section @click="exportrelayCSV"
-                  >Export to CSV</q-item-section
-                >
-              </q-item>
-            </q-list>
-          </q-menu>
-        </q-btn>
-      </div> -->
   </div>
 
   <q-table
@@ -63,14 +50,6 @@
             {{props.row.name}}</a
           >
         </q-td>
-        <!-- <q-td key="toggle" :props="props">
-          <q-toggle
-            size="sm"
-            color="secodary"
-            v-model="props.row.active"
-            @input="showToggleStallDialog(props.row)"
-          ></q-toggle>
-        </q-td> -->
 
         <q-td key="description" :props="props">
           {{props.row.config.description}}
