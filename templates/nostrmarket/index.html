@@ -76,7 +76,7 @@
                 color="primary"
                 class="float-right"
               >
-                <q-tooltip> Show Public or Private keys </q-tooltip>
+                <q-tooltip> Show Public and Private keys </q-tooltip>
               </q-btn>
             </div>
           </div>
@@ -115,6 +115,7 @@
   </div>
 </div>
 {% endblock%}{% block scripts %} {{ window_vars(user) }}
+<!-- todo: serve locally -->
 <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
 
 <script src="{{ url_for('nostrmarket_static', path='js/utils.js') }}"></script>

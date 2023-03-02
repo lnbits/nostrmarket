@@ -86,7 +86,16 @@
         <q-td colspan="100%">
           <div class="row items-center q-mb-lg">
             <div class="col-12">
-              <!-- <stall-details></stall-details> -->
+              <stall-details
+                :stall-id="props.row.id"
+                :adminkey="adminkey"
+                :inkey="inkey"
+                :wallet-options="walletOptions"
+                :zone-options="zoneOptions"
+                :currencies="currencies"
+              ></stall-details>
+              <!-- @stall-deleted="handleRelayDeleted"
+              @stall-updated="handleRelayUpdated" -->
             </div>
           </div>
         </q-td>
