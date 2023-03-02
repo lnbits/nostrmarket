@@ -30,7 +30,7 @@ async function stallList(path) {
           name: this.stallDialog.data.name,
           wallet: this.stallDialog.data.wallet,
           currency: this.stallDialog.data.currency,
-          shipping_zones: this.stallDialog.data.shippingZones.map(z => z.id),
+          shipping_zones: this.stallDialog.data.shippingZones,
           config: {}
         })
       },
@@ -71,10 +71,14 @@ async function stallList(path) {
             '/nostrmarket/api/v1/zone',
             this.inkey
           )
+          console.log('### zones', data)
           this.zoneOptions = data.map(z => ({
-            id: z.id,
-            label: `${z.name} (${z.countries.join(', ')})`
+            ...z,
+            label: z.name
+              ? `${z.name} (${z.countries.join(', ')}})`
+              : z.countries.join(', ')
           }))
+          console.log('### this.zoneOptions', this.zoneOptions)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }

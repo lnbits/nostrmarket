@@ -1,3 +1,4 @@
+import json
 from http import HTTPStatus
 from typing import List, Optional
 
@@ -18,6 +19,7 @@ from .crud import (
     create_merchant,
     create_stall,
     create_zone,
+    delete_stall,
     delete_zone,
     get_merchant_for_user,
     get_stall,
@@ -28,6 +30,7 @@ from .crud import (
     update_zone,
 )
 from .models import Merchant, PartialMerchant, PartialStall, PartialZone, Stall, Zone
+from .nostr.nostr_client import publish_nostr_event
 
 ######################################## MERCHANT ########################################
 
@@ -148,11 +151,23 @@ async def api_delete_zone(zone_id, wallet: WalletTypeInfo = Depends(require_admi
 @nostrmarket_ext.post("/api/v1/stall")
 async def api_create_stall(
     data: PartialStall,
-    wallet: WalletTypeInfo = Depends(require_invoice_key),
-):
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> Stall:
     try:
+        print("### stall", json.dumps(data.dict()))
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Cannot find merchat for stall"
+
         stall = await create_stall(wallet.wallet.user, data=data)
-        return stall.dict()
+
+        event = stall.to_nostr_event(merchant.public_key)
+        event.sig = merchant.sign_hash(bytes.fromhex(event.id))
+        await publish_nostr_event(event)
+
+        stall.config.event_id = event.id
+        await update_stall(wallet.wallet.user, stall)
+
+        return stall
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -164,18 +179,23 @@ async def api_create_stall(
 @nostrmarket_ext.put("/api/v1/stall/{stall_id}")
 async def api_update_stall(
     data: Stall,
-    wallet: WalletTypeInfo = Depends(require_invoice_key),
-):
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> Stall:
     try:
-        stall = await get_stall(wallet.wallet.user, data.id)
-        if not stall:
-            raise HTTPException(
-                status_code=HTTPStatus.NOT_FOUND,
-                detail="Stall does not exist.",
-            )
-        stall = await update_stall(wallet.wallet.user, data.id, **data.dict())
-        assert stall, "Cannot fetch updated stall"
-        return stall.dict()
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Cannot find merchat for stall"
+
+        event = data.to_nostr_event(merchant.public_key)
+        event.sig = merchant.sign_hash(bytes.fromhex(event.id))
+
+        data.config.event_id = event.id
+        # data.config.created_at =
+        stall = await update_stall(wallet.wallet.user, data)
+        assert stall, "Cannot update stall"
+
+        await publish_nostr_event(event)
+
+        return stall
     except HTTPException as ex:
         raise ex
     except Exception as ex:
@@ -207,7 +227,7 @@ async def api_get_stall(stall_id: str, wallet: WalletTypeInfo = Depends(get_key_
 
 
 @nostrmarket_ext.get("/api/v1/stall")
-async def api_gey_stalls(wallet: WalletTypeInfo = Depends(get_key_type)):
+async def api_get_stalls(wallet: WalletTypeInfo = Depends(get_key_type)):
     try:
         stalls = await get_stalls(wallet.wallet.user)
         return stalls
@@ -216,6 +236,38 @@ async def api_gey_stalls(wallet: WalletTypeInfo = Depends(get_key_type)):
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create stall",
+        )
+
+
+@nostrmarket_ext.delete("/api/v1/stall/{stall_id}")
+async def api_delete_stall(
+    stall_id: str, wallet: WalletTypeInfo = Depends(require_admin_key)
+):
+    try:
+        stall = await get_stall(wallet.wallet.user, stall_id)
+        if not stall:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND,
+                detail="Stall does not exist.",
+            )
+
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Cannot find merchat for stall"
+
+        await delete_stall(wallet.wallet.user, stall_id)
+
+        delete_event = stall.to_nostr_delete_event(merchant.public_key)
+        delete_event.sig = merchant.sign_hash(bytes.fromhex(delete_event.id))
+
+        await publish_nostr_event(delete_event)
+
+    except HTTPException as ex:
+        raise ex
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot delte stall",
         )
 
 

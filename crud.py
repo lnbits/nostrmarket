@@ -1,4 +1,5 @@
 import json
+import time
 from typing import List, Optional
 
 from lnbits.helpers import urlsafe_short_hash
@@ -51,15 +52,7 @@ async def create_zone(user_id: str, data: PartialZone) -> Zone:
     zone_id = urlsafe_short_hash()
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.zones (
-            id,
-            user_id,
-            name,
-            currency,
-            cost,
-            regions
-
-        )
+        INSERT INTO nostrmarket.zones (id, user_id, name, currency, cost, regions)
         VALUES (?, ?, ?, ?, ?, ?)
         """,
         (
@@ -112,6 +105,7 @@ async def delete_zone(zone_id: str) -> None:
 
 async def create_stall(user_id: str, data: PartialStall) -> Stall:
     stall_id = urlsafe_short_hash()
+
     await db.execute(
         f"""
         INSERT INTO nostrmarket.stalls (user_id, id, wallet, name, currency, zones, meta)
@@ -123,8 +117,10 @@ async def create_stall(user_id: str, data: PartialStall) -> Stall:
             data.wallet,
             data.name,
             data.currency,
-            json.dumps(data.shipping_zones),
-            json.dumps(dict(data.config)),
+            json.dumps(
+                [z.dict() for z in data.shipping_zones]
+            ),  # todo: cost is float. should be int for sats
+            json.dumps(data.config.dict()),
         ),
     )
 
@@ -152,17 +148,32 @@ async def get_stalls(user_id: str) -> List[Stall]:
     return [Stall.from_row(row) for row in rows]
 
 
-async def update_stall(user_id: str, stall_id: str, **kwargs) -> Optional[Stall]:
-    q = ", ".join([f"{field[0]} = ?" for field in kwargs.items()])
+async def update_stall(user_id: str, stall: Stall) -> Optional[Stall]:
     await db.execute(
-        f"UPDATE market.stalls SET {q} WHERE user_id = ? AND id = ?",
-        (*kwargs.values(), user_id, stall_id),
+        f"""
+            UPDATE nostrmarket.stalls SET wallet = ?, name = ?, currency = ?, zones = ?, meta = ?
+            WHERE user_id = ? AND id = ?
+        """,
+        (
+            stall.wallet,
+            stall.name,
+            stall.currency,
+            json.dumps(
+                [z.dict() for z in stall.shipping_zones]
+            ),  # todo: cost is float. should be int for sats
+            json.dumps(stall.config.dict()),
+            user_id,
+            stall.id,
+        ),
     )
-    row = await db.fetchone(
-        "SELECT * FROM market.stalls WHERE  user_id =? AND id = ?",
+    return await get_stall(user_id, stall.id)
+
+
+async def delete_stall(user_id: str, stall_id: str) -> None:
+    await db.execute(
+        "DELETE FROM nostrmarket.stalls WHERE user_id =? AND id = ?",
         (
             user_id,
             stall_id,
         ),
     )
-    return Stall.from_row(row) if row else None
