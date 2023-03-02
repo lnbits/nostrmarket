@@ -35,22 +35,29 @@ const merchant = async () => {
         if (!privateKey) {
           return
         }
-        if (privateKey.toLowerCase().startsWith('nsec')) {
-          privateKey = nostr.nip19.decode(privateKey)
+        try {
+          if (privateKey.toLowerCase().startsWith('nsec')) {
+            privateKey = nostr.nip19.decode(privateKey).data
+          }
+        } catch (error) {
+          this.$q.notify({
+            type: 'negative',
+            message: `${error}`
+          })
         }
-        await this.createMerchant(privateKey.data)
+        await this.createMerchant(privateKey)
       },
       showImportKeysDialog: async function () {
         this.importKeyDialog.show = true
       },
       createMerchant: async function (privateKey) {
-        const pubkey = nostr.getPublicKey(privateKey)
-        const payload = {
-          private_key: privateKey,
-          public_key: pubkey,
-          config: {}
-        }
         try {
+          const pubkey = nostr.getPublicKey(privateKey)
+          const payload = {
+            private_key: privateKey,
+            public_key: pubkey,
+            config: {}
+          }
           const {data} = await LNbits.api.request(
             'POST',
             '/nostrmarket/api/v1/merchant',
@@ -60,10 +67,13 @@ const merchant = async () => {
           this.merchant = data
           this.$q.notify({
             type: 'positive',
-            message: 'Keys generated!'
+            message: 'Merchant Created!'
           })
         } catch (error) {
-          LNbits.utils.notifyApiError(error)
+          this.$q.notify({
+            type: 'negative',
+            message: `${error}`
+          })
         }
       },
       getMerchant: async function () {
@@ -80,7 +90,6 @@ const merchant = async () => {
       }
     },
     created: async function () {
-      console.log('### nostr', nostr)
       await this.getMerchant()
     }
   })
