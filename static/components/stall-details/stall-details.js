@@ -26,11 +26,14 @@ async function stallDetails(path) {
           data: {
             id: null,
             name: '',
-            description: '',
             categories: [],
             image: null,
             price: 0,
-            quantity: 0
+
+            quantity: 0,
+            config: {
+              description: ''
+            }
           }
         },
         productsFilter: '',
@@ -210,9 +213,7 @@ async function stallDetails(path) {
           price: this.productDialog.data.price,
           quantity: this.productDialog.data.quantity,
           categories: this.productDialog.data.categories,
-          config: {
-            description: this.productDialog.data.description
-          }
+          config: this.productDialog.data.config
         }
         this.productDialog.showDialog = false
         if (this.productDialog.data.id) {
@@ -298,7 +299,10 @@ async function stallDetails(path) {
           categories: [],
           image: null,
           price: 0,
-          quantity: 0
+          quantity: 0,
+          config: {
+            description: ''
+          }
         }
         this.productDialog.showDialog = true
       }
