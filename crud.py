@@ -222,7 +222,7 @@ async def update_product(user_id: str, product: Product) -> Product:
 
     await db.execute(
         f"""
-        UPDATE nostrmarket.products set name = ?, images = ?, price = ?, quantity = ?, category_list = ?, meta = ?
+        UPDATE nostrmarket.products set name = ?, image = ?, price = ?, quantity = ?, category_list = ?, meta = ?
         WHERE user_id = ? AND id = ?
         """,
         (

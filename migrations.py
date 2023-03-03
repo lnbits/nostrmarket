@@ -43,7 +43,7 @@ async def m001_initial(db):
             id TEXT PRIMARY KEY,
             stall_id TEXT NOT NULL,
             name TEXT NOT NULL,
-            images TEXT DEFAULT '[]',
+            image TEXT DEFAULT,
             price REAL NOT NULL,
             quantity INTEGER NOT NULL,
             category_list TEXT DEFAULT '[]',
