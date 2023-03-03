@@ -313,6 +313,11 @@ async def api_create_product(
 ) -> Product:
     try:
         data.validate_product()
+
+        stall = await get_stall(wallet.wallet.user, data.stall_id)
+        assert stall, "Stall missing for product"
+        data.config.currency = stall.currency
+
         product = await create_product(wallet.wallet.user, data=data)
 
         event = await sign_and_send_to_nostr(wallet.wallet.user, product)
@@ -341,7 +346,15 @@ async def api_update_product(
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Product:
     try:
+        if product_id != product.id:
+            raise ValueError("Bad product ID")
+
         product.validate_product()
+
+        stall = await get_stall(wallet.wallet.user, product.stall_id)
+        assert stall, "Stall missing for product"
+        product.config.currency = stall.currency
+
         product = await update_product(wallet.wallet.user, product)
 
         event = await sign_and_send_to_nostr(wallet.wallet.user, product)

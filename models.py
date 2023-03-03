@@ -137,6 +137,7 @@ class Stall(PartialStall, Nostrable):
 class ProductConfig(BaseModel):
     event_id: Optional[str]
     description: Optional[str]
+    currency: Optional[str]
 
 
 class PartialProduct(BaseModel):
@@ -177,6 +178,7 @@ class Product(PartialProduct, Nostrable):
             "name": self.name,
             "description": self.config.description,
             "image": self.image,
+            "currency": self.config.currency,
             "price": self.price,
             "quantity": self.quantity,
         }
