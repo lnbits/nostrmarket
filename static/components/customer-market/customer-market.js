@@ -4,14 +4,11 @@ async function customerMarket(path) {
     name: 'customer-market',
     template,
 
-    props: ['products', 'exchange-rates'],
+    props: ['products', 'exchange-rates', 'change-page'],
     data: function () {
       return {}
     },
-    methods: {
-      changePage() {
-        return
-      }
-    }
+    methods: {},
+    created() {}
   })
 }

@@ -1,0 +1,76 @@
+<q-card class="card--product">
+  <q-img
+    :src="product.image ? product.image : '/nostrmarket/static/images/placeholder.png'"
+    alt="Product Image"
+    loading="lazy"
+    spinner-color="white"
+    fit="contain"
+    height="300px"
+  ></q-img>
+
+  <q-card-section class="q-pb-xs q-pt-md">
+    <div class="row no-wrap items-center">
+      <div class="col text-subtitle2 ellipsis-2-lines">{{ product.name }}</div>
+    </div>
+
+    <!-- <q-rating v-model="stars" color="orange" :max="5" readonly size="17px"></q-rating> -->
+  </q-card-section>
+
+  <q-card-section class="q-py-sm">
+    <div>
+      <div class="text-caption text-weight-bolder">{{ product.stallName }}</div>
+      <span v-if="product.currency == 'sat'">
+        <span class="text-h6">{{ product.price }} sats</span
+        ><span class="q-ml-sm text-grey-6"
+          >BTC {{ (product.price / 1e8).toFixed(8) }}</span
+        >
+      </span>
+      <span v-else>
+        <span class="text-h6">{{ product.formatedPrice }}</span>
+        <span v-if="exchangeRates" class="q-ml-sm text-grey-6"
+          >({{ product.priceInSats }} sats)</span
+        >
+      </span>
+      <span class="q-ml-md text-caption text-green-8 text-weight-bolder q-mt-md"
+        >{{ product.quantity }} left</span
+      >
+    </div>
+    <div v-if="product.categories" class="text-subtitle1">
+      <q-chip v-for="(cat, i) in product.categories" :key="i" dense
+        >{{cat}}</q-chip
+      >
+    </div>
+    <div
+      class="text-caption text-grey ellipsis-2-lines"
+      style="min-height: 40px"
+    >
+      <p v-if="product.description">{{ product.description }}</p>
+    </div>
+  </q-card-section>
+
+  <q-separator></q-separator>
+
+  <q-card-actions>
+    <span>Stall: {{ product.stallName }}</span>
+    <div class="q-ml-auto">
+      <q-btn
+        flat
+        class="text-weight-bold text-capitalize q-ml-auto"
+        dense
+        color="primary"
+        @click="$emit('change-page', 'stall', {stall: product.stall_id, product: product.id})"
+      >
+        View details
+      </q-btn>
+      <q-btn
+        flat
+        class="text-weight-bold text-capitalize q-ml-auto"
+        dense
+        color="primary"
+        @click="$emit('change-page', 'stall', {stall: product.stall_id})"
+      >
+        Visit Stall
+      </q-btn>
+    </div>
+  </q-card-actions>
+</q-card>
