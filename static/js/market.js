@@ -30,7 +30,8 @@ const market = async () => {
     productCard('static/components/product-card/product-card.html'),
     customerMarket('static/components/customer-market/customer-market.html'),
     customerStall('static/components/customer-stall/customer-stall.html'),
-    productDetail('static/components/product-detail/product-detail.html')
+    productDetail('static/components/product-detail/product-detail.html'),
+    shoppingCart('static/components/shopping-cart/shopping-cart.html')
   ])
 
   new Vue({
@@ -58,7 +59,7 @@ const market = async () => {
       filterProducts() {
         let products = this.products
         if (this.activeStall) {
-          products = products.filter(p => p.stall == this.activeStall)
+          products = products.filter(p => p.stall_id == this.activeStall)
         }
         if (!this.searchText || this.searchText.length < 2) return products
         return products.filter(p => {
@@ -76,6 +77,9 @@ const market = async () => {
         return (
           this.products.find(p => p.id == this.activeProduct)?.name || 'Product'
         )
+      },
+      isLoading() {
+        return this.$q.loading.isActive
       }
     },
     async created() {
@@ -88,51 +92,17 @@ const market = async () => {
         }
         if (relays && relays.length) {
           this.relays = new Set([...defaultRelays, ...relays])
+        } else {
+          this.relays = new Set(defaultRelays)
         }
       } catch (e) {
         console.error(e)
       }
-      // Hardcode pubkeys for testing
-      /*
-          this.pubkeys.add(
-            'c1415f950a1e3431de2bc5ee35144639e2f514cf158279abff9ed77d50118796'
-          )
-          this.pubkeys.add(
-            '8f69ac99b96f7c4ad58b98cc38fe5d35ce02daefae7d1609c797ce3b4f92f5fd'
-          )
-          */
-      // stall ids S4hQgtTwiF5kGJZPbqMH9M  jkCbdtkXeMjGBY3LBf8yn4
-      /*let naddr = nostr.nip19.naddrEncode({
-            identifier: '1234',
-            pubkey:
-              'c1415f950a1e3431de2bc5ee35144639e2f514cf158279abff9ed77d50118796',
-            kind: 30018,
-            relays: defaultRelays
-          })
-          console.log(naddr)
-          console.log(nostr.nip19.decode(naddr))
-          */
+
       let params = new URLSearchParams(window.location.search)
       let merchant_pubkey = params.get('merchant_pubkey')
       let stall_id = params.get('stall_id')
       let product_id = params.get('product_id')
-      console.log(merchant_pubkey, stall_id, product_id)
-      if (merchant_pubkey) {
-        await addPubkey(merchant_pubkey)
-        /*LNbits.utils
-              .confirmDialog(
-                `We found a merchant pubkey in your request. Do you want to add it to the merchants list?`
-              )
-              .onCancel(() => {})
-              .onDismiss(() => {})
-              .onOk(() => {
-                this.pubkeys.add(merchant_pubkey)
-              })*/
-      }
-      this.$q.loading.show()
-      this.relays = new Set(defaultRelays)
-      // Get notes from Nostr
-      await this.initNostr()
 
       // What component to render on start
       if (stall_id) {
@@ -142,11 +112,33 @@ const market = async () => {
         this.activePage = 'stall'
         this.activeStall = stall_id
       }
+      if (merchant_pubkey && !this.pubkeys.has(merchant_pubkey)) {
+        await LNbits.utils
+          .confirmDialog(
+            `We found a merchant pubkey in your request. Do you want to add it to the merchants list?`
+          )
+          .onOk(async () => {
+            await this.addPubkey(merchant_pubkey)
+          })
+      }
 
+      // Get notes from Nostr
+      await this.initNostr()
       this.$q.loading.hide()
     },
     methods: {
+      naddr() {
+        let naddr = nostr.nip19.naddrEncode({
+          identifier: '1234',
+          pubkey:
+            'c1415f950a1e3431de2bc5ee35144639e2f514cf158279abff9ed77d50118796',
+          kind: 30018,
+          relays: defaultRelays
+        })
+        console.log(naddr)
+      },
       async initNostr() {
+        this.$q.loading.show()
         const pool = new nostr.SimplePool()
         let relays = Array.from(this.relays)
         let products = new Map()
@@ -168,10 +160,10 @@ const market = async () => {
                 return
               } else if (e.kind == 30018) {
                 //it's a product `d` is the prod. id
-                products.set(e.d, {...e.content, id: e.d, categories: e.t})
+                products.set(e.d, {...e.content, id: e.d[0], categories: e.t})
               } else if (e.kind == 30017) {
                 // it's a stall `d` is the stall id
-                stalls.set(e.d, {...e.content, id: e.d, pubkey: e.pubkey})
+                stalls.set(e.d, {...e.content, id: e.d[0], pubkey: e.pubkey})
                 return
               }
             })
@@ -182,13 +174,13 @@ const market = async () => {
         this.products = Array.from(products.values()).map(obj => {
           let stall = this.stalls.find(s => s.id == obj.stall_id)
           obj.stallName = stall.name
+          obj.images = [obj.image]
           if (obj.currency != 'sat') {
             obj.formatedPrice = this.getAmountFormated(obj.price, obj.currency)
             obj.priceInSats = this.getValueInSats(obj.price, obj.currency)
           }
           return obj
         })
-
         pool.close(relays)
       },
       async getRates() {

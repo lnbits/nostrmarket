@@ -8,7 +8,11 @@ async function customerMarket(path) {
     data: function () {
       return {}
     },
-    methods: {},
+    methods: {
+      changePageM(page, opts) {
+        this.$emit('change-page', page, opts)
+      }
+    },
     created() {}
   })
 }
