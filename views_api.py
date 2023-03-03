@@ -12,7 +12,6 @@ from lnbits.decorators import (
     require_admin_key,
     require_invoice_key,
 )
-from lnbits.extensions.nostrmarket.nostr.event import NostrEvent
 from lnbits.utils.exchange_rates import currencies
 
 from . import nostrmarket_ext
@@ -46,6 +45,7 @@ from .models import (
     Stall,
     Zone,
 )
+from .nostr.event import NostrEvent
 from .nostr.nostr_client import publish_nostr_event
 
 ######################################## MERCHANT ########################################

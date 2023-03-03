@@ -6,7 +6,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from .helpers import sign_message_hash
+from .helpers import decrypt_message, get_shared_secret, sign_message_hash
 from .nostr.event import NostrEvent
 
 ######################################## NOSTR ########################################
@@ -38,6 +38,10 @@ class Merchant(PartialMerchant):
 
     def sign_hash(self, hash: bytes) -> str:
         return sign_message_hash(self.private_key, hash)
+
+    def decrypt_message(self, encrypted_message: str, public_key: str) -> str:
+        encryption_key = get_shared_secret(self.private_key, public_key)
+        return decrypt_message(encrypted_message, encryption_key)
 
     @classmethod
     def from_row(cls, row: Row) -> "Merchant":

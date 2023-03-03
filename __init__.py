@@ -1,4 +1,5 @@
 import asyncio
+from asyncio import Task
 from typing import List
 
 from fastapi import APIRouter
@@ -25,9 +26,9 @@ def nostrmarket_renderer():
     return template_renderer(["lnbits/extensions/nostrmarket/templates"])
 
 
-scheduled_tasks: List[asyncio.Task] = []
+scheduled_tasks: List[Task] = []
 
-from .tasks import subscribe_nostrclient_ws, wait_for_paid_invoices
+from .tasks import subscribe_nostrclient, wait_for_nostr_events, wait_for_paid_invoices
 from .views import *  # noqa
 from .views_api import *  # noqa
 
@@ -35,5 +36,6 @@ from .views_api import *  # noqa
 def nostrmarket_start():
     loop = asyncio.get_event_loop()
     task1 = loop.create_task(catch_everything_and_restart(wait_for_paid_invoices))
-    task2 = loop.create_task(catch_everything_and_restart(subscribe_nostrclient_ws))
-    scheduled_tasks.append([task1, task2])
+    task2 = loop.create_task(catch_everything_and_restart(subscribe_nostrclient))
+    task3 = loop.create_task(catch_everything_and_restart(wait_for_nostr_events))
+    scheduled_tasks.append([task1, task2, task3])

@@ -45,6 +45,23 @@ async def get_merchant(user_id: str, merchant_id: str) -> Optional[Merchant]:
     return Merchant.from_row(row) if row else None
 
 
+async def get_merchant_by_pubkey(public_key: str) -> Optional[Merchant]:
+    row = await db.fetchone(
+        """SELECT * FROM nostrmarket.merchants WHERE public_key = ? """,
+        (public_key,),
+    )
+
+    return Merchant.from_row(row) if row else None
+
+
+async def get_public_keys_for_merchants() -> List[str]:
+    rows = await db.fetchall(
+        """SELECT public_key FROM nostrmarket.merchants""",
+    )
+
+    return [row[0] for row in rows]
+
+
 async def get_merchant_for_user(user_id: str) -> Optional[Merchant]:
     row = await db.fetchone(
         """SELECT * FROM nostrmarket.merchants WHERE user_id = ? """,
