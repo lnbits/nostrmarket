@@ -222,7 +222,7 @@ async def update_product(user_id: str, product: Product) -> Product:
 
     await db.execute(
         f"""
-        UPDATE nostrmarket.products set name = ?, description = ?, images = ?, price = ?, quantity = ?, category_list = ?, meta = ?
+        UPDATE nostrmarket.products set name = ?, images = ?, price = ?, quantity = ?, category_list = ?, meta = ?
         WHERE user_id = ? AND id = ?
         """,
         (
@@ -230,10 +230,10 @@ async def update_product(user_id: str, product: Product) -> Product:
             product.image,
             product.price,
             product.quantity,
+            json.dumps(product.categories),
+            json.dumps(product.config.dict()),
             user_id,
             product.id,
-            json.dumps(product.categories),
-            json.dumps(product.config),
         ),
     )
     updated_product = await get_product(user_id, product.id)

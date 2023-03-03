@@ -172,15 +172,9 @@ async def api_create_stall(
     try:
         data.validate_stall()
 
-        print("### stall", json.dumps(data.dict()))
-        merchant = await get_merchant_for_user(wallet.wallet.user)
-        assert merchant, "Cannot find merchat for stall"
-
         stall = await create_stall(wallet.wallet.user, data=data)
 
-        event = stall.to_nostr_event(merchant.public_key)
-        event.sig = merchant.sign_hash(bytes.fromhex(event.id))
-        await publish_nostr_event(event)
+        event = await sign_and_send_to_nostr(wallet.wallet.user, stall)
 
         stall.config.event_id = event.id
         await update_stall(wallet.wallet.user, stall)
@@ -207,18 +201,13 @@ async def api_update_stall(
     try:
         data.validate_stall()
 
-        merchant = await get_merchant_for_user(wallet.wallet.user)
-        assert merchant, "Cannot find merchat for stall"
-
-        event = data.to_nostr_event(merchant.public_key)
-        event.sig = merchant.sign_hash(bytes.fromhex(event.id))
-
-        data.config.event_id = event.id
-        # data.config.event_created_at =
         stall = await update_stall(wallet.wallet.user, data)
         assert stall, "Cannot update stall"
 
-        await publish_nostr_event(event)
+        event = await sign_and_send_to_nostr(wallet.wallet.user, stall)
+
+        stall.config.event_id = event.id
+        await update_stall(wallet.wallet.user, stall)
 
         return stall
     except HTTPException as ex:
@@ -297,15 +286,12 @@ async def api_delete_stall(
                 detail="Stall does not exist.",
             )
 
-        merchant = await get_merchant_for_user(wallet.wallet.user)
-        assert merchant, "Cannot find merchat for stall"
-
         await delete_stall(wallet.wallet.user, stall_id)
 
-        delete_event = stall.to_nostr_delete_event(merchant.public_key)
-        delete_event.sig = merchant.sign_hash(bytes.fromhex(delete_event.id))
+        event = await sign_and_send_to_nostr(wallet.wallet.user, stall, True)
 
-        await publish_nostr_event(delete_event)
+        stall.config.event_id = event.id
+        await update_stall(wallet.wallet.user, stall)
 
     except HTTPException as ex:
         raise ex
