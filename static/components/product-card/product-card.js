@@ -4,7 +4,7 @@ async function productCard(path) {
     name: 'product-card',
     template,
 
-    props: ['product'],
+    props: ['product', 'change-page'],
     data: function () {
       return {}
     },

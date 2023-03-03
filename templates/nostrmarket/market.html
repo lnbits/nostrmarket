@@ -140,7 +140,7 @@
       </div>
     </div>
     <customer-stall
-      v-if="activeStall"
+      v-if="!isLoading && activeStall"
       :stall="stalls.find(stall => stall.id == activeStall)"
       :products="filterProducts"
       :exchange-rates="exchangeRates"
@@ -163,6 +163,7 @@
 <script src="{{ url_for('nostrmarket_static', path='components/customer-market/customer-market.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/customer-stall/customer-stall.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/product-detail/product-detail.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/shopping-cart/shopping-cart.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/market.js') }}"></script>
 
 {% endblock %}
