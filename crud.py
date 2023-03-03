@@ -197,7 +197,7 @@ async def create_product(user_id: str, data: PartialProduct) -> Product:
 
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.products (user_id, id, stall_id, name, category_list, description, images, price, quantity)
+        INSERT INTO nostrmarket.products (user_id, id, stall_id, name, images, price, quantity, category_list, meta)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
@@ -205,11 +205,11 @@ async def create_product(user_id: str, data: PartialProduct) -> Product:
             product_id,
             data.stall_id,
             data.name,
-            json.dumps(data.categories),
-            data.description,
             data.image,
             data.price,
             data.quantity,
+            json.dumps(data.categories),
+            json.dumps(data.config.dict()),
         ),
     )
     product = await get_product(user_id, product_id)
@@ -222,16 +222,16 @@ async def update_product(user_id: str, product: Product) -> Product:
 
     await db.execute(
         f"""
-        UPDATE nostrmarket.products set name = ?, category_list = ?, description = ?, images = ?, price = ?, quantity = ?
+        UPDATE nostrmarket.products set name = ?, images = ?, price = ?, quantity = ?, category_list = ?, meta = ?
         WHERE user_id = ? AND id = ?
         """,
         (
             product.name,
-            json.dumps(product.categories),
-            product.description,
             product.image,
             product.price,
             product.quantity,
+            json.dumps(product.categories),
+            json.dumps(product.config.dict()),
             user_id,
             product.id,
         ),

@@ -37,17 +37,17 @@ async def m001_initial(db):
     Initial products table.
     """
     await db.execute(
-        f"""
+        """
         CREATE TABLE nostrmarket.products (
             user_id TEXT NOT NULL,
             id TEXT PRIMARY KEY,
             stall_id TEXT NOT NULL,
             name TEXT NOT NULL,
-            category_list TEXT DEFAULT '[]',
-            description TEXT,
             images TEXT DEFAULT '[]',
             price REAL NOT NULL,
-            quantity INTEGER NOT NULL
+            quantity INTEGER NOT NULL,
+            category_list TEXT DEFAULT '[]',
+            meta TEXT NOT NULL DEFAULT '{}'
         );
         """
     )

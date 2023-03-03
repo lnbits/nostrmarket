@@ -26,11 +26,14 @@ async function stallDetails(path) {
           data: {
             id: null,
             name: '',
-            description: '',
             categories: [],
             image: null,
             price: 0,
-            quantity: 0
+
+            quantity: 0,
+            config: {
+              description: ''
+            }
           }
         },
         productsFilter: '',
@@ -190,7 +193,7 @@ async function stallDetails(path) {
         try {
           const {data} = await LNbits.api.request(
             'GET',
-            '/nostrmarket/api/v1/product/' + this.stall.id,
+            '/nostrmarket/api/v1/stall/product/' + this.stall.id,
             this.inkey
           )
           this.products = data
@@ -205,12 +208,12 @@ async function stallDetails(path) {
           stall_id: this.stall.id,
           id: this.productDialog.data.id,
           name: this.productDialog.data.name,
-          description: this.productDialog.data.description,
-          categories: this.productDialog.data.categories,
 
           image: this.productDialog.data.image,
           price: this.productDialog.data.price,
-          quantity: this.productDialog.data.quantity
+          quantity: this.productDialog.data.quantity,
+          categories: this.productDialog.data.categories,
+          config: this.productDialog.data.config
         }
         this.productDialog.showDialog = false
         if (this.productDialog.data.id) {
@@ -296,7 +299,10 @@ async function stallDetails(path) {
           categories: [],
           image: null,
           price: 0,
-          quantity: 0
+          quantity: 0,
+          config: {
+            description: ''
+          }
         }
         this.productDialog.showDialog = true
       }

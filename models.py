@@ -1,5 +1,6 @@
 import json
 import time
+from abc import abstractmethod
 from sqlite3 import Row
 from typing import List, Optional
 
@@ -7,6 +8,18 @@ from pydantic import BaseModel
 
 from .helpers import sign_message_hash
 from .nostr.event import NostrEvent
+
+######################################## NOSTR ########################################
+
+
+class Nostrable:
+    @abstractmethod
+    def to_nostr_event(self, pubkey: str) -> NostrEvent:
+        pass
+
+    @abstractmethod
+    def to_nostr_delete_event(self, pubkey: str) -> NostrEvent:
+        pass
 
 
 ######################################## MERCHANT ########################################
@@ -77,7 +90,7 @@ class PartialStall(BaseModel):
                 )
 
 
-class Stall(PartialStall):
+class Stall(PartialStall, Nostrable):
     id: str
 
     def to_nostr_event(self, pubkey: str) -> NostrEvent:
@@ -90,7 +103,7 @@ class Stall(PartialStall):
         event = NostrEvent(
             pubkey=pubkey,
             created_at=round(time.time()),
-            kind=30005,
+            kind=30017,
             tags=[["d", self.id]],
             content=json.dumps(content, separators=(",", ":"), ensure_ascii=False),
         )
@@ -121,14 +134,20 @@ class Stall(PartialStall):
 ######################################## STALLS ########################################
 
 
+class ProductConfig(BaseModel):
+    event_id: Optional[str]
+    description: Optional[str]
+    currency: Optional[str]
+
+
 class PartialProduct(BaseModel):
     stall_id: str
     name: str
     categories: List[str] = []
-    description: Optional[str]
     image: Optional[str]
     price: float
     quantity: int
+    config: ProductConfig = ProductConfig()
 
     def validate_product(self):
         if self.image:
@@ -150,15 +169,16 @@ class PartialProduct(BaseModel):
                     )
 
 
-class Product(PartialProduct):
+class Product(PartialProduct, Nostrable):
     id: str
 
     def to_nostr_event(self, pubkey: str) -> NostrEvent:
         content = {
             "stall_id": self.stall_id,
             "name": self.name,
-            "description": self.description,
+            "description": self.config.description,
             "image": self.image,
+            "currency": self.config.currency,
             "price": self.price,
             "quantity": self.quantity,
         }
@@ -167,7 +187,7 @@ class Product(PartialProduct):
         event = NostrEvent(
             pubkey=pubkey,
             created_at=round(time.time()),
-            kind=30005,
+            kind=30018,
             tags=[["d", self.id]] + categories,
             content=json.dumps(content, separators=(",", ":"), ensure_ascii=False),
         )
@@ -175,8 +195,21 @@ class Product(PartialProduct):
 
         return event
 
+    def to_nostr_delete_event(self, pubkey: str) -> NostrEvent:
+        delete_event = NostrEvent(
+            pubkey=pubkey,
+            created_at=round(time.time()),
+            kind=5,
+            tags=[["e", self.config.event_id]],
+            content=f"Product '{self.name}' deleted",
+        )
+        delete_event.id = delete_event.event_id
+
+        return delete_event
+
     @classmethod
     def from_row(cls, row: Row) -> "Product":
         product = cls(**dict(row))
+        product.config = ProductConfig(**json.loads(row["meta"]))
         product.categories = json.loads(row["category_list"])
         return product
