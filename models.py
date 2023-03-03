@@ -90,7 +90,7 @@ class PartialStall(BaseModel):
                 )
 
 
-class Stall(PartialStall):
+class Stall(PartialStall, Nostrable):
     id: str
 
     def to_nostr_event(self, pubkey: str) -> NostrEvent:

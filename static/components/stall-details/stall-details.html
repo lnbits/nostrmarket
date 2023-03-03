@@ -8,6 +8,20 @@
     <q-tab-panel name="info">
       <div v-if="stall">
         <div class="row items-center no-wrap q-mb-md">
+          <div class="col-3 q-pr-lg">ID:</div>
+          <div class="col-6 col-sm-8 q-pr-lg">
+            <q-input
+              filled
+              dense
+              readonly
+              disabled
+              v-model.trim="stall.id"
+              type="text"
+            ></q-input>
+          </div>
+          <div class="col-3 col-sm-1"></div>
+        </div>
+        <div class="row items-center no-wrap q-mb-md">
           <div class="col-3 q-pr-lg">Name:</div>
           <div class="col-6 col-sm-8 q-pr-lg">
             <q-input
