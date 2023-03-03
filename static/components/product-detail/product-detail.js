@@ -6,8 +6,21 @@ async function productDetail(path) {
 
     props: ['product'],
     data: function () {
-      return {}
+      return {
+        slide: 1
+      }
     },
-    methods: {}
+    computed: {
+      win_width() {
+        return this.$q.screen.width - 59
+      },
+      win_height() {
+        return this.$q.screen.height - 0
+      }
+    },
+    methods: {},
+    created() {
+      console.log('ping')
+    }
   })
 }

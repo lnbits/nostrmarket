@@ -1,1 +1,187 @@
-<div></div>
+<div class="row q-mt-sm">
+  <div class="col-lg-5 col-md-5 col-sm-12 col-xs-12">
+    <div class="q-pa-md">
+      <q-carousel
+        swipeable
+        animated
+        v-model="slide"
+        thumbnails
+        infinite
+        v-for="(img, i) in product.images"
+        :key="i"
+      >
+        <q-carousel-slide
+          :name="i + 1"
+          :img-src="img"
+          style="/*background-size: contain; background-repeat: no-repeat*/"
+        ></q-carousel-slide>
+      </q-carousel>
+    </div>
+  </div>
+  <div class="col-lg-7 col-md-7 col-sm-12 col-xs-12">
+    <div class="row">
+      <div
+        class="col-lg-7 col-md-7 col-sm-12 col-xs-12"
+        :class="$q.platform.is.desktop ? '' : 'q-px-md'"
+      >
+        <div class="text-subtitle1 q-mt-sm q-pt-xs">{{ product.name }}</div>
+        <div v-if="product.categories" class="text-subtitle1">
+          <q-chip v-for="(cat, i) in product.categories" :key="i" dense
+            >{{cat}}</q-chip
+          >
+        </div>
+        <div class="q-mt-sm text-weight-bold">{{ product.description }}</div>
+        <div>
+          <span v-if="product.currency == 'sat'">
+            <span class="text-h6">{{ product.price }} sats</span
+            ><span class="q-ml-sm text-grey-6"
+              >BTC {{ (product.price / 1e8).toFixed(8) }}</span
+            >
+          </span>
+          <span v-else>
+            <span class="text-h6">{{ product.formatedPrice }}</span>
+            <span class="q-ml-sm text-grey-6"
+              >({{ product.priceInSats }} sats)</span
+            >
+          </span>
+          <span
+            class="q-ml-md text-caption text-green-8 text-weight-bolder q-mt-md"
+            >{{ product.amount > 0 ? 'In stock.' : 'Out of stock.' }}</span
+          >
+          <!-- <div class="text-caption text-weight-bolder q-mt-sm">
+            Special Price
+          </div>
+          <span class="text-h6">₹3,149</span
+          ><span
+            class="q-ml-sm text-grey-6"
+            style="text-decoration: line-through"
+            >₹3,699</span
+          >
+          <span
+            class="q-ml-md text-caption text-green-8 text-weight-bolder q-mt-md"
+            >20% off</span
+          > -->
+        </div>
+        <div class="q-mt-md">
+          <q-btn
+            class="q-mt-md"
+            color="primary"
+            icon="shopping_cart"
+            label="Add to cart"
+          />
+          <q-btn
+            class="q-mt-md q-ml-md"
+            color="primary"
+            icon="shopping_cart"
+            label="Buy now"
+          />
+        </div>
+      </div>
+      <!-- RATING TO BE DONE -->
+      <div
+        class="col-lg-5 col-md-5 col-sm-12 col-xs-12 q-mt-md q-pt-xs q-pl-lg"
+      >
+        <div class="text-subtitle2">Customer rating</div>
+        <div class="text-h3">4.2</div>
+        <div>
+          <q-rating
+            v-model="rating_point"
+            max="5"
+            size="2em"
+            color="orange"
+            icon="star_border"
+            icon-selected="star"
+            icon-half="star_half"
+            no-dimming
+            readonly
+          />
+        </div>
+        <div class="text-subtitle2 text-grey-8">(357 reviews)</div>
+        <div class="text-subtitle2 text-grey-10 q-mt-sm">
+          93% would recommend to a friend
+        </div>
+
+        <q-list dense bordered padding class="no-border q-mt-lg q-pr-xl">
+          <q-item style="padding-left: 0 !important" v-ripple>
+            <span class="text-subtitle2 q-mr-xs">5</span>
+            <q-icon name="star" size="1.5em" color="orange"></q-icon>
+            <q-linear-progress
+              class="q-ml-sm q-mr-sm"
+              style="margin-top: 5px"
+              size="13px"
+              :value="0.9"
+            />
+            <span
+              style="margin-top: 2px"
+              class="text-caption text-weight-bold text-grey-8"
+              >273</span
+            >
+          </q-item>
+          <q-item style="padding-left: 0 !important" v-ripple>
+            <span class="text-subtitle2 q-mr-xs">4</span>
+            <q-icon name="star" size="1.5em" color="orange"></q-icon>
+            <q-linear-progress
+              class="q-ml-sm q-mr-sm"
+              style="margin-top: 5px"
+              size="13px"
+              :value="0.6"
+            />
+            <span
+              style="margin-top: 2px"
+              class="text-caption text-weight-bold text-grey-8"
+              >&nbsp;&nbsp;69</span
+            >
+          </q-item>
+          <q-item style="padding-left: 0 !important" v-ripple>
+            <span class="text-subtitle2 q-mr-xs">3</span>
+            <q-icon name="star" size="1.5em" color="orange"></q-icon>
+            <q-linear-progress
+              class="q-ml-sm q-mr-sm"
+              style="margin-top: 5px"
+              size="13px"
+              :value="0.1"
+            />
+            <span
+              style="margin-top: 2px"
+              class="text-caption text-weight-bold text-grey-8"
+              >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;6</span
+            >
+          </q-item>
+          <q-item style="padding-left: 0 !important" v-ripple>
+            <span class="text-subtitle2 q-mr-xs">2</span>
+            <q-icon name="star" size="1.5em" color="orange"></q-icon>
+            <q-linear-progress
+              class="q-ml-sm q-mr-sm"
+              style="margin-top: 5px"
+              size="13px"
+              :value="0.1"
+            />
+            <span
+              style="margin-top: 2px"
+              class="text-caption text-weight-bold text-grey-8"
+              >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3</span
+            >
+          </q-item>
+          <q-item style="padding-left: 0 !important" v-ripple>
+            <span class="text-subtitle2 q-mr-xs">1</span>
+            <q-icon name="star" size="1.5em" color="orange"></q-icon>
+            <q-linear-progress
+              class="q-ml-sm q-mr-sm"
+              style="margin-top: 5px"
+              size="13px"
+              :value="0.1"
+            />
+            <span
+              style="margin-top: 2px"
+              class="text-caption text-weight-bold text-grey-8"
+              >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;6</span
+            >
+          </q-item>
+        </q-list>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 q-mb-lg">
+    <q-separator></q-separator>
+  </div>
+</div>
