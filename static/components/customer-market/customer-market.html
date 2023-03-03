@@ -70,13 +70,21 @@
         <q-card-actions>
           <span>Stall: {{ item.stallName }}</span>
           <div class="q-ml-auto">
-            <q-btn flat dense>See product</q-btn>
             <q-btn
               flat
               class="text-weight-bold text-capitalize q-ml-auto"
               dense
               color="primary"
-              @click="$emit('change-page', 'stall', {stall: item.stall, pubkey: item.pubkey})"
+              @click="$emit('change-page', 'stall', {stall: item.stall, product: item.id})"
+            >
+              View details
+            </q-btn>
+            <q-btn
+              flat
+              class="text-weight-bold text-capitalize q-ml-auto"
+              dense
+              color="primary"
+              @click="$emit('change-page', 'stall', {stall: item.stall})"
             >
               Visit Stall
             </q-btn>

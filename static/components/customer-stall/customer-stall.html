@@ -12,6 +12,7 @@
     <q-toolbar-title></q-toolbar-title>
     <q-btn dense round flat icon="shopping_cart" class="q-ml-md"></q-btn>
   </q-toolbar>
+  <product-detail v-if="productDetail" :product="mock"></product-detail>
   <div class="row q-col-gutter-md">
     <div
       class="col-xs-12 col-sm-6 col-md-4 col-lg-3"

@@ -137,35 +137,6 @@
             </template>
           </q-input>
         </q-toolbar>
-        <!-- <q-toolbar>
-          <q-breadcrumbs class="cursor">
-            <q-breadcrumbs-el
-              label="Market"
-              icon="home"
-              @click="navigateTo('market')"
-            ></q-breadcrumbs-el>
-            <q-breadcrumbs-el
-              v-if="activeStall"
-              @click="activeProduct && navigateTo('stall', activeStall)"
-              :label="stallName"
-              icon="widgets"
-            ></q-breadcrumbs-el>
-            <q-breadcrumbs-el
-              v-if="activeProduct"
-              :label="productName"
-              icon="navigation"
-            ></q-breadcrumbs-el>
-          </q-breadcrumbs>
-          <q-toolbar-title></q-toolbar-title>
-          <q-btn
-            v-if="activeStall"
-            dense
-            round
-            flat
-            icon="shopping_cart"
-            class="q-ml-md"
-          ></q-btn>
-        </q-toolbar> -->
       </div>
     </div>
 
@@ -174,6 +145,7 @@
       :stall="stalls.find(stall => stall.id == activeStall)"
       :products="filterProducts"
       :exchange-rates="exchangeRates"
+      :product-detail="activeProduct"
       @change-page="navigateTo"
     ></customer-stall>
     <customer-market
@@ -190,6 +162,7 @@
 <script src="{{ url_for('nostrmarket_static', path='js/utils.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/customer-market/customer-market.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/customer-stall/customer-stall.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/product-detail/product-detail.js') }}"></script>
 <script>
   const nostr = window.NostrTools
   const defaultRelays = [
@@ -221,7 +194,8 @@
 
   Promise.all([
     customerMarket('static/components/customer-market/customer-market.html'),
-    customerStall('static/components/customer-stall/customer-stall.html')
+    customerStall('static/components/customer-stall/customer-stall.html'),
+    productDetail('static/components/product-detail/product-detail.html')
   ])
 
   new Vue({
@@ -270,25 +244,34 @@
       }
     },
     async created() {
+      // Check for stored merchants and relays on localStorage
+      try {
+        let merchants = this.$q.localStorage.getItem(`diagonAlley.merchants`)
+        let relays = this.$q.localStorage.getItem(`diagonAlley.relays`)
+        if (merchants && merchants.length) {
+          this.pubkeys = new Set(merchants)
+        }
+        if (relays && relays.length) {
+          this.relays = new Set([...defaultRelays, ...relays])
+        }
+      } catch (e) {
+        console.error(e)
+      }
       // Hardcode pubkeys for testing
+      /*
       this.pubkeys.add(
-        '855ea22a88d7df7ccd8497777db81f115575d5362f51df3af02ead383f5eaba2'
+        'c1415f950a1e3431de2bc5ee35144639e2f514cf158279abff9ed77d50118796'
       )
       this.pubkeys.add(
         '8f69ac99b96f7c4ad58b98cc38fe5d35ce02daefae7d1609c797ce3b4f92f5fd'
       )
+      */
       // stall ids S4hQgtTwiF5kGJZPbqMH9M  jkCbdtkXeMjGBY3LBf8yn4
-      this.$q.loading.show()
-      this.relays = new Set(defaultRelays)
-      // Get notes from Nostr
-      await this.initNostr()
-
-      // What component to render on start
       let merchant_pubkey = JSON.parse('{{ merchant_pubkey | tojson }}')
       let stall_id = JSON.parse('{{ stall_id | tojson }}')
       let product_id = JSON.parse('{{ product_id | tojson }}')
       if (merchant_pubkey) {
-        this.pubkeys.add(merchant_pubkey)
+        await addPubkey(merchant_pubkey)
         /*LNbits.utils
           .confirmDialog(
             `We found a merchant pubkey in your request. Do you want to add it to the merchants list?`
@@ -299,14 +282,18 @@
             this.pubkeys.add(merchant_pubkey)
           })*/
       }
+      this.$q.loading.show()
+      this.relays = new Set(defaultRelays)
+      // Get notes from Nostr
+      await this.initNostr()
+
+      // What component to render on start
       if (stall_id) {
         if (product_id) {
-          this.activePage = 'product'
           this.activeProduct = product_id
-        } else {
-          this.activePage = 'stall'
-          this.activeStall = stall_id
         }
+        this.activePage = 'stall'
+        this.activeStall = stall_id
       }
 
       this.$q.loading.hide()
@@ -321,7 +308,7 @@
         let sub = await pool
           .list(relays, [
             {
-              kinds: [0, 30005], // for production kind is 30017
+              kinds: [0, 30017, 30018], // for production kind is 30017
               authors: Array.from(this.pubkeys)
             }
           ])
@@ -332,10 +319,10 @@
               if (e.kind == 0) {
                 this.profiles.set(e.pubkey, e.content)
                 return
-              } else if (e.content.stall) {
+              } else if (e.kind == 30018) {
                 //it's a product `d` is the prod. id
                 products.set(e.d, {...e.content, id: e.d, categories: e.t})
-              } else {
+              } else if (e.kind == 30017) {
                 // it's a stall `d` is the stall id
                 stalls.set(e.d, {...e.content, id: e.d, pubkey: e.pubkey})
                 return
@@ -346,8 +333,7 @@
         this.stalls = await Array.from(stalls.values())
 
         this.products = Array.from(products.values()).map(obj => {
-          obj.currency = 'EUR' // placeholder for testing/dev
-          let stall = this.stalls.find(s => s.id == obj.stall)
+          let stall = this.stalls.find(s => s.id == obj.stall_id)
           obj.stallName = stall.name
           if (obj.currency != 'sat') {
             obj.formatedPrice = this.getAmountFormated(obj.price, obj.currency)
@@ -383,14 +369,10 @@
             if (stall) {
               this.activeStall = stall
               url.searchParams.set('stall_id', stall)
-            }
-            break
-          case 'product':
-            if (stall && product) {
-              this.activeStall = stall
-              this.activeProduct = product
-              url.searchParams.set('stall_id', stall)
-              url.searchParams.set('product_id', product)
+              if (product) {
+                this.activeProduct = product
+                url.searchParams.set('product_id', product)
+              }
             }
             break
           default:
@@ -415,8 +397,10 @@
       getAmountFormated(amount, unit = 'USD') {
         return LNbits.utils.formatCurrency(amount, unit)
       },
-      async addPubkey() {
-        let pubkey = String(this.inputPubkey).trim()
+      async addPubkey(pubkey = null) {
+        if (!pubkey) {
+          pubkey = String(this.inputPubkey).trim()
+        }
         let regExp = /^#([0-9a-f]{3}){1,2}$/i
         if (pubkey.startsWith('n')) {
           try {
@@ -435,6 +419,10 @@
           pubkey = pubkey
         }
         this.pubkeys.add(pubkey)
+        this.$q.localStorage.set(
+          `diagonAlley.merchants`,
+          Array.from(this.pubkeys)
+        )
         await this.initNostr()
       },
       removePubkey(pubkey) {
@@ -443,6 +431,10 @@
         pubkeys.delete(pubkey)
         this.profiles.delete(pubkey)
         this.pubkeys = new Set(Array.from(pubkeys))
+        this.$q.localStorage.set(
+          `diagonAlley.merchants`,
+          Array.from(this.pubkeys)
+        )
       },
       async addRelay() {
         let relay = String(this.inputRelay).trim()
@@ -451,6 +443,7 @@
           return
         }
         this.relays.add(relay)
+        this.$q.localStorage.set(`diagonAlley.relays`, Array.from(this.relays))
         this.inputRelay = null
         await this.initNostr()
       },
@@ -459,6 +452,7 @@
         let relays = this.relays
         relays.delete(relay)
         this.relays = new Set(Array.from(relays))
+        this.$q.localStorage.set(`diagonAlley.relays`, Array.from(this.relays))
       }
     }
   })
