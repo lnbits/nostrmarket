@@ -12,6 +12,7 @@ from lnbits.decorators import (
     require_admin_key,
     require_invoice_key,
 )
+from lnbits.extensions.nostrmarket.nostr.event import NostrEvent
 from lnbits.utils.exchange_rates import currencies
 
 from . import nostrmarket_ext
@@ -24,6 +25,7 @@ from .crud import (
     delete_stall,
     delete_zone,
     get_merchant_for_user,
+    get_product,
     get_products,
     get_stall,
     get_stalls,
@@ -35,6 +37,7 @@ from .crud import (
 )
 from .models import (
     Merchant,
+    Nostrable,
     PartialMerchant,
     PartialProduct,
     PartialStall,
@@ -266,6 +269,22 @@ async def api_get_stalls(wallet: WalletTypeInfo = Depends(get_key_type)):
         )
 
 
+@nostrmarket_ext.get("/api/v1/stall/product/{stall_id}")
+async def api_get_stall_products(
+    stall_id: str,
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
+):
+    try:
+        products = await get_products(wallet.wallet.user, stall_id)
+        return products
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot get stall products",
+        )
+
+
 @nostrmarket_ext.delete("/api/v1/stall/{stall_id}")
 async def api_delete_stall(
     stall_id: str, wallet: WalletTypeInfo = Depends(require_admin_key)
@@ -310,6 +329,11 @@ async def api_create_product(
         data.validate_product()
         product = await create_product(wallet.wallet.user, data=data)
 
+        event = await sign_and_send_to_nostr(wallet.wallet.user, product)
+
+        product.config.event_id = event.id
+        await update_product(wallet.wallet.user, product)
+
         return product
     except ValueError as ex:
         raise HTTPException(
@@ -334,6 +358,11 @@ async def api_update_product(
         product.validate_product()
         product = await update_product(wallet.wallet.user, product)
 
+        event = await sign_and_send_to_nostr(wallet.wallet.user, product)
+
+        product.config.event_id = event.id
+        await update_product(wallet.wallet.user, product)
+
         return product
     except ValueError as ex:
         raise HTTPException(
@@ -348,13 +377,13 @@ async def api_update_product(
         )
 
 
-@nostrmarket_ext.get("/api/v1/product/{stall_id}")
+@nostrmarket_ext.get("/api/v1/product/{product_id}")
 async def api_get_product(
-    stall_id: str,
+    product_id: str,
     wallet: WalletTypeInfo = Depends(require_invoice_key),
-):
+) -> Optional[Product]:
     try:
-        products = await get_products(wallet.wallet.user, stall_id)
+        products = await get_product(wallet.wallet.user, product_id)
         return products
     except Exception as ex:
         logger.warning(ex)
@@ -370,7 +399,18 @@ async def api_delete_product(
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ):
     try:
+        product = await get_product(wallet.wallet.user, product_id)
+        if not product:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND,
+                detail="Product does not exist.",
+            )
+
         await delete_product(wallet.wallet.user, product_id)
+        await sign_and_send_to_nostr(wallet.wallet.user, product, True)
+
+    except HTTPException as ex:
+        raise ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -385,3 +425,23 @@ async def api_delete_product(
 @nostrmarket_ext.get("/api/v1/currencies")
 async def api_list_currencies_available():
     return list(currencies.keys())
+
+
+######################################## HELPERS ########################################
+
+
+async def sign_and_send_to_nostr(
+    user_id: str, n: Nostrable, delete=False
+) -> NostrEvent:
+    merchant = await get_merchant_for_user(user_id)
+    assert merchant, "Cannot find merchant!"
+
+    event = (
+        n.to_nostr_delete_event(merchant.public_key)
+        if delete
+        else n.to_nostr_event(merchant.public_key)
+    )
+    event.sig = merchant.sign_hash(bytes.fromhex(event.id))
+    await publish_nostr_event(event)
+
+    return event
