@@ -9,6 +9,22 @@
   ></q-img>
 
   <q-card-section class="q-pb-xs q-pt-md">
+    <q-btn
+      v-if="isStall"
+      round
+      :disabled="product.quantity < 1"
+      color="primary"
+      icon="shopping_cart"
+      size="lg"
+      style="
+        position: absolute;
+        top: 0;
+        right: 0;
+        transform: translate(-50%, -50%);
+      "
+      @click="$emit('add-to-cart', product)"
+      ><q-tooltip> Add to cart </q-tooltip></q-btn
+    >
     <div class="row no-wrap items-center">
       <div class="col text-subtitle2 ellipsis-2-lines">{{ product.name }}</div>
     </div>

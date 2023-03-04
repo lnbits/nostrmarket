@@ -17,6 +17,11 @@
           style="/*background-size: contain; background-repeat: no-repeat*/"
         ></q-carousel-slide>
       </q-carousel>
+      <q-img
+        v-if="!product.images"
+        src="/nostrmarket/static/images/placeholder.png"
+        :ratio="16/9"
+      ></q-img>
     </div>
   </div>
   <div class="col-lg-7 col-md-7 col-sm-12 col-xs-12">
@@ -47,7 +52,7 @@
           </span>
           <span
             class="q-ml-md text-caption text-green-8 text-weight-bolder q-mt-md"
-            >{{ product.amount > 0 ? 'In stock.' : 'Out of stock.' }}</span
+            >{{ product.quantity > 0 ? 'In stock.' : 'Out of stock.' }}</span
           >
         </div>
         <div class="q-mt-md">
@@ -56,12 +61,13 @@
             color="primary"
             icon="shopping_cart"
             label="Add to cart"
+            @click="$emit('add-to-cart', product)"
           />
           <q-btn
             class="q-mt-md q-ml-md"
             color="primary"
-            icon="shopping_cart"
-            label="Buy now"
+            icon="share"
+            label="Share"
           />
         </div>
       </div>

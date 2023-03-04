@@ -5,7 +5,7 @@ async function shoppingCart(path) {
     name: 'shopping-cart',
     template,
 
-    props: [],
+    props: ['cart', 'cart-menu', 'remove-from-cart', 'reset-cart'],
     data: function () {
       return {}
     },
