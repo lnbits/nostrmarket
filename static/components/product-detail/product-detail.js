@@ -4,23 +4,14 @@ async function productDetail(path) {
     name: 'product-detail',
     template,
 
-    props: ['product'],
+    props: ['product', 'add-to-cart'],
     data: function () {
       return {
         slide: 1
       }
     },
-    computed: {
-      win_width() {
-        return this.$q.screen.width - 59
-      },
-      win_height() {
-        return this.$q.screen.height - 0
-      }
-    },
+    computed: {},
     methods: {},
-    created() {
-      console.log('ping')
-    }
+    created() {}
   })
 }

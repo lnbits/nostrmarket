@@ -1,20 +1,13 @@
 const market = async () => {
   Vue.component(VueQrcode.name, VueQrcode)
 
-  const nostr = window.NostrTools
+  const NostrTools = window.NostrTools
   const defaultRelays = [
     'wss://relay.damus.io',
     'wss://relay.snort.social',
-    'wss://nos.lol',
     'wss://nostr.wine',
-    'wss://relay.nostr.bg',
     'wss://nostr-pub.wellorder.net',
-    'wss://nostr-pub.semisol.dev',
-    'wss://eden.nostr.land',
-    'wss://nostr.mom',
-    'wss://nostr.fmt.wiz.biz',
-    'wss://nostr.zebedee.cloud',
-    'wss://nostr.rocks'
+    'wss://nostr.zebedee.cloud'
   ]
   const eventToObj = event => {
     event.content = JSON.parse(event.content)
@@ -128,7 +121,7 @@ const market = async () => {
     },
     methods: {
       naddr() {
-        let naddr = nostr.nip19.naddrEncode({
+        let naddr = NostrTools.nip19.naddrEncode({
           identifier: '1234',
           pubkey:
             'c1415f950a1e3431de2bc5ee35144639e2f514cf158279abff9ed77d50118796',
@@ -139,7 +132,7 @@ const market = async () => {
       },
       async initNostr() {
         this.$q.loading.show()
-        const pool = new nostr.SimplePool()
+        const pool = new NostrTools.SimplePool()
         let relays = Array.from(this.relays)
         let products = new Map()
         let stalls = new Map()
@@ -243,7 +236,7 @@ const market = async () => {
         let regExp = /^#([0-9a-f]{3}){1,2}$/i
         if (pubkey.startsWith('n')) {
           try {
-            let {type, data} = nostr.nip19.decode(pubkey)
+            let {type, data} = NostrTools.nip19.decode(pubkey)
             if (type === 'npub') pubkey = data
             else if (type === 'nprofile') {
               pubkey = data.pubkey

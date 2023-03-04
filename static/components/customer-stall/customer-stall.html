@@ -10,13 +10,20 @@
       <q-breadcrumbs-el :label="stall.name" icon="widgets"></q-breadcrumbs-el>
     </q-breadcrumbs>
     <q-toolbar-title></q-toolbar-title>
-    <shopping-cart></shopping-cart>
+    <shopping-cart
+      :cart="cart"
+      :cart-menu="cartMenu"
+      @remove-from-cart="removeFromCart"
+      @reset-cart="resetCart"
+      @open-checkout="checkoutDialog.show = true"
+    ></shopping-cart>
   </q-toolbar>
   <div class="row">
     <product-detail
       class="col-12"
       v-if="productDetail && product"
       :product="product"
+      @add-to-cart="addToCart"
     ></product-detail>
     <div class="col-12 q-my-lg">
       <q-separator></q-separator>
@@ -28,7 +35,102 @@
       v-for="(item, idx) in products"
       :key="idx"
     >
-      <product-card :product="item" @change-page="changePageS"></product-card>
+      <product-card
+        :product="item"
+        @change-page="changePageS"
+        @add-to-cart="addToCart"
+        :is-stall="true"
+      ></product-card>
     </div>
   </div>
+  <!-- BEGIN CHECKOUT DIALOG -->
+  <q-dialog v-model="checkoutDialog.show" position="top">
+    <q-card class="q-pa-lg q-pt-xl lnbits__dialog-card">
+      <q-form @submit="placeOrder" class="q-gutter-md">
+        <q-input
+          filled
+          dense
+          v-model.trim="checkoutDialog.data.username"
+          label="Name *optional"
+        ></q-input>
+        <q-input
+          filled
+          dense
+          v-model.trim="checkoutDialog.data.pubkey"
+          label="Public key"
+        >
+        </q-input>
+        <q-input
+          filled
+          dense
+          readonly
+          hint="This your key pair! Don't lose it!"
+          v-if="checkoutDialog.data.privkey"
+          v-model="checkoutDialog.data.privkey"
+        >
+        </q-input>
+        <div class="row">
+          <div class="col-5">
+            <q-btn unelevated @click="generateKeyPair" color="primary"
+              >Generate key pair</q-btn
+            >
+          </div>
+          <div class="col-5" v-if="hasNip07">
+            <q-btn unelevated @click="getPubkey" color="primary"
+              >Get from Extension</q-btn
+            >
+          </div>
+        </div>
+        <q-input
+          filled
+          dense
+          v-model.trim="checkoutDialog.data.address"
+          label="Address"
+        ></q-input>
+        <q-input
+          v-model="checkoutDialog.data.email"
+          filled
+          dense
+          type="email"
+          label="Email *optional"
+          hint="Merchant may not use email"
+        ></q-input>
+        <p>Select the shipping zone:</p>
+        <div class="row q-mt-lg">
+          <q-option-group
+            :options="stall.shipping.map(s => ({label: s.countries.toString(), value: s.id}))"
+            type="radio"
+            emit-value
+            v-model="checkoutDialog.data.shippingzone"
+          />
+        </div>
+        <div class="row q-mt-lg">
+          Total: {{ stall.currency != 'sat' ? getAmountFormated(finalCost) :
+          finalCost + 'sats' }}
+          <span v-if="stall.currency != 'sat'" class="q-ml-sm text-grey-6"
+            >({{ getValueInSats(finalCost) }} sats)</span
+          >
+        </div>
+        <div class="row q-mt-lg">
+          <q-btn
+            unelevated
+            color="primary"
+            :disable="checkoutDialog.data.address == null
+              || checkoutDialog.data.shippingzone == null"
+            type="submit"
+            >Checkout</q-btn
+          >
+          <q-btn
+            v-close-popup
+            flat
+            @click="checkoutDialog = {show: false, data: {pubkey: null}}"
+            color="grey"
+            class="q-ml-auto"
+            >Cancel</q-btn
+          >
+        </div>
+      </q-form>
+    </q-card>
+  </q-dialog>
+  <!-- END CHECKOUT DIALOG -->
 </div>
