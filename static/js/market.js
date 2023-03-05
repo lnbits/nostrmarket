@@ -5,7 +5,6 @@ const market = async () => {
   const defaultRelays = [
     'wss://relay.damus.io',
     'wss://relay.snort.social',
-    'wss://nostr.wine',
     'wss://nostr-pub.wellorder.net',
     'wss://nostr.zebedee.cloud'
   ]
@@ -175,6 +174,7 @@ const market = async () => {
           return obj
         })
         pool.close(relays)
+        return
       },
       async getRates() {
         let noFiat = this.stalls.map(s => s.currency).every(c => c == 'sat')
