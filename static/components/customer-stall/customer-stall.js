@@ -24,9 +24,7 @@ async function customerStall(path) {
         hasNip07: false,
         checkoutDialog: {
           show: false,
-          data: {
-            pubkey: null
-          }
+          data: {}
         },
         qrCodeDialog: {
           data: {
@@ -130,56 +128,96 @@ async function customerStall(path) {
         this.checkoutDialog.data.pubkey = pk
         this.checkoutDialog.data.privkey = sk
       },
-      placeOrder() {
-        LNbits.utils
-          .confirmDialog(
-            `Send the order to the merchant? You should receive a message with the payment details.`
-          )
-          .onOk(async () => {
-            let orderData = this.checkoutDialog.data
-            let content = {
-              name: orderData?.username,
-              description: null,
-              address: orderData.address,
-              message: null,
-              contact: {
-                nostr: orderData.pubkey,
-                phone: null,
-                email: orderData?.email
-              },
-              items: Array.from(this.cart.products, p => {
-                return {product_id: p[0], quantity: p[1].quantity}
-              })
-            }
-            let event = {
-              kind: 4,
-              created_at: Math.floor(Date.now() / 1000),
-              tags: [],
-              content: await window.nostr.nip04.encrypt(
-                orderData.pubkey,
-                content
-              ),
-              pubkey: orderData.pubkey
-            }
-            event.id = NostrTools.getEventHash(event)
-            if (orderData.privkey) {
-              event.sig = NostrTools.signEvent(event, orderData.privkey)
-            } else if (this.hasNip07) {
-              await window.nostr.signEvent(event)
-            }
-            await this.sendOrder(event)
+      async placeOrder() {
+        // LNbits.utils
+        //   .confirmDialog(
+        //     `Send the order to the merchant? You should receive a message with the payment details.`
+        //   )
+        //   .onOk(async () => {
+        let orderData = this.checkoutDialog.data
+        let orderObj = {
+          name: orderData?.username,
+          description: null,
+          address: orderData.address,
+          message: null,
+          contact: {
+            nostr: orderData.pubkey,
+            phone: null,
+            email: orderData?.email
+          },
+          items: Array.from(this.cart.products, p => {
+            return {product_id: p[0], quantity: p[1].quantity}
           })
+        }
+        let event = {
+          ...(await NostrTools.getBlankEvent()),
+          kind: 4,
+          created_at: Math.floor(Date.now() / 1000),
+          tags: [['p', this.stall.pubkey]],
+          pubkey: orderData.pubkey
+        }
+        if (orderData.privkey) {
+          event.content = await NostrTools.nip04.encrypt(
+            orderData.privkey,
+            this.stall.pubkey,
+            JSON.stringify(orderObj)
+          )
+        } else {
+          console.log('use extension')
+          event.content = await window.nostr.nip04.encrypt(
+            orderData.pubkey,
+            JSON.stringify(orderObj)
+          )
+          let userRelays = Object.keys(
+            (await window.nostr?.getRelays?.()) || []
+          )
+          if (userRelays.length != 0) {
+            userRelays.map(r => this.relays.add(r))
+          }
+        }
+        event.id = NostrTools.getEventHash(event)
+        if (orderData.privkey) {
+          event.sig = await NostrTools.signEvent(event, orderData.privkey)
+        } else if (this.hasNip07) {
+          event = await window.nostr.signEvent(event)
+        }
+        console.log(event, orderData)
+        await this.sendOrder(event)
+        // })
       },
       async sendOrder(order) {
-        const pool = new NostrTools.SimplePool()
-        let relays = Array.from(this.relays)
-        let pubs = await pool.publish(relays, order)
-        pubs.on('ok', relay => {
-          console.log(`${relay.url} has accepted our event`)
-        })
-        pubs.on('failed', reason => {
-          console.log(`failed to publish to ${reason}`)
-        })
+        for (const url of Array.from(this.relays)) {
+          let relay = NostrTools.relayInit(url)
+          relay.on('connect', () => {
+            console.log(`connected to ${relay.url}`)
+          })
+          relay.on('error', () => {
+            console.log(`failed to connect to ${relay.url}`)
+          })
+
+          await relay.connect()
+          let pub = relay.publish(order)
+          pub.on('ok', () => {
+            console.log(`${relay.url} has accepted our event`)
+          })
+          pub.on('failed', reason => {
+            console.log(`failed to publish to ${relay.url}: ${reason}`)
+          })
+        }
+        this.checkoutDialog = {show: false, data: {}}
+        // const pool = new NostrTools.SimplePool()
+        // let relays = Array.from(this.relays)
+        // try {
+        //   let pubs = await pool.publish(relays, order)
+        //   pubs.on('ok', relay => {
+        //     console.log(`${relay.url} has accepted our event`)
+        //   })
+        //   pubs.on('failed', (reason, err) => {
+        //     console.log(`failed to publish to ${reason}: ${err}`)
+        //   })
+        // } catch (err) {
+        //   console.error(err)
+        // }
       }
     },
     created() {
