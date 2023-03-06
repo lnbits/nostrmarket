@@ -256,7 +256,6 @@ class OrderContact(BaseModel):
     nostr: Optional[str]
     phone: Optional[str]
     email: Optional[str]
-    address: Optional[str]
 
 
 class PartialOrder(BaseModel):
@@ -265,6 +264,7 @@ class PartialOrder(BaseModel):
     pubkey: str
     items: List[OrderItem]
     contact: Optional[OrderContact]
+    address: Optional[str]
 
     def validate_order(self):
         assert len(self.items) != 0, f"Order has no items. Order: '{self.id}'"

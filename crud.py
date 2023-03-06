@@ -318,14 +318,15 @@ async def delete_product(user_id: str, product_id: str) -> None:
 async def create_order(user_id: str, o: Order) -> Order:
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.orders (user_id, id, event_id, pubkey, contact_data, order_items, invoice_id, total)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO nostrmarket.orders (user_id, id, event_id, pubkey, address, contact_data, order_items, invoice_id, total)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             user_id,
             o.id,
             o.event_id,
             o.pubkey,
+            o.address,
             json.dumps(o.contact.dict() if o.contact else {}),
             json.dumps([i.dict() for i in o.items]),
             o.invoice_id,
