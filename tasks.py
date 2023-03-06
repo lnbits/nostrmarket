@@ -89,19 +89,21 @@ async def handle_message(msg: str):
         if type.upper() == "EVENT":
             event = NostrEvent(**event)
             if event.kind == 4:
-                merchant = await get_merchant_by_pubkey(public_key)
-                assert merchant, f"Merchant not found for public key '{public_key}'"
-
-                clear_text_msg = merchant.decrypt_message(event.content, event.pubkey)
-                dm_resp = await handle_dirrect_message(
-                    event.pubkey, event.id, clear_text_msg
-                )
-                if dm_resp:
-                    dm_event = merchant.build_dm_event(dm_resp, event.pubkey)
-                    await publish_nostr_event(dm_event)
+                await handle_nip04_message(public_key, event)
 
     except Exception as ex:
         logger.warning(ex)
+
+
+async def handle_nip04_message(public_key: str, event: NostrEvent):
+    merchant = await get_merchant_by_pubkey(public_key)
+    assert merchant, f"Merchant not found for public key '{public_key}'"
+
+    clear_text_msg = merchant.decrypt_message(event.content, event.pubkey)
+    dm_resp = await handle_dirrect_message(event.pubkey, event.id, clear_text_msg)
+    if dm_resp:
+        dm_event = merchant.build_dm_event(dm_resp, event.pubkey)
+        await publish_nostr_event(dm_event)
 
 
 async def handle_dirrect_message(
@@ -110,41 +112,44 @@ async def handle_dirrect_message(
     order, text_msg = order_from_json(msg)
     try:
         if order:
-            ### check that event_id not parsed already
             order["pubkey"] = from_pubkey
             order["event_id"] = event_id
-            partial_order = PartialOrder(**order)
-            partial_order.validate_order()
-            assert len(partial_order.items) != 0, "Order has no items. Order: " + msg
-
-            first_product_id = partial_order.items[0].product_id
-            wallet_id = await get_wallet_for_product(first_product_id)
-            assert (
-                wallet_id
-            ), f"Cannot find wallet id for product id: {first_product_id}"
-
-            wallet = await get_wallet(wallet_id)
-            assert wallet, f"Cannot find wallet for product id: {first_product_id}"
-
-            market_url = url_for(f"/nostrmarket/api/v1/order", external=True)
-            async with httpx.AsyncClient() as client:
-                resp = await client.post(
-                    url=market_url,
-                    headers={
-                        "X-Api-Key": wallet.adminkey,
-                    },
-                    json=order,
-                )
-                resp.raise_for_status()
-                data = resp.json()
-                return (
-                    json.dumps(data, separators=(",", ":"), ensure_ascii=False)
-                    if data
-                    else None
-                )
+            return await handle_new_order(PartialOrder(**order))
         else:
             print("### text_msg", text_msg)
             return None
     except Exception as ex:
         logger.warning(ex)
         return None
+
+
+async def handle_new_order(order: PartialOrder):
+    ### check that event_id not parsed already
+
+    order.validate_order()
+    assert (
+        len(order.items) != 0
+    ), f"Order has no items. Order:  '{order.id}' ({order.event_id})"
+
+    first_product_id = order.items[0].product_id
+    wallet_id = await get_wallet_for_product(first_product_id)
+    assert wallet_id, f"Cannot find wallet id for product id: {first_product_id}"
+
+    wallet = await get_wallet(wallet_id)
+    assert wallet, f"Cannot find wallet for product id: {first_product_id}"
+
+    market_url = url_for(f"/nostrmarket/api/v1/order", external=True)
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            url=market_url,
+            headers={
+                "X-Api-Key": wallet.adminkey,
+            },
+            json=order.dict(),
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        if data:
+            return json.dumps(data, separators=(",", ":"), ensure_ascii=False)
+
+    return None

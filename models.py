@@ -256,6 +256,7 @@ class OrderContact(BaseModel):
     nostr: Optional[str]
     phone: Optional[str]
     email: Optional[str]
+    address: Optional[str]
 
 
 class PartialOrder(BaseModel):
@@ -307,15 +308,3 @@ class PaymentRequest(BaseModel):
     id: str
     message: Optional[str]
     payment_options: List[PaymentOption]
-
-    def to_nostr_event(self, author_pubkey: str, to_pubkey: str) -> NostrEvent:
-        event = NostrEvent(
-            pubkey=author_pubkey,
-            created_at=round(time.time()),
-            kind=4,
-            tags=[["p", to_pubkey]],
-            content=json.dumps(self.dict(), separators=(",", ":"), ensure_ascii=False),
-        )
-        event.id = event.event_id
-
-        return event
