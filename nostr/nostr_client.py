@@ -46,21 +46,21 @@ async def connect_to_nostrclient_ws(
     return ws
 
 
-async def handle_event(event, pubkeys):
-    tags = [t[1] for t in event["tags"] if t[0] == "p"]
-    to_merchant = None
-    if tags and len(tags) > 0:
-        to_merchant = tags[0]
+# async def handle_event(event, pubkeys):
+#     tags = [t[1] for t in event["tags"] if t[0] == "p"]
+#     to_merchant = None
+#     if tags and len(tags) > 0:
+#         to_merchant = tags[0]
 
-    if event["pubkey"] in pubkeys or to_merchant in pubkeys:
-        logger.debug(f"Event sent to {to_merchant}")
-        pubkey = to_merchant if to_merchant in pubkeys else event["pubkey"]
-        # Send event to market extension
-        await send_event_to_market(event=event, pubkey=pubkey)
+#     if event["pubkey"] in pubkeys or to_merchant in pubkeys:
+#         logger.debug(f"Event sent to {to_merchant}")
+#         pubkey = to_merchant if to_merchant in pubkeys else event["pubkey"]
+#         # Send event to market extension
+#         await send_event_to_market(event=event, pubkey=pubkey)
 
 
-async def send_event_to_market(event: dict, pubkey: str):
-    # Sends event to market extension, for decrypt and handling
-    market_url = url_for(f"/market/api/v1/nip04/{pubkey}", external=True)
-    async with httpx.AsyncClient() as client:
-        await client.post(url=market_url, json=event)
+# async def send_event_to_market(event: dict, pubkey: str):
+#     # Sends event to market extension, for decrypt and handling
+#     market_url = url_for(f"/market/api/v1/nip04/{pubkey}", external=True)
+#     async with httpx.AsyncClient() as client:
+#         await client.post(url=market_url, json=event)

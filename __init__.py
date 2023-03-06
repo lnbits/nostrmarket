@@ -1,5 +1,5 @@
 import asyncio
-from asyncio import Task
+from asyncio import Queue, Task
 from typing import List
 
 from fastapi import APIRouter
@@ -26,16 +26,29 @@ def nostrmarket_renderer():
     return template_renderer(["lnbits/extensions/nostrmarket/templates"])
 
 
+recieve_event_queue: Queue = Queue()
+send_req_queue: Queue = Queue()
 scheduled_tasks: List[Task] = []
 
-from .tasks import subscribe_nostrclient, wait_for_nostr_events, wait_for_paid_invoices
+
+from .tasks import (
+    subscribe_to_nostr_client,
+    wait_for_nostr_events,
+    wait_for_paid_invoices,
+)
 from .views import *  # noqa
 from .views_api import *  # noqa
 
 
 def nostrmarket_start():
+    async def _subscribe_to_nostr_client():
+        await subscribe_to_nostr_client(recieve_event_queue, send_req_queue)
+
+    async def _wait_for_nostr_events():
+        await wait_for_nostr_events(recieve_event_queue, send_req_queue)
+
     loop = asyncio.get_event_loop()
     task1 = loop.create_task(catch_everything_and_restart(wait_for_paid_invoices))
-    task2 = loop.create_task(catch_everything_and_restart(subscribe_nostrclient))
-    task3 = loop.create_task(catch_everything_and_restart(wait_for_nostr_events))
+    task2 = loop.create_task(catch_everything_and_restart(_subscribe_to_nostr_client))
+    task3 = loop.create_task(catch_everything_and_restart(_wait_for_nostr_events))
     scheduled_tasks.append([task1, task2, task3])

@@ -217,3 +217,40 @@ class Product(PartialProduct, Nostrable):
         product.config = ProductConfig(**json.loads(row["meta"]))
         product.categories = json.loads(row["category_list"])
         return product
+
+
+######################################## ORDERS ########################################
+
+
+class OrderItem(BaseModel):
+    product_id: str
+    quantity: int
+
+
+class OrderContact(BaseModel):
+    nostr: Optional[str]
+    phone: Optional[str]
+    email: Optional[str]
+
+
+class PartialOrder(BaseModel):
+    id: Optional[str]
+    event_id: Optional[str]
+    pubkey: str
+    items: List[OrderItem]
+    contact: Optional[OrderContact]
+
+
+class Order(PartialOrder):
+    id: str
+    invoice_id: str
+    total: float
+    paid: bool = False
+    shipped: bool = False
+
+    @classmethod
+    def from_row(cls, row: Row) -> "Order":
+        contact = OrderContact(**json.loads(row["contact_data"]))
+        items = [OrderItem(**z) for z in json.loads(row["order_items"])]
+        order = cls(**dict(row), contact=contact, items=items)
+        return order

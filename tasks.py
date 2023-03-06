@@ -7,15 +7,21 @@ import websocket
 from loguru import logger
 from websocket import WebSocketApp
 
+from lnbits.core import get_wallet
 from lnbits.core.models import Payment
+from lnbits.extensions.nostrmarket.models import PartialOrder
+from lnbits.helpers import url_for
 from lnbits.tasks import register_invoice_listener
 
-from .crud import get_merchant, get_merchant_by_pubkey, get_public_keys_for_merchants
+from .crud import (
+    get_merchant_by_pubkey,
+    get_product,
+    get_public_keys_for_merchants,
+    get_wallet_for_product,
+)
+from .helpers import order_from_json
 from .nostr.event import NostrEvent
 from .nostr.nostr_client import connect_to_nostrclient_ws
-
-recieve_event_queue: Queue = Queue()
-send_req_queue: Queue = Queue()
 
 
 async def wait_for_paid_invoices():
@@ -34,7 +40,7 @@ async def on_invoice_paid(payment: Payment) -> None:
     print("### on_invoice_paid")
 
 
-async def subscribe_nostrclient():
+async def subscribe_to_nostr_client(recieve_event_queue: Queue, send_req_queue: Queue):
     print("### subscribe_nostrclient_ws")
 
     def on_open(_):
@@ -65,7 +71,7 @@ async def subscribe_nostrclient():
             await asyncio.sleep(5)
 
 
-async def wait_for_nostr_events():
+async def wait_for_nostr_events(recieve_event_queue: Queue, send_req_queue: Queue):
     public_keys = await get_public_keys_for_merchants()
     for p in public_keys:
         await send_req_queue.put(
@@ -85,10 +91,47 @@ async def handle_message(msg: str):
             event = NostrEvent(**event)
             if event.kind == 4:
                 merchant = await get_merchant_by_pubkey(public_key)
-                if not merchant:
-                    return
-                clear_text_msg = merchant.decrypt_message(event.content, event.pubkey)
-                print("### clear_text_msg", clear_text_msg)
+                assert merchant, f"Merchant not found for public key '{public_key}'"
 
+                clear_text_msg = merchant.decrypt_message(event.content, event.pubkey)
+                await handle_nip04_message(
+                    event.pubkey, event.id, clear_text_msg
+                )
+
+    except Exception as ex:
+        logger.warning(ex)
+
+
+async def handle_nip04_message(from_pubkey: str, event_id: str, msg: str):
+    order, text_msg = order_from_json(msg)
+    try:
+        if order:
+            print("### order", from_pubkey, event_id, msg)
+            ### check that event_id not parsed already
+            order["pubkey"] = from_pubkey
+            order["event_id"] = event_id
+            partial_order = PartialOrder(**order)
+            assert len(partial_order.items) != 0, "Order has no items. Order: " + msg
+
+            first_product_id = partial_order.items[0].product_id
+            wallet_id = await get_wallet_for_product(first_product_id)
+            assert (
+                wallet_id
+            ), f"Cannot find wallet id for product id: {first_product_id}"
+
+            wallet = await get_wallet(wallet_id)
+            assert wallet, f"Cannot find wallet for product id: {first_product_id}"
+
+            market_url = url_for(f"/nostrmarket/api/v1/order", external=True)
+            async with httpx.AsyncClient() as client:
+                await client.post(
+                    url=market_url,
+                    headers={
+                        "X-Api-Key": wallet.adminkey,
+                    },
+                    json=order,
+                )
+        else:
+            print("### text_msg", text_msg)
     except Exception as ex:
         logger.warning(ex)

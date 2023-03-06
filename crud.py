@@ -7,7 +7,9 @@ from lnbits.helpers import urlsafe_short_hash
 from . import db
 from .models import (
     Merchant,
+    Order,
     PartialMerchant,
+    PartialOrder,
     PartialProduct,
     PartialStall,
     PartialZone,
@@ -206,7 +208,7 @@ async def delete_stall(user_id: str, stall_id: str) -> None:
     )
 
 
-######################################## STALL ########################################
+######################################## PRODUCTS ########################################
 
 
 async def create_product(user_id: str, data: PartialProduct) -> Product:
@@ -214,7 +216,7 @@ async def create_product(user_id: str, data: PartialProduct) -> Product:
 
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.products (user_id, id, stall_id, name, images, price, quantity, category_list, meta)
+        INSERT INTO nostrmarket.products (user_id, id, stall_id, name, image, price, quantity, category_list, meta)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
@@ -278,6 +280,29 @@ async def get_products(user_id: str, stall_id: str) -> List[Product]:
     return [Product.from_row(row) for row in rows]
 
 
+async def get_products_by_ids(user_id: str, product_ids: List[str]) -> List[Product]:
+    q = ",".join(["?"] * len(product_ids))
+    rows = await db.fetchall(
+        f"SELECT id, stall_id, name, price, quantity  FROM nostrmarket.products WHERE user_id = ? AND id IN ({q})",
+        (user_id, *product_ids),
+    )
+    return [Product.from_row(row) for row in rows]
+
+
+
+async def get_wallet_for_product(product_id: str) -> Optional[str]:
+    row = await db.fetchone(
+        """
+        SELECT s.wallet FROM nostrmarket.products p
+        INNER JOIN nostrmarket.stalls s
+        ON p.stall_id = s.id
+        WHERE p.id=?
+       """,
+        (product_id,),
+    )
+    return row[0] if row else None
+
+
 async def delete_product(user_id: str, product_id: str) -> None:
     await db.execute(
         "DELETE FROM nostrmarket.products WHERE user_id =? AND id = ?",
@@ -286,3 +311,37 @@ async def delete_product(user_id: str, product_id: str) -> None:
             product_id,
         ),
     )
+
+######################################## ORDERS ########################################
+
+async def create_order(user_id: str, o: Order) -> Order:
+    await db.execute(
+        f"""
+        INSERT INTO nostrmarket.orders (user_id, id, event_id, pubkey, contact_data, order_items, invoice_id, total)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            user_id,
+            o.id,
+            o.event_id,
+            o.pubkey,
+            json.dumps(o.contact.dict()),
+            json.dumps([i.dict() for i in o.items]),
+            o.invoice_id,
+            o.total,
+        ),
+    )
+    order = await get_order(user_id, o.id)
+    assert order, "Newly created order couldn't be retrieved"
+
+    return order
+
+async def get_order(user_id: str, order_id: str) -> Optional[Order]:
+    row = await db.fetchone(
+        "SELECT * FROM nostrmarket.orders WHERE user_id =? AND id = ?",
+        (
+            user_id,
+            order_id,
+        ),
+    )
+    return Order.from_row(row) if row else None
