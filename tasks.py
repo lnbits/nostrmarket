@@ -9,19 +9,18 @@ from websocket import WebSocketApp
 
 from lnbits.core import get_wallet
 from lnbits.core.models import Payment
-from lnbits.extensions.nostrmarket.models import PartialOrder
-from lnbits.helpers import url_for
+from lnbits.helpers import Optional, url_for
 from lnbits.tasks import register_invoice_listener
 
 from .crud import (
     get_merchant_by_pubkey,
-    get_product,
     get_public_keys_for_merchants,
     get_wallet_for_product,
 )
 from .helpers import order_from_json
+from .models import PartialOrder
 from .nostr.event import NostrEvent
-from .nostr.nostr_client import connect_to_nostrclient_ws
+from .nostr.nostr_client import connect_to_nostrclient_ws, publish_nostr_event
 
 
 async def wait_for_paid_invoices():
@@ -94,21 +93,28 @@ async def handle_message(msg: str):
                 assert merchant, f"Merchant not found for public key '{public_key}'"
 
                 clear_text_msg = merchant.decrypt_message(event.content, event.pubkey)
-                await handle_nip04_message(event.pubkey, event.id, clear_text_msg)
+                dm_resp = await handle_dirrect_message(
+                    event.pubkey, event.id, clear_text_msg
+                )
+                if dm_resp:
+                    dm_event = merchant.build_dm_event(dm_resp, event.pubkey)
+                    await publish_nostr_event(dm_event)
 
     except Exception as ex:
         logger.warning(ex)
 
 
-async def handle_nip04_message(from_pubkey: str, event_id: str, msg: str):
+async def handle_dirrect_message(
+    from_pubkey: str, event_id: str, msg: str
+) -> Optional[str]:
     order, text_msg = order_from_json(msg)
     try:
         if order:
-            print("### order", from_pubkey, event_id, msg)
             ### check that event_id not parsed already
             order["pubkey"] = from_pubkey
             order["event_id"] = event_id
             partial_order = PartialOrder(**order)
+            partial_order.validate_order()
             assert len(partial_order.items) != 0, "Order has no items. Order: " + msg
 
             first_product_id = partial_order.items[0].product_id
@@ -131,9 +137,14 @@ async def handle_nip04_message(from_pubkey: str, event_id: str, msg: str):
                 )
                 resp.raise_for_status()
                 data = resp.json()
-
-                print("### payment request", data)
+                return (
+                    json.dumps(data, separators=(",", ":"), ensure_ascii=False)
+                    if data
+                    else None
+                )
         else:
             print("### text_msg", text_msg)
+            return None
     except Exception as ex:
         logger.warning(ex)
+        return None

@@ -31,7 +31,7 @@ def decrypt_message(encoded_message: str, encryption_key) -> str:
     return unpadded_data.decode()
 
 
-def encrypt_message(message: str, encryption_key, iv: Optional[bytes]) -> str:
+def encrypt_message(message: str, encryption_key, iv: Optional[bytes] = None) -> str:
     padder = padding.PKCS7(128).padder()
     padded_data = padder.update(message.encode()) + padder.finalize()
 

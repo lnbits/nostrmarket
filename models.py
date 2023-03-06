@@ -8,7 +8,12 @@ from pydantic import BaseModel
 
 from lnbits.utils.exchange_rates import fiat_amount_as_satoshis
 
-from .helpers import decrypt_message, get_shared_secret, sign_message_hash
+from .helpers import (
+    decrypt_message,
+    encrypt_message,
+    get_shared_secret,
+    sign_message_hash,
+)
 from .nostr.event import NostrEvent
 
 ######################################## NOSTR ########################################
@@ -44,6 +49,24 @@ class Merchant(PartialMerchant):
     def decrypt_message(self, encrypted_message: str, public_key: str) -> str:
         encryption_key = get_shared_secret(self.private_key, public_key)
         return decrypt_message(encrypted_message, encryption_key)
+
+    def encrypt_message(self, clear_text_message: str, public_key: str) -> str:
+        encryption_key = get_shared_secret(self.private_key, public_key)
+        return encrypt_message(clear_text_message, encryption_key)
+
+    def build_dm_event(self, message: str, to_pubkey: str) -> NostrEvent:
+        content = self.encrypt_message(message, to_pubkey)
+        event = NostrEvent(
+            pubkey=self.public_key,
+            created_at=round(time.time()),
+            kind=4,
+            tags=[["p", to_pubkey]],
+            content=content,
+        )
+        event.id = event.event_id
+        event.sig = self.sign_hash(bytes.fromhex(event.id))
+
+        return event
 
     @classmethod
     def from_row(cls, row: Row) -> "Merchant":
@@ -242,6 +265,9 @@ class PartialOrder(BaseModel):
     items: List[OrderItem]
     contact: Optional[OrderContact]
 
+    def validate_order(self):
+        assert len(self.items) != 0, f"Order has no items. Order: '{self.id}'"
+
     async def total_sats(self, products: List[Product]) -> float:
         product_prices = {}
         for p in products:
@@ -281,3 +307,15 @@ class PaymentRequest(BaseModel):
     id: str
     message: Optional[str]
     payment_options: List[PaymentOption]
+
+    def to_nostr_event(self, author_pubkey: str, to_pubkey: str) -> NostrEvent:
+        event = NostrEvent(
+            pubkey=author_pubkey,
+            created_at=round(time.time()),
+            kind=4,
+            tags=[["p", to_pubkey]],
+            content=json.dumps(self.dict(), separators=(",", ":"), ensure_ascii=False),
+        )
+        event.id = event.event_id
+
+        return event
