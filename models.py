@@ -6,6 +6,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
+from lnbits.utils.exchange_rates import fiat_amount_as_satoshis
+
 from .helpers import decrypt_message, get_shared_secret, sign_message_hash
 from .nostr.event import NostrEvent
 
@@ -234,15 +236,29 @@ class OrderContact(BaseModel):
 
 
 class PartialOrder(BaseModel):
-    id: Optional[str]
+    id: str
     event_id: Optional[str]
     pubkey: str
     items: List[OrderItem]
     contact: Optional[OrderContact]
 
+    async def total_sats(self, products: List[Product]) -> float:
+        product_prices = {}
+        for p in products:
+            product_prices[p.id] = p
+
+        amount: float = 0  # todo
+        for item in self.items:
+            price = product_prices[item.product_id].price
+            currency = product_prices[item.product_id].config.currency or "sat"
+            if currency != "sat":
+                price = await fiat_amount_as_satoshis(price, currency)
+            amount += item.quantity * price
+
+        return amount
+
 
 class Order(PartialOrder):
-    id: str
     invoice_id: str
     total: float
     paid: bool = False
@@ -254,3 +270,14 @@ class Order(PartialOrder):
         items = [OrderItem(**z) for z in json.loads(row["order_items"])]
         order = cls(**dict(row), contact=contact, items=items)
         return order
+
+
+class PaymentOption(BaseModel):
+    type: str
+    link: str
+
+
+class PaymentRequest(BaseModel):
+    id: str
+    message: Optional[str]
+    payment_options: List[PaymentOption]

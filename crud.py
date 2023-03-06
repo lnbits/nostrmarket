@@ -283,11 +283,10 @@ async def get_products(user_id: str, stall_id: str) -> List[Product]:
 async def get_products_by_ids(user_id: str, product_ids: List[str]) -> List[Product]:
     q = ",".join(["?"] * len(product_ids))
     rows = await db.fetchall(
-        f"SELECT id, stall_id, name, price, quantity  FROM nostrmarket.products WHERE user_id = ? AND id IN ({q})",
+        f"SELECT id, stall_id, name, price, quantity, category_list, meta  FROM nostrmarket.products WHERE user_id = ? AND id IN ({q})",
         (user_id, *product_ids),
     )
     return [Product.from_row(row) for row in rows]
-
 
 
 async def get_wallet_for_product(product_id: str) -> Optional[str]:
@@ -312,7 +311,9 @@ async def delete_product(user_id: str, product_id: str) -> None:
         ),
     )
 
+
 ######################################## ORDERS ########################################
+
 
 async def create_order(user_id: str, o: Order) -> Order:
     await db.execute(
@@ -325,7 +326,7 @@ async def create_order(user_id: str, o: Order) -> Order:
             o.id,
             o.event_id,
             o.pubkey,
-            json.dumps(o.contact.dict()),
+            json.dumps(o.contact.dict() if o.contact else {}),
             json.dumps([i.dict() for i in o.items]),
             o.invoice_id,
             o.total,
@@ -336,12 +337,24 @@ async def create_order(user_id: str, o: Order) -> Order:
 
     return order
 
+
 async def get_order(user_id: str, order_id: str) -> Optional[Order]:
     row = await db.fetchone(
         "SELECT * FROM nostrmarket.orders WHERE user_id =? AND id = ?",
         (
             user_id,
             order_id,
+        ),
+    )
+    return Order.from_row(row) if row else None
+
+
+async def get_order_by_event_id(user_id: str, event_id: str) -> Optional[Order]:
+    row = await db.fetchone(
+        "SELECT * FROM nostrmarket.orders WHERE user_id =? AND  event_id =?",
+        (
+            user_id,
+            event_id,
         ),
     )
     return Order.from_row(row) if row else None

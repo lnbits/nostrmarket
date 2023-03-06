@@ -5,8 +5,8 @@ from typing import List, Optional
 from fastapi import Depends
 from fastapi.exceptions import HTTPException
 from loguru import logger
-from lnbits.core import create_invoice
 
+from lnbits.core import create_invoice
 from lnbits.decorators import (
     WalletTypeInfo,
     get_key_type,
@@ -26,6 +26,8 @@ from .crud import (
     delete_stall,
     delete_zone,
     get_merchant_for_user,
+    get_order,
+    get_order_by_event_id,
     get_product,
     get_products,
     get_products_by_ids,
@@ -47,6 +49,8 @@ from .models import (
     PartialProduct,
     PartialStall,
     PartialZone,
+    PaymentOption,
+    PaymentRequest,
     Product,
     Stall,
     Zone,
@@ -430,36 +434,39 @@ async def api_delete_product(
 @nostrmarket_ext.post("/api/v1/order")
 async def api_create_order(
     data: PartialOrder, wallet: WalletTypeInfo = Depends(require_admin_key)
-):
+) -> Optional[PaymentRequest]:
     try:
-        data.id = data.id or data.event_id    
+        if await get_order(wallet.wallet.user, data.id):
+            return None
+        if data.event_id and await get_order_by_event_id(
+            wallet.wallet.user, data.event_id
+        ):
+            return None
+
+        products = await get_products_by_ids(
+            wallet.wallet.user, [p.product_id for p in data.items]
+        )
+        total_amount = await data.total_sats(products)
 
         wallet_id = await get_wallet_for_product(data.items[0].product_id)
         assert wallet_id, "Missing wallet for order `{data.id}`"
-        
-        product_ids = [p.product_id for p in data.items]
-        products = await get_products_by_ids(wallet.wallet.user, product_ids)
 
-        product_prices = {}
-        for p in products:
-            product_prices[p.id] = p
-
-        amount: float = 0 # todo
-        for item in data.items:
-            amount += item.quantity * product_prices[item.product_id].price
-       
-        payment_hash, payment_request = await create_invoice(
+        payment_hash, invoice = await create_invoice(
             wallet_id=wallet_id,
-            amount=round(amount),
+            amount=round(total_amount),
             memo=f"Order '{data.id}' for pubkey '{data.pubkey}'",
             extra={
                 "tag": "nostrmarket",
                 "order_id": data.id,
-            }
+            },
         )
 
-        order = Order(**data.dict(), invoice_id=payment_hash, total=100)
+        order = Order(**data.dict(), invoice_id=payment_hash, total=total_amount)
         await create_order(wallet.wallet.user, order)
+
+        return PaymentRequest(
+            id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)]
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(

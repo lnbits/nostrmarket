@@ -94,9 +94,7 @@ async def handle_message(msg: str):
                 assert merchant, f"Merchant not found for public key '{public_key}'"
 
                 clear_text_msg = merchant.decrypt_message(event.content, event.pubkey)
-                await handle_nip04_message(
-                    event.pubkey, event.id, clear_text_msg
-                )
+                await handle_nip04_message(event.pubkey, event.id, clear_text_msg)
 
     except Exception as ex:
         logger.warning(ex)
@@ -124,13 +122,17 @@ async def handle_nip04_message(from_pubkey: str, event_id: str, msg: str):
 
             market_url = url_for(f"/nostrmarket/api/v1/order", external=True)
             async with httpx.AsyncClient() as client:
-                await client.post(
+                resp = await client.post(
                     url=market_url,
                     headers={
                         "X-Api-Key": wallet.adminkey,
                     },
                     json=order,
                 )
+                resp.raise_for_status()
+                data = resp.json()
+
+                print("### payment request", data)
         else:
             print("### text_msg", text_msg)
     except Exception as ex:
