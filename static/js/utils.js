@@ -25,3 +25,13 @@ function imgSizeFit(img, maxWidth = 1024, maxHeight = 768) {
   )
   return {width: img.naturalWidth * ratio, height: img.naturalHeight * ratio}
 }
+
+async function hash(string) {
+  const utf8 = new TextEncoder().encode(string)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', utf8)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  const hashHex = hashArray
+    .map(bytes => bytes.toString(16).padStart(2, '0'))
+    .join('')
+  return hashHex
+}
