@@ -95,6 +95,13 @@
           label="Email *optional"
           hint="Merchant may not use email"
         ></q-input>
+        <q-input
+          v-model="checkoutDialog.data.message"
+          filled
+          dense
+          type="text"
+          label="Message *optional"
+        ></q-input>
         <p>Select the shipping zone:</p>
         <div class="row q-mt-lg">
           <q-option-group
