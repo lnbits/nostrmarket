@@ -6,6 +6,7 @@ const merchant = async () => {
   await stallDetails('static/components/stall-details/stall-details.html')
   await stallList('static/components/stall-list/stall-list.html')
   await orderList('static/components/order-list/order-list.html')
+  await directMessages('static/components/direct-messages/direct-messages.html')
 
   const nostr = window.NostrTools
 

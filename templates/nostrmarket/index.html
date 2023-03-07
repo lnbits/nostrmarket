@@ -101,18 +101,23 @@
   </div>
 
   <div class="col-12 col-md-5 q-gutter-y-md">
-    <q-card>
-      <q-card-section>
-        <h6 class="text-subtitle1 q-my-none">
-          {{SITE_TITLE}} Nostr Market Extension
-        </h6>
-      </q-card-section>
-      <q-card-section class="q-pa-none">
-        <q-separator></q-separator>
-        <q-list> {% include "nostrmarket/_api_docs.html" %} </q-list>
-      </q-card-section>
-    </q-card>
+    <!-- <div class="row q-col-gutter-md"> -->
+    <div class="col-12">
+      <q-card>
+        <q-card-section>
+          <h6 class="text-subtitle1 q-my-none">
+            {{SITE_TITLE}} Nostr Market Extension
+          </h6>
+        </q-card-section>
+        <q-card-section class="q-pa-none">
+          <q-separator></q-separator>
+          <q-list> {% include "nostrmarket/_api_docs.html" %} </q-list>
+        </q-card-section>
+      </q-card>
+    </div>
+    <div class="col-12">x111</div>
   </div>
+
   <div>
     <q-dialog v-model="importKeyDialog.show" position="top">
       <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
@@ -151,6 +156,7 @@
 <script src="{{ url_for('nostrmarket_static', path='components/stall-details/stall-details.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/stall-list/stall-list.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/order-list/order-list.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/direct-messages/direct-messages.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/index.js') }}"></script>
 
 {% endblock %}
