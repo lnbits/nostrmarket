@@ -34,8 +34,8 @@
             size="sm"
           ></q-checkbox>
         </q-td>
-        <q-td key="shipped" :props="props"> 
-            <q-checkbox
+        <q-td key="shipped" :props="props">
+          <q-checkbox
             v-model="props.row.shipped"
             :label="props.row.shipped ? 'Yes' : 'No'"
             size="sm"
@@ -49,8 +49,112 @@
       </q-tr>
       <q-tr v-if="props.row.expanded" :props="props">
         <q-td colspan="100%">
-          <div class="row items-center q-mb-lg">
-            <div class="col-12"></div>
+          <div class="row items-center no-wrap q-mb-md q-mt-md">
+            <div class="col-3 q-pr-lg">Order ID:</div>
+            <div class="col-6 col-sm-8 q-pr-lg">
+              <q-input
+                filled
+                dense
+                readonly
+                disabled
+                v-model.trim="props.row.id"
+                type="text"
+              ></q-input>
+            </div>
+            <div class="col-3 col-sm-1"></div>
+          </div>
+          <div class="row items-center no-wrap q-mb-md">
+            <div class="col-3 q-pr-lg">Customer Public Key:</div>
+            <div class="col-6 col-sm-8 q-pr-lg">
+              <q-input
+                filled
+                dense
+                readonly
+                disabled
+                v-model.trim="props.row.pubkey"
+                type="text"
+              ></q-input>
+            </div>
+            <div class="col-3 col-sm-1"></div>
+          </div>
+          <div class="row items-center no-wrap q-mb-md">
+            <div class="col-3 q-pr-lg">Address:</div>
+            <div class="col-6 col-sm-8 q-pr-lg">
+              <q-input
+                filled
+                dense
+                readonly
+                disabled
+                v-model.trim="props.row.address"
+                type="text"
+              ></q-input>
+            </div>
+            <div class="col-3 col-sm-1"></div>
+          </div>
+          <div
+            v-if="props.row.contact.nostr"
+            class="row items-center no-wrap q-mb-md"
+          >
+            <div class="col-3 q-pr-lg">Nostr Contact Pubkey:</div>
+            <div class="col-6 col-sm-8 q-pr-lg">
+              <q-input
+                filled
+                dense
+                readonly
+                disabled
+                v-model.trim="props.row.contact.nostr"
+                type="text"
+              ></q-input>
+            </div>
+            <div class="col-3 col-sm-1"></div>
+          </div>
+          <div
+            v-if="props.row.contact.phone"
+            class="row items-center no-wrap q-mb-md"
+          >
+            <div class="col-3 q-pr-lg">Phone:</div>
+            <div class="col-6 col-sm-8 q-pr-lg">
+              <q-input
+                filled
+                dense
+                readonly
+                disabled
+                v-model.trim="props.row.contact.phone"
+                type="text"
+              ></q-input>
+            </div>
+            <div class="col-3 col-sm-1"></div>
+          </div>
+          <div
+            v-if="props.row.contact.email"
+            class="row items-center no-wrap q-mb-md"
+          >
+            <div class="col-3 q-pr-lg">Email:</div>
+            <div class="col-6 col-sm-8 q-pr-lg">
+              <q-input
+                filled
+                dense
+                readonly
+                disabled
+                v-model.trim="props.row.contact.email"
+                type="text"
+              ></q-input>
+            </div>
+            <div class="col-3 col-sm-1"></div>
+          </div>
+          <div class="row items-center no-wrap q-mb-md">
+            <div class="col-3 q-pr-lg">Invoice ID:</div>
+            <div class="col-6 col-sm-8 q-pr-lg">
+              <q-input
+                filled
+                dense
+                readonly
+                disabled
+                v-model.trim="props.row.invoice_id"
+                type="text"
+              ></q-input>
+            </div>
+            <div class="col-3 col-sm-1"></div>
           </div>
         </q-td>
       </q-tr>
