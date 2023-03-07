@@ -364,7 +364,7 @@ async def get_order_by_event_id(user_id: str, event_id: str) -> Optional[Order]:
 
 async def get_orders(user_id: str) -> List[Order]:
     rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.orders WHERE user_id = ?",
+        "SELECT * FROM nostrmarket.orders WHERE user_id = ? ORDER BY time DESC",
         (user_id,),
     )
     return [Order.from_row(row) for row in rows]
@@ -372,7 +372,7 @@ async def get_orders(user_id: str) -> List[Order]:
 
 async def get_orders_for_stall(user_id: str, stall_id: str) -> List[Order]:
     rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.orders WHERE user_id = ? AND stall_id = ?",
+        "SELECT * FROM nostrmarket.orders WHERE user_id = ? AND stall_id = ? ORDER BY time DESC",
         (
             user_id,
             stall_id,

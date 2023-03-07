@@ -23,9 +23,24 @@
 
         <q-td key="id" :props="props"> {{toShortId(props.row.id)}} </q-td>
         <q-td key="total" :props="props"> {{props.row.total}} </q-td>
+        <!-- todo: currency per order -->
 
-        <q-td key="paid" :props="props"> {{props.row.paid}} </q-td>
-        <q-td key="shipped" :props="props"> {{props.row.shipped}} </q-td>
+        <q-td key="paid" :props="props">
+          <q-checkbox
+            v-model="props.row.paid"
+            :label="props.row.paid ? 'Yes' : 'No'"
+            disable
+            readonly
+            size="sm"
+          ></q-checkbox>
+        </q-td>
+        <q-td key="shipped" :props="props"> 
+            <q-checkbox
+            v-model="props.row.shipped"
+            :label="props.row.shipped ? 'Yes' : 'No'"
+            size="sm"
+          ></q-checkbox>
+        </q-td>
 
         <q-td key="pubkey" :props="props">
           {{toShortId(props.row.pubkey)}}
