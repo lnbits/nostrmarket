@@ -1,3 +1,4 @@
+import json
 from http import HTTPStatus
 from typing import List, Optional
 
@@ -27,6 +28,8 @@ from .crud import (
     get_merchant_for_user,
     get_order,
     get_order_by_event_id,
+    get_orders,
+    get_orders_for_stall,
     get_product,
     get_products,
     get_products_by_ids,
@@ -283,6 +286,22 @@ async def api_get_stall_products(
         )
 
 
+@nostrmarket_ext.get("/api/v1/stall/order/{stall_id}")
+async def api_get_stall_orders(
+    stall_id: str,
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
+):
+    try:
+        orders = await get_orders_for_stall(wallet.wallet.user, stall_id)
+        return orders
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot get stall products",
+        )
+
+
 @nostrmarket_ext.delete("/api/v1/stall/{stall_id}")
 async def api_delete_stall(
     stall_id: str, wallet: WalletTypeInfo = Depends(require_admin_key)
@@ -435,6 +454,7 @@ async def api_create_order(
     data: PartialOrder, wallet: WalletTypeInfo = Depends(require_admin_key)
 ) -> Optional[PaymentRequest]:
     try:
+        # print("### new order: ", json.dumps(data.dict()))
         if await get_order(wallet.wallet.user, data.id):
             return None
         if data.event_id and await get_order_by_event_id(
@@ -445,6 +465,8 @@ async def api_create_order(
         products = await get_products_by_ids(
             wallet.wallet.user, [p.product_id for p in data.items]
         )
+        data.validate_order_items(products)
+
         total_amount = await data.total_sats(products)
 
         wallet_id = await get_wallet_for_product(data.items[0].product_id)
@@ -460,7 +482,12 @@ async def api_create_order(
             },
         )
 
-        order = Order(**data.dict(), invoice_id=payment_hash, total=total_amount)
+        order = Order(
+            **data.dict(),
+            stall_id=products[0].stall_id,
+            invoice_id=payment_hash,
+            total=total_amount,
+        )
         await create_order(wallet.wallet.user, order)
 
         return PaymentRequest(
@@ -471,6 +498,41 @@ async def api_create_order(
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create order",
+        )
+
+
+nostrmarket_ext.get("/api/v1/order/{order_id}")
+
+
+async def api_get_order(order_id: str, wallet: WalletTypeInfo = Depends(get_key_type)):
+    try:
+        order = await get_order(wallet.wallet.user, order_id)
+        if not order:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND,
+                detail="Order does not exist.",
+            )
+        return order
+    except HTTPException as ex:
+        raise ex
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot get order",
+        )
+
+
+@nostrmarket_ext.get("/api/v1/order")
+async def api_get_orders(wallet: WalletTypeInfo = Depends(get_key_type)):
+    try:
+        orders = await get_orders(wallet.wallet.user)
+        return orders
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot get orders",
         )
 
 

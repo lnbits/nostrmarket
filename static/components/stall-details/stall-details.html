@@ -187,10 +187,10 @@
     <q-tab-panel name="orders">
       <div v-if="stall">
         <order-list
-            :adminkey="adminkey"
-            :inkey="inkey"
-            :wallet-options="walletOptions"
-          ></order-list>
+          :adminkey="adminkey"
+          :inkey="inkey"
+          :stall-id="stallId"
+        ></order-list>
       </div>
     </q-tab-panel>
   </q-tab-panels>

@@ -318,8 +318,8 @@ async def delete_product(user_id: str, product_id: str) -> None:
 async def create_order(user_id: str, o: Order) -> Order:
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.orders (user_id, id, event_id, pubkey, address, contact_data, order_items, invoice_id, total)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO nostrmarket.orders (user_id, id, event_id, pubkey, address, contact_data, order_items, stall_id, invoice_id, total)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             user_id,
@@ -329,6 +329,7 @@ async def create_order(user_id: str, o: Order) -> Order:
             o.address,
             json.dumps(o.contact.dict() if o.contact else {}),
             json.dumps([i.dict() for i in o.items]),
+            o.stall_id,
             o.invoice_id,
             o.total,
         ),
@@ -359,3 +360,22 @@ async def get_order_by_event_id(user_id: str, event_id: str) -> Optional[Order]:
         ),
     )
     return Order.from_row(row) if row else None
+
+
+async def get_orders(user_id: str) -> List[Order]:
+    rows = await db.fetchall(
+        "SELECT * FROM nostrmarket.orders WHERE user_id = ?",
+        (user_id,),
+    )
+    return [Order.from_row(row) for row in rows]
+
+
+async def get_orders_for_stall(user_id: str, stall_id: str) -> List[Order]:
+    rows = await db.fetchall(
+        "SELECT * FROM nostrmarket.orders WHERE user_id = ? AND stall_id = ?",
+        (
+            user_id,
+            stall_id,
+        ),
+    )
+    return [Order.from_row(row) for row in rows]

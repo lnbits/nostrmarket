@@ -127,9 +127,6 @@ async def handle_new_order(order: PartialOrder):
     ### check that event_id not parsed already
 
     order.validate_order()
-    assert (
-        len(order.items) != 0
-    ), f"Order has no items. Order:  '{order.id}' ({order.event_id})"
 
     first_product_id = order.items[0].product_id
     wallet_id = await get_wallet_for_product(first_product_id)

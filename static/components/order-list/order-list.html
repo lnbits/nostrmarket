@@ -1,3 +1,44 @@
 <div>
-    xx1
+  <q-table
+    flat
+    dense
+    :data="orders"
+    row-key="id"
+    :columns="ordersTable.columns"
+    :pagination.sync="ordersTable.pagination"
+    :filter="filter"
+  >
+    <template v-slot:body="props">
+      <q-tr :props="props">
+        <q-td auto-width>
+          <q-btn
+            size="sm"
+            color="accent"
+            round
+            dense
+            @click="props.row.expanded= !props.row.expanded"
+            :icon="props.row.expanded? 'remove' : 'add'"
+          />
+        </q-td>
+
+        <q-td key="id" :props="props"> {{toShortId(props.row.id)}} </q-td>
+        <q-td key="total" :props="props"> {{props.row.total}} </q-td>
+
+        <q-td key="paid" :props="props"> {{props.row.paid}} </q-td>
+        <q-td key="shipped" :props="props"> {{props.row.shipped}} </q-td>
+
+        <q-td key="pubkey" :props="props">
+          {{toShortId(props.row.pubkey)}}
+        </q-td>
+        <q-td key="time" :props="props"> {{formatDate(props.row.time)}} </q-td>
+      </q-tr>
+      <q-tr v-if="props.row.expanded" :props="props">
+        <q-td colspan="100%">
+          <div class="row items-center q-mb-lg">
+            <div class="col-12"></div>
+          </div>
+        </q-td>
+      </q-tr>
+    </template>
+  </q-table>
 </div>

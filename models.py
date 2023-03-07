@@ -269,6 +269,26 @@ class PartialOrder(BaseModel):
     def validate_order(self):
         assert len(self.items) != 0, f"Order has no items. Order: '{self.id}'"
 
+    def validate_order_items(self, product_list: List[Product]):
+        assert len(self.items) != 0, f"Order has no items. Order: '{self.id}'"
+        assert (
+            len(product_list) != 0
+        ), f"No products found for order. Order: '{self.id}'"
+
+        product_ids = [p.id for p in product_list]
+        for item in self.items:
+            if item.product_id not in product_ids:
+                raise ValueError(
+                    f"Order ({self.id}) item product does not exist: {item.product_id}"
+                )
+
+        stall_id = product_list[0].stall_id
+        for p in product_list:
+            if p.stall_id != stall_id:
+                raise ValueError(
+                    f"Order ({self.id}) has products from different stalls"
+                )
+
     async def total_sats(self, products: List[Product]) -> float:
         product_prices = {}
         for p in products:
@@ -286,10 +306,12 @@ class PartialOrder(BaseModel):
 
 
 class Order(PartialOrder):
+    stall_id: str
     invoice_id: str
     total: float
     paid: bool = False
     shipped: bool = False
+    time: int
 
     @classmethod
     def from_row(cls, row: Row) -> "Order":

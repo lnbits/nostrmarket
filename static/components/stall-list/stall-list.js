@@ -36,6 +36,12 @@ async function stallList(path) {
               field: 'id'
             },
             {
+              name: 'currency',
+              align: 'left',
+              label: 'Currency',
+              field: 'currency'
+            },
+            {
               name: 'description',
               align: 'left',
               label: 'Description',
