@@ -5,6 +5,32 @@
       <q-toolbar-title>Settings</q-toolbar-title>
       <q-btn flat round dense icon="close" @click="drawer = !drawer"></q-btn>
     </q-toolbar>
+    <div>
+      <div v-if="account" class="bg-transparent q-ma-md">
+        <!-- <q-avatar size="56px" class="q-mb-sm">
+          <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
+        </q-avatar>
+        <div class="text-weight-bold">Razvan Stoenescu</div>
+        <div>@rstoenescu</div> -->
+        <q-btn
+          label="Delete data"
+          class="q-mt-md"
+          color="primary"
+          @click="deleteAccount"
+          ><q-tooltip>Delete account data</q-tooltip></q-btn
+        >
+      </div>
+      <div v-else class="q-pa-md">
+        <q-btn
+          label="Login"
+          class="q-mt-md"
+          color="primary"
+          @click="accountDialog.show = true"
+          ><q-tooltip>Login or Create account</q-tooltip></q-btn
+        >
+      </div>
+      <q-separator></q-separator>
+    </div>
     <div class="q-pa-md">
       <q-list padding>
         <q-expansion-item
@@ -155,6 +181,62 @@
       @change-page="navigateTo"
     ></customer-market>
   </q-page-container>
+  <!-- ACCOUNT DIALOG -->
+  <q-dialog v-model="accountDialog.show" persistent>
+    <q-card style="min-width: 350px">
+      <q-card-section class="row items-center q-pb-none">
+        <div class="text-h6">Account Setup</div>
+        <q-space></q-space>
+        <q-btn icon="close" flat round dense v-close-popup></q-btn>
+      </q-card-section>
+      <q-card-section>
+        <p>Type your Nostr private key or generate a new one.</p>
+        <small> You can also use a Nostr-capable extension. </small>
+      </q-card-section>
+
+      <q-card-section class="q-pt-none">
+        <q-input
+          dense
+          label="Private key (hex)"
+          v-model="accountDialog.data.key"
+          autofocus
+          @keyup.enter="createAccount"
+          :error="!isValidKey"
+        ></q-input>
+
+        <q-item tag="label">
+          <q-item-section avatar top>
+            <q-checkbox v-model="accountDialog.data.watchOnly"></q-checkbox>
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>Is this a Public Key?</q-item-label>
+            <q-item-label caption>
+              If not using an Nostr capable extension, you'll have to sign
+              events manually! Better to use a Private Key that you can delete
+              later, or just generate an ephemeral key pair to use in the
+              Marketplace!
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+      </q-card-section>
+
+      <q-card-actions align="right" class="text-primary">
+        <q-btn
+          v-if="hasExtension"
+          flat
+          label="Use Public Key from Extension"
+          @click="() => createAccount(true)"
+        ></q-btn>
+        <q-btn
+          v-if="isValidKey"
+          label="Add key"
+          color="primary"
+          @click="() => createAccount()"
+        ></q-btn>
+        <q-btn v-else flat label="Generate" @click="generateKeyPair"></q-btn>
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </q-layout>
 {% endblock %} {% block scripts %}
 <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
@@ -165,6 +247,44 @@
 <script src="{{ url_for('nostrmarket_static', path='components/customer-stall/customer-stall.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/product-detail/product-detail.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/shopping-cart/shopping-cart.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/chat-dialog/chat-dialog.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/market.js') }}"></script>
+<style scoped>
+  .q-field__native span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
+  .chat-container {
+    position: relative;
+    display: grid;
+    grid-template-rows: 1fr auto;
+    /*height: calc(100vh - 200px);*/
+    height: 70vh;
+  }
+
+  .chat-box {
+    display: flex;
+    flex-direction: column-reverse;
+    padding: 1rem;
+    overflow-y: auto;
+    margin-left: auto;
+    width: 50%;
+  }
+
+  .chat-messages {
+    width: auto;
+  }
+
+  .chat-other {
+  }
+
+  .chat-input {
+    position: relative;
+    display: flex;
+    align-items: end;
+    margin-top: 1rem;
+  }
+</style>
 {% endblock %}
