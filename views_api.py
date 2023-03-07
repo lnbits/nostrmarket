@@ -46,6 +46,7 @@ from .models import (
     Merchant,
     Nostrable,
     Order,
+    OrderExtra,
     PartialMerchant,
     PartialOrder,
     PartialProduct,
@@ -487,6 +488,7 @@ async def api_create_order(
             stall_id=products[0].stall_id,
             invoice_id=payment_hash,
             total=total_amount,
+            extra=await OrderExtra.from_products(products),
         )
         await create_order(wallet.wallet.user, order)
 

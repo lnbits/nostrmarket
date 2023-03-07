@@ -6,7 +6,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from lnbits.utils.exchange_rates import fiat_amount_as_satoshis
+from lnbits.utils.exchange_rates import btc_price, fiat_amount_as_satoshis
 
 from .helpers import (
     decrypt_message,
@@ -244,6 +244,12 @@ class Product(PartialProduct, Nostrable):
         return product
 
 
+class ProductOverview(BaseModel):
+    id: str
+    name: str
+    price: float
+
+
 ######################################## ORDERS ########################################
 
 
@@ -256,6 +262,20 @@ class OrderContact(BaseModel):
     nostr: Optional[str]
     phone: Optional[str]
     email: Optional[str]
+
+
+class OrderExtra(BaseModel):
+    products: List[ProductOverview]
+    currency: str
+    btc_price: str
+
+    @classmethod
+    async def from_products(cls, products: List[Product]):
+        currency = products[0].config.currency
+        exchange_rate = (
+            (await btc_price(currency)) if currency and currency != "sat" else 1
+        )
+        return OrderExtra(products=products, currency=currency, btc_price=exchange_rate)
 
 
 class PartialOrder(BaseModel):
@@ -311,13 +331,15 @@ class Order(PartialOrder):
     total: float
     paid: bool = False
     shipped: bool = False
-    time: int
+    time: Optional[int]
+    extra: OrderExtra
 
     @classmethod
     def from_row(cls, row: Row) -> "Order":
         contact = OrderContact(**json.loads(row["contact_data"]))
+        extra = OrderExtra(**json.loads(row["extra_data"]))
         items = [OrderItem(**z) for z in json.loads(row["order_items"])]
-        order = cls(**dict(row), contact=contact, items=items)
+        order = cls(**dict(row), contact=contact, items=items, extra=extra)
         return order
 
 

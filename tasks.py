@@ -36,7 +36,7 @@ async def on_invoice_paid(payment: Payment) -> None:
     if payment.extra.get("tag") != "nostrmarket":
         return
 
-    print("### on_invoice_paid")
+    print("### on_invoice_paid", json.dumps(payment))
 
 
 async def subscribe_to_nostr_client(recieve_event_queue: Queue, send_req_queue: Queue):
@@ -124,7 +124,7 @@ async def handle_dirrect_message(
 
 
 async def handle_new_order(order: PartialOrder):
-    ### check that event_id not parsed already
+    ### todo: check that event_id not parsed already
 
     order.validate_order()
 

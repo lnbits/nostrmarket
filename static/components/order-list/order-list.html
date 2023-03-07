@@ -63,20 +63,7 @@
             </div>
             <div class="col-3 col-sm-1"></div>
           </div>
-          <div class="row items-center no-wrap q-mb-md">
-            <div class="col-3 q-pr-lg">Customer Public Key:</div>
-            <div class="col-6 col-sm-8 q-pr-lg">
-              <q-input
-                filled
-                dense
-                readonly
-                disabled
-                v-model.trim="props.row.pubkey"
-                type="text"
-              ></q-input>
-            </div>
-            <div class="col-3 col-sm-1"></div>
-          </div>
+
           <div class="row items-center no-wrap q-mb-md">
             <div class="col-3 q-pr-lg">Address:</div>
             <div class="col-6 col-sm-8 q-pr-lg">
@@ -91,23 +78,48 @@
             </div>
             <div class="col-3 col-sm-1"></div>
           </div>
-          <div
-            v-if="props.row.contact.nostr"
-            class="row items-center no-wrap q-mb-md"
-          >
-            <div class="col-3 q-pr-lg">Nostr Contact Pubkey:</div>
+          <div class="row items-center no-wrap q-mb-md">
+            <div class="col-3 q-pr-lg">Products:</div>
+            <div class="col-8">
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col-1">Quantity</div>
+                <div class="col-1"></div>
+                <div class="col-10">Name</div>
+              </div>
+            </div>
+            <div class="col-1"></div>
+          </div>
+          <div class="row items-center no-wrap q-mb-md">
+            <div class="col-3 q-pr-lg"></div>
+            <div class="col-8">
+              <div
+                v-for="item in props.row.items"
+                class="row items-center no-wrap q-mb-md"
+              >
+                <div class="col-1">{{item.quantity}}</div>
+                <div class="col-1">x</div>
+                <div class="col-10">
+                  {{productOverview(props.row, item.product_id)}}
+                </div>
+              </div>
+            </div>
+            <div class="col-1"></div>
+          </div>
+          <div class="row items-center no-wrap q-mb-md">
+            <div class="col-3 q-pr-lg">Customer Public Key:</div>
             <div class="col-6 col-sm-8 q-pr-lg">
               <q-input
                 filled
                 dense
                 readonly
                 disabled
-                v-model.trim="props.row.contact.nostr"
+                v-model.trim="props.row.pubkey"
                 type="text"
               ></q-input>
             </div>
             <div class="col-3 col-sm-1"></div>
           </div>
+
           <div
             v-if="props.row.contact.phone"
             class="row items-center no-wrap q-mb-md"

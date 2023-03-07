@@ -80,6 +80,7 @@ async def m001_initial(db):
             event_id TEXT,
             pubkey TEXT NOT NULL,
             contact_data TEXT NOT NULL DEFAULT '{empty_object}',
+            extra_data TEXT NOT NULL DEFAULT '{empty_object}',
             order_items TEXT NOT NULL,
             address TEXT,
             total REAL NOT NULL,

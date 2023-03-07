@@ -71,6 +71,13 @@ async function orderList(path) {
           'YYYY-MM-DD HH:mm'
         )
       },
+      productOverview: function (order, productId) {
+        product = order.extra.products.find(p => p.id === productId)
+        if (product) {
+          return `${product.name} (${product.price} ${order.extra.currency})`
+        }
+        return ''
+      },
       getOrders: async function () {
         try {
           const ordersPath = this.stallId

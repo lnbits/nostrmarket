@@ -318,8 +318,8 @@ async def delete_product(user_id: str, product_id: str) -> None:
 async def create_order(user_id: str, o: Order) -> Order:
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.orders (user_id, id, event_id, pubkey, address, contact_data, order_items, stall_id, invoice_id, total)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO nostrmarket.orders (user_id, id, event_id, pubkey, address, contact_data, extra_data, order_items, stall_id, invoice_id, total)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             user_id,
@@ -328,6 +328,7 @@ async def create_order(user_id: str, o: Order) -> Order:
             o.pubkey,
             o.address,
             json.dumps(o.contact.dict() if o.contact else {}),
+            json.dumps(o.extra.dict()),
             json.dumps([i.dict() for i in o.items]),
             o.stall_id,
             o.invoice_id,
