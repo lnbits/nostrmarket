@@ -13,13 +13,14 @@ from lnbits.helpers import Optional, url_for
 from lnbits.tasks import register_invoice_listener
 
 from .crud import (
+    create_direct_message,
     get_merchant_by_pubkey,
     get_public_keys_for_merchants,
     get_wallet_for_product,
     update_order_paid_status,
 )
 from .helpers import order_from_json
-from .models import OrderStatusUpdate, PartialOrder
+from .models import OrderStatusUpdate, PartialDirectMessage, PartialOrder
 from .nostr.event import NostrEvent
 from .nostr.nostr_client import connect_to_nostrclient_ws, publish_nostr_event
 
@@ -125,14 +126,16 @@ async def handle_nip04_message(public_key: str, event: NostrEvent):
     assert merchant, f"Merchant not found for public key '{public_key}'"
 
     clear_text_msg = merchant.decrypt_message(event.content, event.pubkey)
-    dm_content = await handle_dirrect_message(event.pubkey, event.id, clear_text_msg)
+    dm_content = await handle_dirrect_message(
+        merchant.id, event.pubkey, event.id, clear_text_msg
+    )
     if dm_content:
         dm_event = merchant.build_dm_event(dm_content, event.pubkey)
         await publish_nostr_event(dm_event)
 
 
 async def handle_dirrect_message(
-    from_pubkey: str, event_id: str, msg: str
+    merchant_id: str, from_pubkey: str, event_id: str, msg: str
 ) -> Optional[str]:
     order, text_msg = order_from_json(msg)
     try:
@@ -142,6 +145,13 @@ async def handle_dirrect_message(
             return await handle_new_order(PartialOrder(**order))
         else:
             print("### text_msg", text_msg)
+            dm = PartialDirectMessage(
+                event_id=event_id,
+                message=text_msg,
+                public_key=from_pubkey,
+                incomming=True,
+            )
+            await create_direct_message(merchant_id, dm)
             return None
     except Exception as ex:
         logger.warning(ex)

@@ -94,30 +94,19 @@ async def m001_initial(db):
     )
 
     """
-    Initial market table.
-    """
-    await db.execute(
-        """
-        CREATE TABLE nostrmarket.markets (
-            id TEXT PRIMARY KEY,
-            user_id TEXT NOT NULL,
-            name TEXT
-        );
-        """
-    )
-
-    """
     Initial chat messages table.
     """
     await db.execute(
         f"""
-        CREATE TABLE nostrmarket.messages (
+        CREATE TABLE nostrmarket.direct_messages (
+            merchant_id TEXT NOT NULL,
             id TEXT PRIMARY KEY,
-            msg TEXT NOT NULL,
-            pubkey TEXT NOT NULL,
-            conversation_id TEXT NOT NULL,
-            timestamp TIMESTAMP NOT NULL DEFAULT {db.timestamp_now}       
-            );
+            event_id TEXT,
+            message TEXT NOT NULL,
+            public_key TEXT NOT NULL,
+            incomming BOOLEAN NOT NULL DEFAULT false,
+            time TIMESTAMP NOT NULL DEFAULT {db.timestamp_now}       
+        );
         """
     )
 

@@ -594,6 +594,7 @@ async def api_stop(wallet: WalletTypeInfo = Depends(check_admin)):
 
     return {"success": True}
 
+
 ######################################## HELPERS ########################################
 
 

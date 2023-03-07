@@ -359,3 +359,23 @@ class PaymentRequest(BaseModel):
     id: str
     message: Optional[str]
     payment_options: List[PaymentOption]
+
+
+######################################## MESSAGE ########################################
+
+
+class PartialDirectMessage(BaseModel):
+    event_id: Optional[str]
+    message: str
+    public_key: str
+    incomming: bool = False
+    time: Optional[int]
+
+
+class DirectMessage(BaseModel):
+    id: str
+
+    @classmethod
+    def from_row(cls, row: Row) -> "DirectMessage":
+        dm = cls(**dict(row))
+        return dm

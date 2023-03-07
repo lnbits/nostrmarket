@@ -5,8 +5,10 @@ from lnbits.helpers import urlsafe_short_hash
 
 from . import db
 from .models import (
+    DirectMessage,
     Merchant,
     Order,
+    PartialDirectMessage,
     PartialMerchant,
     PartialProduct,
     PartialStall,
@@ -405,3 +407,42 @@ async def update_order_shipped_status(
         (order_id,),
     )
     return Order.from_row(row) if row else None
+
+
+######################################## MESSAGES ########################################L
+
+
+async def create_direct_message(
+    merchant_id: str, dm: PartialDirectMessage
+) -> DirectMessage:
+    dm_id = urlsafe_short_hash()
+    await db.execute(
+        f"""
+        INSERT INTO nostrmarket.direct_messages (merchant_id, id, event_id, message, public_key, incomming)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (merchant_id, dm_id, dm.event_id, dm.message, dm.public_key, dm.incomming),
+    )
+
+    msg = await get_direct_message(merchant_id, dm_id)
+    assert msg, "Newly created dm couldn't be retrieved"
+    return msg
+
+
+async def get_direct_message(merchant_id: str, dm_id: str) -> Optional[DirectMessage]:
+    row = await db.fetchone(
+        "SELECT * FROM nostrmarket.direct_messages WHERE merchant_id = ? AND id = ?",
+        (
+            merchant_id,
+            dm_id,
+        ),
+    )
+    return DirectMessage.from_row(row) if row else None
+
+
+async def get_direct_messages(merchant_id: str, public_key: str) -> List[DirectMessage]:
+    rows = await db.fetchall(
+        "SELECT * FROM nostrmarket.zones WHERE merchant_id = ? AND public_ley = ?",
+        (merchant_id, public_key),
+    )
+    return [DirectMessage.from_row(row) for row in rows]
