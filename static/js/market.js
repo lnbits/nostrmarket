@@ -2,6 +2,7 @@ const market = async () => {
   Vue.component(VueQrcode.name, VueQrcode)
 
   const NostrTools = window.NostrTools
+
   const defaultRelays = [
     'wss://relay.damus.io',
     'wss://relay.snort.social',
@@ -23,7 +24,8 @@ const market = async () => {
     customerMarket('static/components/customer-market/customer-market.html'),
     customerStall('static/components/customer-stall/customer-stall.html'),
     productDetail('static/components/product-detail/product-detail.html'),
-    shoppingCart('static/components/shopping-cart/shopping-cart.html')
+    shoppingCart('static/components/shopping-cart/shopping-cart.html'),
+    chatDialog('static/components/chat-dialog/chat-dialog.html')
   ])
 
   new Vue({
@@ -31,7 +33,15 @@ const market = async () => {
     mixins: [windowMixin],
     data: function () {
       return {
-        drawer: false,
+        account: null,
+        accountDialog: {
+          show: false,
+          data: {
+            watchOnly: false,
+            key: null
+          }
+        },
+        drawer: true,
         pubkeys: new Set(),
         relays: new Set(),
         events: [],
@@ -72,9 +82,20 @@ const market = async () => {
       },
       isLoading() {
         return this.$q.loading.isActive
+      },
+      hasExtension() {
+        return window.nostr
+      },
+      isValidKey() {
+        return this.accountDialog.data.key
+          ?.toLowerCase()
+          ?.match(/^[0-9a-f]{64}$/)
       }
     },
     async created() {
+      // Check for user stored
+      this.account = this.$q.localStorage.getItem('diagonAlley.account') || null
+
       // Check for stored merchants and relays on localStorage
       try {
         let merchants = this.$q.localStorage.getItem(`diagonAlley.merchants`)
@@ -115,7 +136,10 @@ const market = async () => {
       }
 
       // Get notes from Nostr
-      await this.initNostr()
+      //await this.initNostr()
+
+      // Get fiat rates (i think there's an LNbits endpoint for this)
+      //await this.getRates()
       this.$q.loading.hide()
     },
     methods: {
@@ -128,6 +152,46 @@ const market = async () => {
           relays: defaultRelays
         })
         console.log(naddr)
+      },
+      async deleteAccount() {
+        await LNbits.utils
+          .confirmDialog(
+            `This will delete all stored data. If you didn't backup the Key Pair (Private and Public Keys), you will lose it. Continue?`
+          )
+          .onOk(() => {
+            window.localStorage.removeItem('diagonAlley.account')
+            this.account = null
+          })
+      },
+      async createAccount(useExtension = false) {
+        let nip07
+        if (useExtension) {
+          await this.getFromExtension()
+          nip07 = true
+        }
+        if (this.isValidKey) {
+          let {key, watchOnly} = this.accountDialog.data
+          this.$q.localStorage.set('diagonAlley.account', {
+            privkey: watchOnly ? null : key,
+            pubkey: watchOnly ? key : NostrTools.getPublicKey(key),
+            useExtension: nip07 ?? false
+          })
+          this.accountDialog.data = {
+            watchOnly: false,
+            key: null
+          }
+          this.accountDialog.show = false
+          this.account = this.$q.localStorage.getItem('diagonAlley.account')
+        }
+      },
+      generateKeyPair() {
+        this.accountDialog.data.key = NostrTools.generatePrivateKey()
+        this.accountDialog.data.watchOnly = false
+      },
+      async getFromExtension() {
+        this.accountDialog.data.key = await window.nostr.getPublicKey()
+        this.accountDialog.data.watchOnly = true
+        return
       },
       async initNostr() {
         this.$q.loading.show()
