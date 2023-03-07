@@ -1,5 +1,4 @@
 import json
-import time
 from typing import List, Optional
 
 from lnbits.helpers import urlsafe_short_hash
@@ -9,7 +8,6 @@ from .models import (
     Merchant,
     Order,
     PartialMerchant,
-    PartialOrder,
     PartialProduct,
     PartialStall,
     PartialZone,
@@ -380,3 +378,28 @@ async def get_orders_for_stall(user_id: str, stall_id: str) -> List[Order]:
         ),
     )
     return [Order.from_row(row) for row in rows]
+
+
+async def update_order_paid_status(order_id: str, paid: bool) -> Optional[Order]:
+    await db.execute(
+        f"UPDATE nostrmarket.orders SET paid = ?  WHERE id = ?",
+        (paid, order_id),
+    )
+    row = await db.fetchone(
+        "SELECT * FROM nostrmarket.orders WHERE id = ?",
+        (order_id,),
+    )
+    return Order.from_row(row) if row else None
+
+
+async def update_order_shipped_status(order_id: str, shipped: bool) -> Optional[Order]:
+    await db.execute(
+        f"UPDATE nostrmarket.orders SET shipped = ?  WHERE id = ?",
+        (order_id, shipped),
+    )
+
+    row = await db.fetchone(
+        "SELECT * FROM nostrmarket.orders WHERE id = ?",
+        (order_id,),
+    )
+    return Order.from_row(row) if row else None

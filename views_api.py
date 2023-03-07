@@ -93,7 +93,7 @@ async def api_get_merchant(
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot create merchant",
+            detail="Cannot get merchant",
         )
 
 
@@ -108,7 +108,7 @@ async def api_get_zones(wallet: WalletTypeInfo = Depends(get_key_type)) -> List[
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot create merchant",
+            detail="Cannot get zone",
         )
 
 
@@ -123,7 +123,7 @@ async def api_create_zone(
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot create merchant",
+            detail="Cannot create zone",
         )
 
 
@@ -149,7 +149,7 @@ async def api_update_zone(
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot create merchant",
+            detail="Cannot update zone",
         )
 
 
@@ -170,7 +170,7 @@ async def api_delete_zone(zone_id, wallet: WalletTypeInfo = Depends(require_admi
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot create merchant",
+            detail="Cannot delete zone",
         )
 
 
@@ -463,6 +463,9 @@ async def api_create_order(
         ):
             return None
 
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Cannot find merchant!"
+
         products = await get_products_by_ids(
             wallet.wallet.user, [p.product_id for p in data.items]
         )
@@ -480,6 +483,7 @@ async def api_create_order(
             extra={
                 "tag": "nostrmarket",
                 "order_id": data.id,
+                "merchant_pubkey": merchant.public_key,
             },
         )
 
@@ -536,6 +540,26 @@ async def api_get_orders(wallet: WalletTypeInfo = Depends(get_key_type)):
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get orders",
         )
+
+
+# @nostrmarket_ext.patch("/api/v1/order/{order_id}")
+# async def api_update_order(
+#     data: OrderStatusUpdate,
+#     wallet: WalletTypeInfo = Depends(require_admin_key),
+# ) -> Zone:
+#     try:
+
+#         zone = await update_order(wallet.wallet.user, data)
+#         assert zone, "Cannot find updated zone"
+#         return zone
+#     except HTTPException as ex:
+#         raise ex
+#     except Exception as ex:
+#         logger.warning(ex)
+#         raise HTTPException(
+#             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+#             detail="Cannot update order",
+#         )
 
 
 ######################################## OTHER ########################################

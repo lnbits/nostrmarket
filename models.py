@@ -343,6 +343,13 @@ class Order(PartialOrder):
         return order
 
 
+class OrderStatusUpdate(BaseModel):
+    id: str
+    message: Optional[str]
+    paid: Optional[bool]
+    shipped: Optional[bool]
+
+
 class PaymentOption(BaseModel):
     type: str
     link: str

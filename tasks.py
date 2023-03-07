@@ -16,9 +16,10 @@ from .crud import (
     get_merchant_by_pubkey,
     get_public_keys_for_merchants,
     get_wallet_for_product,
+    update_order_paid_status,
 )
 from .helpers import order_from_json
-from .models import PartialOrder
+from .models import OrderStatusUpdate, PartialOrder
 from .nostr.event import NostrEvent
 from .nostr.nostr_client import connect_to_nostrclient_ws, publish_nostr_event
 
@@ -36,7 +37,33 @@ async def on_invoice_paid(payment: Payment) -> None:
     if payment.extra.get("tag") != "nostrmarket":
         return
 
-    print("### on_invoice_paid", json.dumps(payment))
+    order_id = payment.extra.get("order_id")
+    merchant_pubkey = payment.extra.get("merchant_pubkey")
+    if not order_id or not merchant_pubkey:
+        return None
+
+    await handle_order_paid(order_id, merchant_pubkey)
+
+
+
+async def handle_order_paid(order_id: str, merchant_pubkey: str):
+    try:
+        order = await update_order_paid_status(order_id, True)
+        assert order, f"Paid order cannot be found. Order id: {order_id}"
+        order_status = OrderStatusUpdate(
+            id=order_id, message="Payment received.", paid=True, shipped=order.shipped
+        )
+
+        merchant = await get_merchant_by_pubkey(merchant_pubkey)
+        assert merchant, f"Merchant cannot be foud for order {order_id}"
+        dm_content = json.dumps(
+            order_status.dict(), separators=(",", ":"), ensure_ascii=False
+        )
+
+        dm_event = merchant.build_dm_event(dm_content, order.pubkey)
+        await publish_nostr_event(dm_event)
+    except Exception as ex:
+        logger.warning(ex)
 
 
 async def subscribe_to_nostr_client(recieve_event_queue: Queue, send_req_queue: Queue):
@@ -60,7 +87,6 @@ async def subscribe_to_nostr_client(recieve_event_queue: Queue, send_req_queue: 
                 # be sure the connection is open
                 await asyncio.sleep(3)
             req = await send_req_queue.get()
-            print("### req", req)
             ws.send(json.dumps(req))
         except Exception as ex:
             logger.warning(ex)
@@ -100,9 +126,9 @@ async def handle_nip04_message(public_key: str, event: NostrEvent):
     assert merchant, f"Merchant not found for public key '{public_key}'"
 
     clear_text_msg = merchant.decrypt_message(event.content, event.pubkey)
-    dm_resp = await handle_dirrect_message(event.pubkey, event.id, clear_text_msg)
-    if dm_resp:
-        dm_event = merchant.build_dm_event(dm_resp, event.pubkey)
+    dm_content = await handle_dirrect_message(event.pubkey, event.id, clear_text_msg)
+    if dm_content:
+        dm_event = merchant.build_dm_event(dm_content, event.pubkey)
         await publish_nostr_event(dm_event)
 
 
