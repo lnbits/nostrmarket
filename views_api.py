@@ -18,6 +18,7 @@ from lnbits.utils.exchange_rates import currencies
 
 from . import nostrmarket_ext, scheduled_tasks
 from .crud import (
+    create_direct_message,
     create_merchant,
     create_order,
     create_product,
@@ -26,6 +27,7 @@ from .crud import (
     delete_product,
     delete_stall,
     delete_zone,
+    get_direct_messages,
     get_merchant_for_user,
     get_order,
     get_order_by_event_id,
@@ -45,11 +47,13 @@ from .crud import (
     update_zone,
 )
 from .models import (
+    DirectMessage,
     Merchant,
     Nostrable,
     Order,
     OrderExtra,
     OrderStatusUpdate,
+    PartialDirectMessage,
     PartialMerchant,
     PartialOrder,
     PartialProduct,
@@ -573,6 +577,49 @@ async def api_update_order_status(
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot update order",
+        )
+
+
+######################################## DIRECT MESSAGES ########################################
+
+
+@nostrmarket_ext.get("/api/v1/message/{public_key}")
+async def api_get_messages(
+    public_key: str, wallet: WalletTypeInfo = Depends(get_key_type)
+) -> List[DirectMessage]:
+    try:
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, f"Merchant cannot be found"
+
+        messages = await get_direct_messages(merchant.id, public_key)
+        return messages
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot get zone",
+        )
+
+@nostrmarket_ext.post("/api/v1/message")
+async def api_create_message(
+    data: PartialDirectMessage, wallet: WalletTypeInfo = Depends(require_admin_key)
+) -> DirectMessage:
+    try:
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, f"Merchant cannot be found"
+
+        dm_event = merchant.build_dm_event(data.message, data.public_key)
+        data.event_id = dm_event.id
+
+        dm = await create_direct_message(merchant.id, data)
+        await publish_nostr_event(dm_event)
+
+        return dm
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot create message",
         )
 
 

@@ -418,10 +418,10 @@ async def create_direct_message(
     dm_id = urlsafe_short_hash()
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.direct_messages (merchant_id, id, event_id, message, public_key, incomming)
+        INSERT INTO nostrmarket.direct_messages (merchant_id, id, event_id, message, public_key, incoming)
         VALUES (?, ?, ?, ?, ?, ?)
         """,
-        (merchant_id, dm_id, dm.event_id, dm.message, dm.public_key, dm.incomming),
+        (merchant_id, dm_id, dm.event_id, dm.message, dm.public_key, dm.incoming),
     )
 
     msg = await get_direct_message(merchant_id, dm_id)
@@ -442,7 +442,7 @@ async def get_direct_message(merchant_id: str, dm_id: str) -> Optional[DirectMes
 
 async def get_direct_messages(merchant_id: str, public_key: str) -> List[DirectMessage]:
     rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.zones WHERE merchant_id = ? AND public_ley = ?",
+        "SELECT * FROM nostrmarket.direct_messages WHERE merchant_id = ? AND public_key = ? ORDER BY time DESC",
         (merchant_id, public_key),
     )
     return [DirectMessage.from_row(row) for row in rows]

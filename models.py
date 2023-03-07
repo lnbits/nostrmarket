@@ -368,11 +368,11 @@ class PartialDirectMessage(BaseModel):
     event_id: Optional[str]
     message: str
     public_key: str
-    incomming: bool = False
+    incoming: bool = False
     time: Optional[int]
 
 
-class DirectMessage(BaseModel):
+class DirectMessage(PartialDirectMessage):
     id: str
 
     @classmethod

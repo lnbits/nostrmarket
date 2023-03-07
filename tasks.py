@@ -149,7 +149,7 @@ async def handle_dirrect_message(
                 event_id=event_id,
                 message=text_msg,
                 public_key=from_pubkey,
-                incomming=True,
+                incoming=True,
             )
             await create_direct_message(merchant_id, dm)
             return None

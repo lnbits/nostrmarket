@@ -104,7 +104,7 @@ async def m001_initial(db):
             event_id TEXT,
             message TEXT NOT NULL,
             public_key TEXT NOT NULL,
-            incomming BOOLEAN NOT NULL DEFAULT false,
+            incoming BOOLEAN NOT NULL DEFAULT false,
             time TIMESTAMP NOT NULL DEFAULT {db.timestamp_now}       
         );
         """

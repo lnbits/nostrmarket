@@ -1,1 +1,58 @@
-<div>dmmms</div>
+<div>
+  <q-card>
+    <q-card-section>
+      <h6 class="text-subtitle1 q-my-none">Messages</h6>
+    </q-card-section>
+    <q-card-section class="q-pa-none">
+      <q-separator></q-separator>
+    </q-card-section>
+    <q-card-section>
+      <!-- <q-select
+        v-model="customerKey"
+        :options="Object.keys(messages).map(k => ({label: `${k.slice(0, 25)}...`, value: k}))"
+        label="Customers"
+        @input="chatRoom(customerKey)"
+        emit-value
+      ></q-select> -->
+    </q-card-section>
+    <q-card-section>
+      <div class="chat-container" ref="chatCard">
+        <div class="chat-box">
+          <div class="chat-messages" style="height: 45vh">
+            <q-chat-message
+              v-for="(dm, index) in messages"
+              :key="index"
+              :name="dm.incoming ? 'customer': 'me'"
+              :text="[dm.message]"
+              :sent="!dm.incoming"
+              :bg-color="dm.incoming ? 'white' : 'light-green-2'"
+            />
+          </div>
+        </div>
+        <q-card-section>
+          <q-form @submit="sendDirectMesage" class="full-width chat-input">
+            <q-input
+              ref="newMessage"
+              v-model="newMessage"
+              placeholder="Message"
+              class="full-width"
+              dense
+              outlined
+            >
+              <template>
+                <q-btn
+                  round
+                  dense
+                  flat
+                  type="submit"
+                  icon="send"
+                  color="primary"
+                />
+              </template>
+            </q-input>
+          </q-form>
+        </q-card-section>
+      </div>
+    </q-card-section>
+  </q-card>
+</div>
