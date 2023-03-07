@@ -185,7 +185,13 @@
       </div>
     </q-tab-panel>
     <q-tab-panel name="orders">
-      <div v-if="stall"></div>
+      <div v-if="stall">
+        <order-list
+            :adminkey="adminkey"
+            :inkey="inkey"
+            :wallet-options="walletOptions"
+          ></order-list>
+      </div>
     </q-tab-panel>
   </q-tab-panels>
   <q-dialog v-model="productDialog.showDialog" position="top">
