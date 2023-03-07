@@ -1,7 +1,7 @@
 import base64
 import json
 import secrets
-from typing import Optional
+from typing import Any, Optional, Tuple
 
 import secp256k1
 from cffi import FFI
@@ -31,7 +31,7 @@ def decrypt_message(encoded_message: str, encryption_key) -> str:
     return unpadded_data.decode()
 
 
-def encrypt_message(message: str, encryption_key, iv: Optional[bytes]) -> str:
+def encrypt_message(message: str, encryption_key, iv: Optional[bytes] = None) -> str:
     padder = padding.PKCS7(128).padder()
     padded_data = padder.update(message.encode()) + padder.finalize()
 
@@ -73,9 +73,11 @@ def copy_x(output, x32, y32, data):
     return 1
 
 
-def is_json(string: str):
+def order_from_json(s: str) -> Tuple[Optional[Any], Optional[str]]:
     try:
-        json.loads(string)
-    except ValueError as e:
-        return False
-    return True
+        order = json.loads(s)
+        return (
+            (order, None) if (type(order) is dict) and "items" in order else (None, s)
+        )
+    except ValueError:
+        return None, s

@@ -5,6 +5,7 @@ const merchant = async () => {
   await shippingZones('static/components/shipping-zones/shipping-zones.html')
   await stallDetails('static/components/stall-details/stall-details.html')
   await stallList('static/components/stall-list/stall-list.html')
+  await orderList('static/components/order-list/order-list.html')
 
   const nostr = window.NostrTools
 

@@ -1,0 +1,205 @@
+<div>
+  <q-table
+    flat
+    dense
+    :data="orders"
+    row-key="id"
+    :columns="ordersTable.columns"
+    :pagination.sync="ordersTable.pagination"
+    :filter="filter"
+  >
+    <template v-slot:body="props">
+      <q-tr :props="props">
+        <q-td auto-width>
+          <q-btn
+            size="sm"
+            color="accent"
+            round
+            dense
+            @click="props.row.expanded= !props.row.expanded"
+            :icon="props.row.expanded? 'remove' : 'add'"
+          />
+        </q-td>
+
+        <q-td key="id" :props="props"> {{toShortId(props.row.id)}} </q-td>
+        <q-td key="total" :props="props"> {{props.row.total}} </q-td>
+        <!-- todo: currency per order -->
+
+        <q-td key="paid" :props="props">
+          <q-checkbox
+            v-model="props.row.paid"
+            :label="props.row.paid ? 'Yes' : 'No'"
+            disable
+            readonly
+            size="sm"
+          ></q-checkbox>
+        </q-td>
+        <q-td key="shipped" :props="props">
+          <q-checkbox
+            v-model="props.row.shipped"
+            @input="showShipOrderDialog(props.row)"
+            :label="props.row.shipped ? 'Yes' : 'No'"
+            size="sm"
+          ></q-checkbox>
+        </q-td>
+
+        <q-td key="pubkey" :props="props">
+          {{toShortId(props.row.pubkey)}}
+        </q-td>
+        <q-td key="time" :props="props"> {{formatDate(props.row.time)}} </q-td>
+      </q-tr>
+      <q-tr v-if="props.row.expanded" :props="props">
+        <q-td colspan="100%">
+          <div class="row items-center no-wrap q-mb-md">
+            <div class="col-3 q-pr-lg">Products:</div>
+            <div class="col-8">
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col-1">Quantity</div>
+                <div class="col-1"></div>
+                <div class="col-10">Name</div>
+              </div>
+            </div>
+            <div class="col-1"></div>
+          </div>
+          <div class="row items-center no-wrap q-mb-md">
+            <div class="col-3 q-pr-lg"></div>
+            <div class="col-8">
+              <div
+                v-for="item in props.row.items"
+                class="row items-center no-wrap q-mb-md"
+              >
+                <div class="col-1">{{item.quantity}}</div>
+                <div class="col-1">x</div>
+                <div class="col-10">
+                  {{productOverview(props.row, item.product_id)}}
+                </div>
+              </div>
+            </div>
+            <div class="col-1"></div>
+          </div>
+          <div class="row items-center no-wrap q-mb-md q-mt-md">
+            <div class="col-3 q-pr-lg">Order ID:</div>
+            <div class="col-6 col-sm-8 q-pr-lg">
+              <q-input
+                filled
+                dense
+                readonly
+                disabled
+                v-model.trim="props.row.id"
+                type="text"
+              ></q-input>
+            </div>
+            <div class="col-3 col-sm-1"></div>
+          </div>
+
+          <div class="row items-center no-wrap q-mb-md">
+            <div class="col-3 q-pr-lg">Address:</div>
+            <div class="col-6 col-sm-8 q-pr-lg">
+              <q-input
+                filled
+                dense
+                readonly
+                disabled
+                v-model.trim="props.row.address"
+                type="text"
+              ></q-input>
+            </div>
+            <div class="col-3 col-sm-1"></div>
+          </div>
+
+          <div class="row items-center no-wrap q-mb-md">
+            <div class="col-3 q-pr-lg">Customer Public Key:</div>
+            <div class="col-6 col-sm-8 q-pr-lg">
+              <q-input
+                filled
+                dense
+                readonly
+                disabled
+                v-model.trim="props.row.pubkey"
+                type="text"
+              ></q-input>
+            </div>
+            <div class="col-3 col-sm-1"></div>
+          </div>
+
+          <div
+            v-if="props.row.contact.phone"
+            class="row items-center no-wrap q-mb-md"
+          >
+            <div class="col-3 q-pr-lg">Phone:</div>
+            <div class="col-6 col-sm-8 q-pr-lg">
+              <q-input
+                filled
+                dense
+                readonly
+                disabled
+                v-model.trim="props.row.contact.phone"
+                type="text"
+              ></q-input>
+            </div>
+            <div class="col-3 col-sm-1"></div>
+          </div>
+          <div
+            v-if="props.row.contact.email"
+            class="row items-center no-wrap q-mb-md"
+          >
+            <div class="col-3 q-pr-lg">Email:</div>
+            <div class="col-6 col-sm-8 q-pr-lg">
+              <q-input
+                filled
+                dense
+                readonly
+                disabled
+                v-model.trim="props.row.contact.email"
+                type="text"
+              ></q-input>
+            </div>
+            <div class="col-3 col-sm-1"></div>
+          </div>
+          <div class="row items-center no-wrap q-mb-md">
+            <div class="col-3 q-pr-lg">Invoice ID:</div>
+            <div class="col-6 col-sm-8 q-pr-lg">
+              <q-input
+                filled
+                dense
+                readonly
+                disabled
+                v-model.trim="props.row.invoice_id"
+                type="text"
+              ></q-input>
+            </div>
+            <div class="col-3 col-sm-1"></div>
+          </div>
+        </q-td>
+      </q-tr>
+    </template>
+  </q-table>
+
+  <q-dialog v-model="showShipDialog" position="top">
+    <q-card v-if="selectedOrder" class="q-pa-lg q-pt-xl" style="width: 500px">
+      <q-form @submit="updateOrderShipped" class="q-gutter-md">
+        <q-input
+          filled
+          dense
+          v-model.trim="shippingMessage"
+          label="Shipping Message"
+          type="textarea"
+          rows="4"
+        ></q-input>
+
+        <div class="row q-mt-lg">
+          <q-btn
+            unelevated
+            color="primary"
+            type="submit"
+            :label="selectedOrder.shipped? 'Unship Order' : 'Ship Order'"
+          ></q-btn>
+
+          <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+            >Cancel</q-btn
+          >
+        </div>
+      </q-form>
+    </q-card>
+  </q-dialog>
+</div>

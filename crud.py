@@ -1,5 +1,4 @@
 import json
-import time
 from typing import List, Optional
 
 from lnbits.helpers import urlsafe_short_hash
@@ -7,6 +6,7 @@ from lnbits.helpers import urlsafe_short_hash
 from . import db
 from .models import (
     Merchant,
+    Order,
     PartialMerchant,
     PartialProduct,
     PartialStall,
@@ -43,6 +43,23 @@ async def get_merchant(user_id: str, merchant_id: str) -> Optional[Merchant]:
     )
 
     return Merchant.from_row(row) if row else None
+
+
+async def get_merchant_by_pubkey(public_key: str) -> Optional[Merchant]:
+    row = await db.fetchone(
+        """SELECT * FROM nostrmarket.merchants WHERE public_key = ? """,
+        (public_key,),
+    )
+
+    return Merchant.from_row(row) if row else None
+
+
+async def get_public_keys_for_merchants() -> List[str]:
+    rows = await db.fetchall(
+        """SELECT public_key FROM nostrmarket.merchants""",
+    )
+
+    return [row[0] for row in rows]
 
 
 async def get_merchant_for_user(user_id: str) -> Optional[Merchant]:
@@ -189,7 +206,7 @@ async def delete_stall(user_id: str, stall_id: str) -> None:
     )
 
 
-######################################## STALL ########################################
+######################################## PRODUCTS ########################################
 
 
 async def create_product(user_id: str, data: PartialProduct) -> Product:
@@ -197,7 +214,7 @@ async def create_product(user_id: str, data: PartialProduct) -> Product:
 
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.products (user_id, id, stall_id, name, images, price, quantity, category_list, meta)
+        INSERT INTO nostrmarket.products (user_id, id, stall_id, name, image, price, quantity, category_list, meta)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
@@ -261,6 +278,28 @@ async def get_products(user_id: str, stall_id: str) -> List[Product]:
     return [Product.from_row(row) for row in rows]
 
 
+async def get_products_by_ids(user_id: str, product_ids: List[str]) -> List[Product]:
+    q = ",".join(["?"] * len(product_ids))
+    rows = await db.fetchall(
+        f"SELECT id, stall_id, name, price, quantity, category_list, meta  FROM nostrmarket.products WHERE user_id = ? AND id IN ({q})",
+        (user_id, *product_ids),
+    )
+    return [Product.from_row(row) for row in rows]
+
+
+async def get_wallet_for_product(product_id: str) -> Optional[str]:
+    row = await db.fetchone(
+        """
+        SELECT s.wallet FROM nostrmarket.products p
+        INNER JOIN nostrmarket.stalls s
+        ON p.stall_id = s.id
+        WHERE p.id=?
+       """,
+        (product_id,),
+    )
+    return row[0] if row else None
+
+
 async def delete_product(user_id: str, product_id: str) -> None:
     await db.execute(
         "DELETE FROM nostrmarket.products WHERE user_id =? AND id = ?",
@@ -269,3 +308,100 @@ async def delete_product(user_id: str, product_id: str) -> None:
             product_id,
         ),
     )
+
+
+######################################## ORDERS ########################################
+
+
+async def create_order(user_id: str, o: Order) -> Order:
+    await db.execute(
+        f"""
+        INSERT INTO nostrmarket.orders (user_id, id, event_id, pubkey, address, contact_data, extra_data, order_items, stall_id, invoice_id, total)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            user_id,
+            o.id,
+            o.event_id,
+            o.pubkey,
+            o.address,
+            json.dumps(o.contact.dict() if o.contact else {}),
+            json.dumps(o.extra.dict()),
+            json.dumps([i.dict() for i in o.items]),
+            o.stall_id,
+            o.invoice_id,
+            o.total,
+        ),
+    )
+    order = await get_order(user_id, o.id)
+    assert order, "Newly created order couldn't be retrieved"
+
+    return order
+
+
+async def get_order(user_id: str, order_id: str) -> Optional[Order]:
+    row = await db.fetchone(
+        "SELECT * FROM nostrmarket.orders WHERE user_id =? AND id = ?",
+        (
+            user_id,
+            order_id,
+        ),
+    )
+    return Order.from_row(row) if row else None
+
+
+async def get_order_by_event_id(user_id: str, event_id: str) -> Optional[Order]:
+    row = await db.fetchone(
+        "SELECT * FROM nostrmarket.orders WHERE user_id =? AND  event_id =?",
+        (
+            user_id,
+            event_id,
+        ),
+    )
+    return Order.from_row(row) if row else None
+
+
+async def get_orders(user_id: str) -> List[Order]:
+    rows = await db.fetchall(
+        "SELECT * FROM nostrmarket.orders WHERE user_id = ? ORDER BY time DESC",
+        (user_id,),
+    )
+    return [Order.from_row(row) for row in rows]
+
+
+async def get_orders_for_stall(user_id: str, stall_id: str) -> List[Order]:
+    rows = await db.fetchall(
+        "SELECT * FROM nostrmarket.orders WHERE user_id = ? AND stall_id = ? ORDER BY time DESC",
+        (
+            user_id,
+            stall_id,
+        ),
+    )
+    return [Order.from_row(row) for row in rows]
+
+
+async def update_order_paid_status(order_id: str, paid: bool) -> Optional[Order]:
+    await db.execute(
+        f"UPDATE nostrmarket.orders SET paid = ?  WHERE id = ?",
+        (paid, order_id),
+    )
+    row = await db.fetchone(
+        "SELECT * FROM nostrmarket.orders WHERE id = ?",
+        (order_id,),
+    )
+    return Order.from_row(row) if row else None
+
+
+async def update_order_shipped_status(
+    user_id: str, order_id: str, shipped: bool
+) -> Optional[Order]:
+    await db.execute(
+        f"UPDATE nostrmarket.orders SET shipped = ?  WHERE user_id = ? AND id = ?",
+        (shipped, user_id, order_id),
+    )
+
+    row = await db.fetchone(
+        "SELECT * FROM nostrmarket.orders WHERE id = ?",
+        (order_id,),
+    )
+    return Order.from_row(row) if row else None

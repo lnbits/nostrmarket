@@ -71,35 +71,24 @@ async def m001_initial(db):
     """
     Initial orders table.
     """
+    empty_object = "{}"
     await db.execute(
         f"""
         CREATE TABLE nostrmarket.orders (
+            user_id TEXT NOT NULL,
             id TEXT PRIMARY KEY,
-            wallet TEXT NOT NULL,
-            username TEXT,
-            pubkey TEXT,
-            shipping_zone TEXT NOT NULL,
+            event_id TEXT,
+            pubkey TEXT NOT NULL,
+            contact_data TEXT NOT NULL DEFAULT '{empty_object}',
+            extra_data TEXT NOT NULL DEFAULT '{empty_object}',
+            order_items TEXT NOT NULL,
             address TEXT,
-            email TEXT,
             total REAL NOT NULL,
+            stall_id TEXT NOT NULL,
             invoice_id TEXT NOT NULL,
-            paid BOOLEAN NOT NULL,
-            shipped BOOLEAN NOT NULL,
+            paid BOOLEAN NOT NULL DEFAULT false,
+            shipped BOOLEAN NOT NULL DEFAULT false,
             time TIMESTAMP NOT NULL DEFAULT {db.timestamp_now}
-        );
-        """
-    )
-
-    """
-    Initial order details table.
-    """
-    await db.execute(
-        f"""
-        CREATE TABLE nostrmarket.order_details (
-            id TEXT PRIMARY KEY,
-            order_id TEXT NOT NULL,
-            product_id TEXT NOT NULL,
-            quantity INTEGER NOT NULL
         );
         """
     )
@@ -113,19 +102,6 @@ async def m001_initial(db):
             id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL,
             name TEXT
-        );
-        """
-    )
-
-    """
-    Initial market stalls table.
-    """
-    await db.execute(
-        f"""
-        CREATE TABLE nostrmarket.market_stalls (
-            id TEXT PRIMARY KEY,
-            market_id TEXT NOT NULL,
-            stall_id TEXT NOT NULL
         );
         """
     )

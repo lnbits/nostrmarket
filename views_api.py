@@ -6,18 +6,20 @@ from fastapi import Depends
 from fastapi.exceptions import HTTPException
 from loguru import logger
 
+from lnbits.core import create_invoice
 from lnbits.decorators import (
     WalletTypeInfo,
+    check_admin,
     get_key_type,
     require_admin_key,
     require_invoice_key,
 )
-from lnbits.extensions.nostrmarket.nostr.event import NostrEvent
 from lnbits.utils.exchange_rates import currencies
 
-from . import nostrmarket_ext
+from . import nostrmarket_ext, scheduled_tasks
 from .crud import (
     create_merchant,
+    create_order,
     create_product,
     create_stall,
     create_zone,
@@ -25,12 +27,19 @@ from .crud import (
     delete_stall,
     delete_zone,
     get_merchant_for_user,
+    get_order,
+    get_order_by_event_id,
+    get_orders,
+    get_orders_for_stall,
     get_product,
     get_products,
+    get_products_by_ids,
     get_stall,
     get_stalls,
+    get_wallet_for_product,
     get_zone,
     get_zones,
+    update_order_shipped_status,
     update_product,
     update_stall,
     update_zone,
@@ -38,14 +47,21 @@ from .crud import (
 from .models import (
     Merchant,
     Nostrable,
+    Order,
+    OrderExtra,
+    OrderStatusUpdate,
     PartialMerchant,
+    PartialOrder,
     PartialProduct,
     PartialStall,
     PartialZone,
+    PaymentOption,
+    PaymentRequest,
     Product,
     Stall,
     Zone,
 )
+from .nostr.event import NostrEvent
 from .nostr.nostr_client import publish_nostr_event
 
 ######################################## MERCHANT ########################################
@@ -80,7 +96,7 @@ async def api_get_merchant(
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot create merchant",
+            detail="Cannot get merchant",
         )
 
 
@@ -95,13 +111,13 @@ async def api_get_zones(wallet: WalletTypeInfo = Depends(get_key_type)) -> List[
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot create merchant",
+            detail="Cannot get zone",
         )
 
 
 @nostrmarket_ext.post("/api/v1/zone")
 async def api_create_zone(
-    data: PartialZone, wallet: WalletTypeInfo = Depends(get_key_type)
+    data: PartialZone, wallet: WalletTypeInfo = Depends(require_admin_key)
 ):
     try:
         zone = await create_zone(wallet.wallet.user, data)
@@ -110,7 +126,7 @@ async def api_create_zone(
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot create merchant",
+            detail="Cannot create zone",
         )
 
 
@@ -136,7 +152,7 @@ async def api_update_zone(
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot create merchant",
+            detail="Cannot update zone",
         )
 
 
@@ -157,7 +173,7 @@ async def api_delete_zone(zone_id, wallet: WalletTypeInfo = Depends(require_admi
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot create merchant",
+            detail="Cannot delete zone",
         )
 
 
@@ -266,6 +282,22 @@ async def api_get_stall_products(
     try:
         products = await get_products(wallet.wallet.user, stall_id)
         return products
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot get stall products",
+        )
+
+
+@nostrmarket_ext.get("/api/v1/stall/order/{stall_id}")
+async def api_get_stall_orders(
+    stall_id: str,
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
+):
+    try:
+        orders = await get_orders_for_stall(wallet.wallet.user, stall_id)
+        return orders
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -418,6 +450,132 @@ async def api_delete_product(
         )
 
 
+######################################## ORDERS ########################################
+
+
+@nostrmarket_ext.post("/api/v1/order")
+async def api_create_order(
+    data: PartialOrder, wallet: WalletTypeInfo = Depends(require_admin_key)
+) -> Optional[PaymentRequest]:
+    try:
+        # print("### new order: ", json.dumps(data.dict()))
+        if await get_order(wallet.wallet.user, data.id):
+            return None
+        if data.event_id and await get_order_by_event_id(
+            wallet.wallet.user, data.event_id
+        ):
+            return None
+
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Cannot find merchant!"
+
+        products = await get_products_by_ids(
+            wallet.wallet.user, [p.product_id for p in data.items]
+        )
+        data.validate_order_items(products)
+
+        total_amount = await data.total_sats(products)
+
+        wallet_id = await get_wallet_for_product(data.items[0].product_id)
+        assert wallet_id, "Missing wallet for order `{data.id}`"
+
+        payment_hash, invoice = await create_invoice(
+            wallet_id=wallet_id,
+            amount=round(total_amount),
+            memo=f"Order '{data.id}' for pubkey '{data.pubkey}'",
+            extra={
+                "tag": "nostrmarket",
+                "order_id": data.id,
+                "merchant_pubkey": merchant.public_key,
+            },
+        )
+
+        order = Order(
+            **data.dict(),
+            stall_id=products[0].stall_id,
+            invoice_id=payment_hash,
+            total=total_amount,
+            extra=await OrderExtra.from_products(products),
+        )
+        await create_order(wallet.wallet.user, order)
+
+        return PaymentRequest(
+            id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)]
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot create order",
+        )
+
+
+nostrmarket_ext.get("/api/v1/order/{order_id}")
+
+
+async def api_get_order(order_id: str, wallet: WalletTypeInfo = Depends(get_key_type)):
+    try:
+        order = await get_order(wallet.wallet.user, order_id)
+        if not order:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND,
+                detail="Order does not exist.",
+            )
+        return order
+    except HTTPException as ex:
+        raise ex
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot get order",
+        )
+
+
+@nostrmarket_ext.get("/api/v1/order")
+async def api_get_orders(wallet: WalletTypeInfo = Depends(get_key_type)):
+    try:
+        orders = await get_orders(wallet.wallet.user)
+        return orders
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot get orders",
+        )
+
+
+@nostrmarket_ext.patch("/api/v1/order/{order_id}")
+async def api_update_order_status(
+    data: OrderStatusUpdate,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> Order:
+    try:
+        assert data.shipped != None, "Shipped value is required for order"
+        order = await update_order_shipped_status(
+            wallet.wallet.user, data.id, data.shipped
+        )
+        assert order, "Cannot find updated order"
+
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, f"Merchant cannot be found for order {data.id}"
+
+        data.paid = order.paid
+        dm_content = json.dumps(data.dict(), separators=(",", ":"), ensure_ascii=False)
+
+        dm_event = merchant.build_dm_event(dm_content, order.pubkey)
+        await publish_nostr_event(dm_event)
+
+        return order
+
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot update order",
+        )
+
+
 ######################################## OTHER ########################################
 
 
@@ -425,6 +583,16 @@ async def api_delete_product(
 async def api_list_currencies_available():
     return list(currencies.keys())
 
+
+@nostrmarket_ext.delete("/api/v1", status_code=HTTPStatus.OK)
+async def api_stop(wallet: WalletTypeInfo = Depends(check_admin)):
+    for t in scheduled_tasks:
+        try:
+            t.cancel()
+        except Exception as ex:
+            logger.warning(ex)
+
+    return {"success": True}
 
 ######################################## HELPERS ########################################
 
