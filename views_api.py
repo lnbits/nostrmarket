@@ -9,13 +9,14 @@ from loguru import logger
 from lnbits.core import create_invoice
 from lnbits.decorators import (
     WalletTypeInfo,
+    check_admin,
     get_key_type,
     require_admin_key,
     require_invoice_key,
 )
 from lnbits.utils.exchange_rates import currencies
 
-from . import nostrmarket_ext
+from . import nostrmarket_ext, scheduled_tasks
 from .crud import (
     create_merchant,
     create_order,
@@ -582,6 +583,16 @@ async def api_update_order_status(
 async def api_list_currencies_available():
     return list(currencies.keys())
 
+
+@nostrmarket_ext.delete("/api/v1", status_code=HTTPStatus.OK)
+async def api_stop(wallet: WalletTypeInfo = Depends(check_admin)):
+    for t in scheduled_tasks:
+        try:
+            t.cancel()
+        except Exception as ex:
+            logger.warning(ex)
+
+    return {"success": True}
 
 ######################################## HELPERS ########################################
 
