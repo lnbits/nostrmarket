@@ -392,10 +392,12 @@ async def update_order_paid_status(order_id: str, paid: bool) -> Optional[Order]
     return Order.from_row(row) if row else None
 
 
-async def update_order_shipped_status(order_id: str, shipped: bool) -> Optional[Order]:
+async def update_order_shipped_status(
+    user_id: str, order_id: str, shipped: bool
+) -> Optional[Order]:
     await db.execute(
-        f"UPDATE nostrmarket.orders SET shipped = ?  WHERE id = ?",
-        (order_id, shipped),
+        f"UPDATE nostrmarket.orders SET shipped = ?  WHERE user_id = ? AND id = ?",
+        (shipped, user_id, order_id),
     )
 
     row = await db.fetchone(

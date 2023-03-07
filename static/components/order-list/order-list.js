@@ -8,7 +8,9 @@ async function orderList(path) {
     data: function () {
       return {
         orders: [],
-
+        selectedOrder: null,
+        shippingMessage: '',
+        showShipDialog: false,
         filter: '',
         ordersTable: {
           columns: [
@@ -93,6 +95,39 @@ async function orderList(path) {
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
+      },
+      updateOrderShipped: async function () {
+        console.log('### order', this.selectedOrder)
+        this.selectedOrder.shipped = !this.selectedOrder.shipped
+        try {
+          await LNbits.api.request(
+            'PATCH',
+            `/nostrmarket/api/v1/order/${this.selectedOrder.id}`,
+            this.adminkey,
+            {
+              id: this.selectedOrder.id,
+              message: this.shippingMessage,
+              shipped: this.selectedOrder.shipped
+            }
+          )
+          this.$q.notify({
+            type: 'positive',
+            message: 'Order updated!'
+          })
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        }
+        this.showShipDialog = false
+      },
+      showShipOrderDialog: function (order) {
+        this.selectedOrder = order
+        this.shippingMessage = order.shipped
+          ? `The order has been shipped! Order ID: '${order.id}' `
+          : `The order has NOT yet been shipped! Order ID: '${order.id}'`
+
+        // do not change the status yet
+        this.selectedOrder.shipped = !order.shipped
+        this.showShipDialog = true
       }
     },
     created: async function () {

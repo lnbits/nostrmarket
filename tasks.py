@@ -45,7 +45,6 @@ async def on_invoice_paid(payment: Payment) -> None:
     await handle_order_paid(order_id, merchant_pubkey)
 
 
-
 async def handle_order_paid(order_id: str, merchant_pubkey: str):
     try:
         order = await update_order_paid_status(order_id, True)
@@ -55,7 +54,7 @@ async def handle_order_paid(order_id: str, merchant_pubkey: str):
         )
 
         merchant = await get_merchant_by_pubkey(merchant_pubkey)
-        assert merchant, f"Merchant cannot be foud for order {order_id}"
+        assert merchant, f"Merchant cannot be found for order {order_id}"
         dm_content = json.dumps(
             order_status.dict(), separators=(",", ":"), ensure_ascii=False
         )

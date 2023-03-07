@@ -38,6 +38,7 @@ from .crud import (
     get_wallet_for_product,
     get_zone,
     get_zones,
+    update_order_shipped_status,
     update_product,
     update_stall,
     update_zone,
@@ -47,6 +48,7 @@ from .models import (
     Nostrable,
     Order,
     OrderExtra,
+    OrderStatusUpdate,
     PartialMerchant,
     PartialOrder,
     PartialProduct,
@@ -542,24 +544,35 @@ async def api_get_orders(wallet: WalletTypeInfo = Depends(get_key_type)):
         )
 
 
-# @nostrmarket_ext.patch("/api/v1/order/{order_id}")
-# async def api_update_order(
-#     data: OrderStatusUpdate,
-#     wallet: WalletTypeInfo = Depends(require_admin_key),
-# ) -> Zone:
-#     try:
+@nostrmarket_ext.patch("/api/v1/order/{order_id}")
+async def api_update_order_status(
+    data: OrderStatusUpdate,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> Order:
+    try:
+        assert data.shipped != None, "Shipped value is required for order"
+        order = await update_order_shipped_status(
+            wallet.wallet.user, data.id, data.shipped
+        )
+        assert order, "Cannot find updated order"
 
-#         zone = await update_order(wallet.wallet.user, data)
-#         assert zone, "Cannot find updated zone"
-#         return zone
-#     except HTTPException as ex:
-#         raise ex
-#     except Exception as ex:
-#         logger.warning(ex)
-#         raise HTTPException(
-#             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-#             detail="Cannot update order",
-#         )
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, f"Merchant cannot be found for order {data.id}"
+
+        data.paid = order.paid
+        dm_content = json.dumps(data.dict(), separators=(",", ":"), ensure_ascii=False)
+
+        dm_event = merchant.build_dm_event(dm_content, order.pubkey)
+        await publish_nostr_event(dm_event)
+
+        return order
+
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot update order",
+        )
 
 
 ######################################## OTHER ########################################
