@@ -18,11 +18,10 @@
     <q-card-section>
       <div class="chat-container" ref="chatCard">
         <div class="chat-box">
-          <div  class="chat-messages" style="height: 45vh">
+          <div class="chat-messages" style="height: 45vh">
             <q-chat-message
               v-for="(dm, index) in messages"
               :key="index"
-            
               :name="dm.incoming ? 'customer': 'me'"
               :text="[dm.message]"
               :sent="!dm.incoming"
