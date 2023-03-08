@@ -222,6 +222,7 @@ const market = async () => {
             })
           })
         await Promise.resolve(sub)
+        this.$q.loading.hide()
         this.stalls = await Array.from(stalls.values())
 
         this.products = Array.from(products.values()).map(obj => {
@@ -272,7 +273,8 @@ const market = async () => {
       getAmountFormated(amount, unit = 'USD') {
         return LNbits.utils.formatCurrency(amount, unit)
       },
-      async addPubkey(pubkey = null) {
+      async addPubkey(pubkey) {
+        console.log(pubkey, this.inputPubkey)
         if (!pubkey) {
           pubkey = String(this.inputPubkey).trim()
         }
@@ -285,6 +287,7 @@ const market = async () => {
               pubkey = data.pubkey
               givenRelays = data.relays
             }
+            console.log(pubkey)
             this.pubkeys.add(pubkey)
             this.inputPubkey = null
           } catch (err) {
@@ -310,6 +313,7 @@ const market = async () => {
           `diagonAlley.merchants`,
           Array.from(this.pubkeys)
         )
+        Promise.resolve(this.initNostr())
       },
       async addRelay() {
         let relay = String(this.inputRelay).trim()
