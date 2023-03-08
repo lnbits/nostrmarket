@@ -54,7 +54,7 @@ async def create_new_order(
     payment_hash, invoice = await create_invoice(
         wallet_id=wallet_id,
         amount=round(total_amount),
-        memo=f"Order '{data.id}' for pubkey '{data.pubkey}'",
+        memo=f"Order '{data.id}' for pubkey '{data.public_key}'",
         extra={
             "tag": "nostrmarket",
             "order_id": data.id,
@@ -107,7 +107,7 @@ async def handle_order_paid(order_id: str, merchant_pubkey: str):
             order_status.dict(), separators=(",", ":"), ensure_ascii=False
         )
 
-        dm_event = merchant.build_dm_event(dm_content, order.pubkey)
+        dm_event = merchant.build_dm_event(dm_content, order.public_key)
         await publish_nostr_event(dm_event)
     except Exception as ex:
         logger.warning(ex)
@@ -143,7 +143,12 @@ async def _handle_incoming_dms(
     event: NostrEvent, merchant: Merchant, clear_text_msg: str
 ):
     dm_content = await _handle_dirrect_message(
-        merchant.id, event.pubkey, event.id, event.created_at, clear_text_msg
+        merchant.id,
+        merchant.public_key,
+        event.pubkey,
+        event.id,
+        event.created_at,
+        clear_text_msg,
     )
     if dm_content:
         dm_event = merchant.build_dm_event(dm_content, event.pubkey)
@@ -166,17 +171,23 @@ async def _handle_outgoing_dms(
 
 
 async def _handle_dirrect_message(
-    merchant_id: str, from_pubkey: str, event_id: str, event_created_at: int, msg: str
+    merchant_id: str,
+    merchant_public_key: str,
+    from_pubkey: str,
+    event_id: str,
+    event_created_at: int,
+    msg: str,
 ) -> Optional[str]:
     order, text_msg = order_from_json(msg)
     try:
         if order:
-            order["pubkey"] = from_pubkey
+            order["public_key"] = from_pubkey
+            order["merchant_public_key"] = merchant_public_key
             order["event_id"] = event_id
             order["event_created_at"] = event_created_at
             return await _handle_new_order(PartialOrder(**order))
         else:
-            print("### text_msg", text_msg)
+            print("### text_msg", text_msg, event_created_at, event_id)
             dm = PartialDirectMessage(
                 event_id=event_id,
                 event_created_at=event_created_at,

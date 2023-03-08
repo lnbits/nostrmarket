@@ -318,8 +318,22 @@ async def delete_product(user_id: str, product_id: str) -> None:
 async def create_order(user_id: str, o: Order) -> Order:
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.orders (user_id, id, event_id, event_created_at, pubkey, address, contact_data, extra_data, order_items, stall_id, invoice_id, total)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO nostrmarket.orders (
+            user_id, 
+            id, 
+            event_id, 
+            event_created_at,
+            merchant_public_key,
+            public_key, 
+            address, 
+            contact_data, 
+            extra_data, 
+            order_items, 
+            stall_id, 
+            invoice_id, 
+            total
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(event_id) DO NOTHING
         """,
         (
@@ -327,7 +341,8 @@ async def create_order(user_id: str, o: Order) -> Order:
             o.id,
             o.event_id,
             o.event_created_at,
-            o.pubkey,
+            o.merchant_public_key,
+            o.public_key,
             o.address,
             json.dumps(o.contact.dict() if o.contact else {}),
             json.dumps(o.extra.dict()),
@@ -382,6 +397,17 @@ async def get_orders_for_stall(user_id: str, stall_id: str) -> List[Order]:
         ),
     )
     return [Order.from_row(row) for row in rows]
+
+
+async def get_last_order_time(public_key: str) -> int:
+    row = await db.fetchone(
+        """
+            SELECT event_created_at FROM nostrmarket.orders 
+            WHERE merchant_public_key = ? ORDER BY event_created_at DESC LIMIT 1
+        """,
+        (public_key,),
+    )
+    return row[0] if row else 0
 
 
 async def update_order_paid_status(order_id: str, paid: bool) -> Optional[Order]:
@@ -457,3 +483,14 @@ async def get_direct_messages(merchant_id: str, public_key: str) -> List[DirectM
         (merchant_id, public_key),
     )
     return [DirectMessage.from_row(row) for row in rows]
+
+
+async def get_last_direct_messages_time(public_key: str) -> int:
+    row = await db.fetchone(
+        """
+            SELECT event_created_at FROM nostrmarket.direct_messages 
+            WHERE public_key = ? ORDER BY event_created_at DESC LIMIT 1
+        """,
+        (public_key),
+    )
+    return row[0] if row else 0

@@ -500,7 +500,7 @@ async def api_update_order_status(
         data.paid = order.paid
         dm_content = json.dumps(data.dict(), separators=(",", ":"), ensure_ascii=False)
 
-        dm_event = merchant.build_dm_event(dm_content, order.pubkey)
+        dm_event = merchant.build_dm_event(dm_content, order.public_key)
         await publish_nostr_event(dm_event)
 
         return order

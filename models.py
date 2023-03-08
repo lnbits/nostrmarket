@@ -282,7 +282,8 @@ class PartialOrder(BaseModel):
     id: str
     event_id: Optional[str]
     event_created_at: Optional[int]
-    pubkey: str
+    public_key: str
+    merchant_public_key: str
     items: List[OrderItem]
     contact: Optional[OrderContact]
     address: Optional[str]
