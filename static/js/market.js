@@ -222,7 +222,6 @@ const market = async () => {
             })
           })
         await Promise.resolve(sub)
-        this.$q.loading.hide()
         this.stalls = await Array.from(stalls.values())
 
         this.products = Array.from(products.values()).map(obj => {
@@ -234,6 +233,7 @@ const market = async () => {
           }
           return obj
         })
+        this.$q.loading.hide()
         pool.close(relays)
         return
       },
