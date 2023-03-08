@@ -24,7 +24,7 @@
       :cart-menu="cartMenu"
       @remove-from-cart="removeFromCart"
       @reset-cart="resetCart"
-      @open-checkout="checkoutDialog.show = true"
+      @open-checkout="openCheckout"
     ></shopping-cart>
   </q-toolbar>
   <div class="row">
@@ -62,35 +62,77 @@
           v-model.trim="checkoutDialog.data.username"
           label="Name *optional"
         ></q-input>
+        <q-expansion-item
+          v-if="!account"
+          dense
+          dense-toggle
+          expand-separator
+          icon="person_off"
+          label="Not logged in?"
+        >
+          <q-card>
+            <q-card-section>
+              It seems you haven't logged in. You can:
+              <ol>
+                <li>
+                  enter your public and private keys bellow (to sign the order
+                  message)
+                </li>
+                <li>use a Nostr Signer Extension (NIP07)</li>
+                <li>
+                  fill out the required fields, without keys, and download the
+                  order and send as a direct message to the merchant on any
+                  Nostr client
+                </li>
+              </ol>
+            </q-card-section>
+            <q-card-actions v-if="hasNip07" align="right">
+              <q-btn
+                v-if="hasNip07"
+                unelevated
+                @click="getFromExtension"
+                color="primary"
+                label="Get from Extension"
+                ><q-tooltip>Use a Nostr browser extension</q-tooltip></q-btn
+              >
+              <q-btn
+                unelevated
+                @click="downloadOrder"
+                color="primary"
+                label="Download order"
+                ><q-tooltip
+                  >Download the order and send manually</q-tooltip
+                ></q-btn
+              >
+            </q-card-actions>
+          </q-card>
+        </q-expansion-item>
         <q-input
           filled
           dense
-          readonly
-          v-model.trim="customerPubkey"
+          :readonly="Boolean(customerPubkey)"
+          v-model.trim="checkoutDialog.data.pubkey"
           label="Public key"
+          hint="Enter your public key"
         >
         </q-input>
         <q-input
           filled
           dense
-          readonly
-          type="password"
-          v-if="customerPrivkey"
-          v-model="customerPrivkey"
+          :readonly="Boolean(customerPrivkey)"
+          :type="isPwd ? 'password' : 'text'"
+          v-if="!customerUseExtension"
+          v-model.trim="checkoutDialog.data.privkey"
+          hint="Enter your private key or see bellow for instructions"
         >
+          <template v-slot:append>
+            <q-icon
+              :name="isPwd ? 'visibility_off' : 'visibility'"
+              class="cursor-pointer"
+              @click="isPwd = !isPwd"
+            />
+          </template>
         </q-input>
-        <!-- <div class="row">
-          <div class="col-5">
-            <q-btn unelevated @click="generateKeyPair" color="primary"
-              >Generate key pair</q-btn
-            >
-          </div>
-          <div class="col-5" v-if="hasNip07">
-            <q-btn unelevated @click="getPubkey" color="primary"
-              >Get from Extension</q-btn
-            >
-          </div>
-        </div> -->
         <q-input
           filled
           dense
@@ -127,11 +169,23 @@
         </div>
         <div class="row q-mt-lg">
           <q-btn
+            v-if="!checkoutDialog.data.pubkey && !checkoutDialog.data.privkey"
             :loading="loading"
             unelevated
             color="primary"
             :disable="checkoutDialog.data.address == null
               || checkoutDialog.data.shippingzone == null"
+            @click="downloadOrder"
+            >Download Order</q-btn
+          >
+          <q-btn
+            v-else
+            :loading="loading"
+            unelevated
+            color="primary"
+            :disable="checkoutDialog.data.address == null
+              || checkoutDialog.data.shippingzone == null
+              || checkoutDialog.data.pubkey == null"
             type="submit"
             >Checkout</q-btn
           >
@@ -154,7 +208,7 @@
     position="top"
     @hide="closeQrCodeDialog"
   >
-    <q-card v-else class="q-pa-lg q-pt-xl lnbits__dialog-card">
+    <q-card class="q-pa-lg q-pt-xl lnbits__dialog-card">
       <div class="text-center q-mb-lg">
         <a :href="'lightning:' + qrCodeDialog.data.payment_request">
           <q-responsive :ratio="1" class="q-mx-xl">

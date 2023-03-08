@@ -16,6 +16,7 @@ async function customerStall(path) {
     data: function () {
       return {
         loading: false,
+        isPwd: true,
         cart: {
           total: 0,
           size: 0,
@@ -112,6 +113,24 @@ async function customerStall(path) {
           size: 0,
           products: new Map()
         }
+      },
+      async downloadOrder() {
+        return
+      },
+      async getFromExtension() {
+        this.customerPubkey = await window.nostr.getPublicKey()
+        this.customerUseExtension = true
+        this.checkoutDialog.data.pubkey = this.customerPubkey
+      },
+      openCheckout() {
+        // Check if user is logged in
+        if (this.customerPubkey) {
+          this.checkoutDialog.data.pubkey = this.customerPubkey
+          if (this.customerPrivkey && !useExtension) {
+            this.checkoutDialog.data.privkey = this.customerPrivkey
+          }
+        }
+        this.checkoutDialog.show = true
       },
       resetCheckout() {
         this.checkoutDialog = {
@@ -296,9 +315,9 @@ async function customerStall(path) {
       }
     },
     created() {
-      this.customerPubkey = this.account.pubkey
-      this.customerPrivkey = this.account.privkey
-      this.customerUseExtension = this.account.useExtension
+      this.customerPubkey = this.account?.pubkey
+      this.customerPrivkey = this.account?.privkey
+      this.customerUseExtension = this.account?.useExtension
       setTimeout(() => {
         if (window.nostr) {
           this.hasNip07 = true
