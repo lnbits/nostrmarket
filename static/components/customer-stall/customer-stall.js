@@ -231,7 +231,6 @@ async function customerStall(path) {
         try {
           const pool = new NostrTools.SimplePool()
           const filters = [
-            // /
             {
               kinds: [4],
               '#p': [this.customerPubkey]
@@ -261,11 +260,6 @@ async function customerStall(path) {
               }
               console.log(`${mine ? 'Me' : 'Merchant'}: ${plaintext}`)
 
-              // this.nostrMessages.set(event.id, {
-              //   msg: plaintext,
-              //   timestamp: event.created_at,
-              //   sender: `${mine ? 'Me' : 'Merchant'}`
-              // })
               this.messageFilter(plaintext, cb => Promise.resolve(pool.close))
             } catch {
               console.error('Unable to decrypt message!')
@@ -280,7 +274,6 @@ async function customerStall(path) {
         let json = JSON.parse(text)
         if (json.id != this.activeOrder) return
         if (json?.payment_options) {
-          // this.qrCodeDialog.show = true
           this.qrCodeDialog.data.payment_request = json.payment_options.find(
             o => o.type == 'ln'
           ).link
@@ -289,24 +282,18 @@ async function customerStall(path) {
             message: 'Waiting for payment...'
           })
         } else if (json?.paid) {
-          this.qrCodeDialog.dismissMsg = this.$q.notify({
+          this.closeQrCodeDialog()
+          this.$q.notify({
             type: 'positive',
             message: 'Sats received, thanks!',
             icon: 'thumb_up'
           })
-          this.closeQrCodeDialog()
           this.activeOrder = null
           Promise.resolve(cb())
         } else {
           return
         }
       }
-      // async mockInit() {
-      //   this.customerPubkey = await window.nostr.getPublicKey()
-      //   this.activeOrder =
-      //     'e4a16aa0198022dc682b2b52ed15767438282c0e712f510332fc047eaf795313'
-      //   await this.listenMessages()
-      // }
     },
     created() {
       this.customerPubkey = this.account.pubkey
