@@ -6,7 +6,6 @@ from fastapi import Depends
 from fastapi.exceptions import HTTPException
 from loguru import logger
 
-from lnbits.core import create_invoice
 from lnbits.decorators import (
     WalletTypeInfo,
     check_admin,
@@ -20,7 +19,6 @@ from . import nostrmarket_ext, scheduled_tasks
 from .crud import (
     create_direct_message,
     create_merchant,
-    create_order,
     create_product,
     create_stall,
     create_zone,
@@ -30,15 +28,12 @@ from .crud import (
     get_direct_messages,
     get_merchant_for_user,
     get_order,
-    get_order_by_event_id,
     get_orders,
     get_orders_for_stall,
     get_product,
     get_products,
-    get_products_by_ids,
     get_stall,
     get_stalls,
-    get_wallet_for_product,
     get_zone,
     get_zones,
     update_order_shipped_status,
@@ -49,9 +44,7 @@ from .crud import (
 from .models import (
     DirectMessage,
     Merchant,
-    Nostrable,
     Order,
-    OrderExtra,
     OrderStatusUpdate,
     PartialDirectMessage,
     PartialMerchant,
@@ -59,14 +52,13 @@ from .models import (
     PartialProduct,
     PartialStall,
     PartialZone,
-    PaymentOption,
     PaymentRequest,
     Product,
     Stall,
     Zone,
 )
-from .nostr.event import NostrEvent
 from .nostr.nostr_client import publish_nostr_event
+from .services import create_order
 
 ######################################## MERCHANT ########################################
 
@@ -463,49 +455,7 @@ async def api_create_order(
 ) -> Optional[PaymentRequest]:
     try:
         # print("### new order: ", json.dumps(data.dict()))
-        if await get_order(wallet.wallet.user, data.id):
-            return None
-        if data.event_id and await get_order_by_event_id(
-            wallet.wallet.user, data.event_id
-        ):
-            return None
-
-        merchant = await get_merchant_for_user(wallet.wallet.user)
-        assert merchant, "Cannot find merchant!"
-
-        products = await get_products_by_ids(
-            wallet.wallet.user, [p.product_id for p in data.items]
-        )
-        data.validate_order_items(products)
-
-        total_amount = await data.total_sats(products)
-
-        wallet_id = await get_wallet_for_product(data.items[0].product_id)
-        assert wallet_id, "Missing wallet for order `{data.id}`"
-
-        payment_hash, invoice = await create_invoice(
-            wallet_id=wallet_id,
-            amount=round(total_amount),
-            memo=f"Order '{data.id}' for pubkey '{data.pubkey}'",
-            extra={
-                "tag": "nostrmarket",
-                "order_id": data.id,
-                "merchant_pubkey": merchant.public_key,
-            },
-        )
-
-        order = Order(
-            **data.dict(),
-            stall_id=products[0].stall_id,
-            invoice_id=payment_hash,
-            total=total_amount,
-            extra=await OrderExtra.from_products(products),
-        )
-        await create_order(wallet.wallet.user, order)
-
-        return PaymentRequest(
-            id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)]
-        )
+        return await create_order(wallet.wallet.user, data)
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -642,23 +592,3 @@ async def api_stop(wallet: WalletTypeInfo = Depends(check_admin)):
             logger.warning(ex)
 
     return {"success": True}
-
-
-######################################## HELPERS ########################################
-
-
-async def sign_and_send_to_nostr(
-    user_id: str, n: Nostrable, delete=False
-) -> NostrEvent:
-    merchant = await get_merchant_for_user(user_id)
-    assert merchant, "Cannot find merchant!"
-
-    event = (
-        n.to_nostr_delete_event(merchant.public_key)
-        if delete
-        else n.to_nostr_event(merchant.public_key)
-    )
-    event.sig = merchant.sign_hash(bytes.fromhex(event.id))
-    await publish_nostr_event(event)
-
-    return event
