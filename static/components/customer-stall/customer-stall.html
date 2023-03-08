@@ -121,9 +121,6 @@
         <div class="row q-mt-lg">
           Total: {{ stall.currency != 'sat' ? getAmountFormated(finalCost,
           stall.currency) : finalCost + 'sats' }}
-          <!-- <span v-if="stall.currency != 'sat'" class="q-ml-sm text-grey-6"
-            >({{ getValueInSats(finalCost) }} sats)</span
-          > -->
         </div>
         <div class="row q-mt-lg">
           <q-btn
