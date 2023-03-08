@@ -57,7 +57,7 @@
                   <q-item-section avatar>
                     <q-avatar>
                       <img
-                        v-if="profiles.get(pub) && profiles.get(pub).picture"
+                        v-if="profiles.get(pub) && profiles.get(pub)?.picture"
                         :src="profiles.get(pub).picture"
                       />
                       <img
@@ -68,7 +68,7 @@
                   </q-item-section>
                   <q-item-section>
                     <q-item-label
-                      v-if="profiles.get(pub) && profiles.get(pub).name"
+                      v-if="profiles.get(pub) && profiles.get(pub)?.name"
                       >{{ profiles.get(pub).name }}</q-item-label
                     >
                     <q-item-label v-else
