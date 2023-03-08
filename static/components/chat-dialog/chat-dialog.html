@@ -1,9 +1,9 @@
-<div class="q-mr-lg">
-  <q-btn dense round flat icon="chat" @click="dialog = true" />
+<div class="q-mr-md">
+  <q-btn dense round flat icon="chat" @click="startDialog" />
   <q-dialog
     v-model="dialog"
     persistent
-    :maximized="maximizedToggle"
+    maximized
     transition-show="slide-up"
     transition-hide="slide-down"
   >
@@ -13,77 +13,57 @@
         <div>Chat Box</div>
 
         <q-space></q-space>
-        <q-btn
-          dense
-          flat
-          icon="minimize"
-          @click="maximizedToggle = false"
-          :disable="!maximizedToggle"
-        >
-          <q-tooltip
-            v-if="maximizedToggle"
-            content-class="bg-white text-primary"
-            >Minimize</q-tooltip
-          >
-        </q-btn>
-        <q-btn
-          dense
-          flat
-          icon="crop_square"
-          @click="maximizedToggle = true"
-          :disable="maximizedToggle"
-        >
-          <q-tooltip
-            v-if="!maximizedToggle"
-            content-class="bg-white text-primary"
-            >Maximize</q-tooltip
-          >
-        </q-btn>
-        <q-btn dense flat icon="close" v-close-popup>
+
+        <q-btn dense flat icon="close" @click="closeDialog">
           <q-tooltip content-class="bg-white text-primary">Close</q-tooltip>
         </q-btn>
       </q-bar>
 
-      <q-card-section class="absolute-bottom">
-        <div class="chat-container" ref="chatCard">
-          <div class="chat-box">
-            <!-- <p v-if="Object.keys(messages).length === 0">No messages yet</p> -->
-            <div class="chat-messages">
-              <q-chat-message
-                :key="index"
-                v-for="(message, index) in sortedMessages"
-                :name="message.sender"
-                :text="[message.msg]"
-                :sent="message.sender == 'Me'"
-                :bg-color="message.sender == 'Me' ? 'white' : 'light-green-2'"
-              />
-            </div>
-          </div>
-          <q-card-section>
-            <q-form @submit="sendMessage" class="full-width chat-input">
-              <q-input
-                ref="newMessage"
-                v-model="newMessage"
-                placeholder="Message"
-                class="full-width"
-                dense
-                outlined
-              >
-                <template>
-                  <q-btn
-                    round
-                    dense
-                    flat
-                    type="submit"
-                    icon="send"
-                    color="primary"
-                  />
-                </template>
-              </q-input>
-            </q-form>
-          </q-card-section>
-        </div>
+      <q-card-section
+        style="
+          height: calc(100vh - 120px);
+          overflow-y: scroll;
+          display: flex;
+          flex-direction: column-reverse;
+        "
+      >
+        <q-chat-message
+          :key="index"
+          v-for="(message, index) in sortedMessages"
+          :name="message.sender"
+          :text="[message.msg]"
+          :sent="message.sender == 'Me'"
+          :bg-color="message.sender == 'Me' ? 'white' : 'light-green-2'"
+          :stamp="`${timeFromNow(message.timestamp * 1000)}`"
+          size="6"
+        />
       </q-card-section>
+      <q-card-actions>
+        <q-form @submit="sendMessage" class="full-width chat-input">
+          <q-input
+            ref="newMessage"
+            v-model="newMessage"
+            placeholder="Message"
+            class="full-width"
+            dense
+            outlined
+          >
+            <template>
+              <q-btn
+                round
+                dense
+                flat
+                type="submit"
+                icon="send"
+                color="primary"
+              />
+            </template>
+          </q-input>
+        </q-form>
+      </q-card-actions>
+      <q-inner-loading :showing="loading">
+        <q-spinner-cube size="50px" color="primary" />
+      </q-inner-loading>
     </q-card>
   </q-dialog>
 </div>

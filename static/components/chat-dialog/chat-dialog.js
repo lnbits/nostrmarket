@@ -9,7 +9,7 @@ async function chatDialog(path) {
     data: function () {
       return {
         dialog: false,
-        maximizedToggle: true,
+        loading: false,
         pool: null,
         nostrMessages: [],
         newMessage: ''
@@ -17,11 +17,22 @@ async function chatDialog(path) {
     },
     computed: {
       sortedMessages() {
-        return this.nostrMessages.sort((a, b) => a.timestamp - b.timestamp)
+        return this.nostrMessages.sort((a, b) => b.timestamp - a.timestamp)
       }
     },
     methods: {
+      async startDialog() {
+        this.dialog = true
+        await this.startPool()
+      },
+      async closeDialog() {
+        this.dialog = false
+        await this.pool.close(Array.from(this.relays))
+      },
       async startPool() {
+        this.loading = true
+        this.pool = new NostrTools.SimplePool()
+        let messagesMap = new Map()
         let sub = this.pool.sub(Array.from(this.relays), [
           {
             kinds: [4],
@@ -32,6 +43,10 @@ async function chatDialog(path) {
             '#p': [this.account.pubkey]
           }
         ])
+        sub.on('eose', () => {
+          this.loading = false
+          this.nostrMessages = Array.from(messagesMap.values())
+        })
         sub.on('event', async event => {
           let mine = event.pubkey == this.account.pubkey
           let sender = mine
@@ -52,8 +67,7 @@ async function chatDialog(path) {
                 event.content
               )
             }
-            this.nostrMessages.push({
-              id: event.id,
+            messagesMap.set(event.id, {
               msg: plaintext,
               timestamp: event.created_at,
               sender: `${mine ? 'Me' : 'Merchant'}`
@@ -62,6 +76,10 @@ async function chatDialog(path) {
             console.error('Unable to decrypt message!')
           }
         })
+        setTimeout(() => {
+          this.nostrMessages = Array.from(messagesMap.values())
+          this.loading = false
+        }, 5000)
       },
       async sendMessage() {
         if (this.newMessage && this.newMessage.length < 1) return
@@ -128,16 +146,67 @@ async function chatDialog(path) {
           event = await window.nostr.signEvent(event)
         }
         return event
+      },
+      timeFromNow(time) {
+        // Get timestamps
+        let unixTime = new Date(time).getTime()
+        if (!unixTime) return
+        let now = new Date().getTime()
+
+        // Calculate difference
+        let difference = unixTime / 1000 - now / 1000
+
+        // Setup return object
+        let tfn = {}
+
+        // Check if time is in the past, present, or future
+        tfn.when = 'now'
+        if (difference > 0) {
+          tfn.when = 'future'
+        } else if (difference < -1) {
+          tfn.when = 'past'
+        }
+
+        // Convert difference to absolute
+        difference = Math.abs(difference)
+
+        // Calculate time unit
+        if (difference / (60 * 60 * 24 * 365) > 1) {
+          // Years
+          tfn.unitOfTime = 'years'
+          tfn.time = Math.floor(difference / (60 * 60 * 24 * 365))
+        } else if (difference / (60 * 60 * 24 * 45) > 1) {
+          // Months
+          tfn.unitOfTime = 'months'
+          tfn.time = Math.floor(difference / (60 * 60 * 24 * 45))
+        } else if (difference / (60 * 60 * 24) > 1) {
+          // Days
+          tfn.unitOfTime = 'days'
+          tfn.time = Math.floor(difference / (60 * 60 * 24))
+        } else if (difference / (60 * 60) > 1) {
+          // Hours
+          tfn.unitOfTime = 'hours'
+          tfn.time = Math.floor(difference / (60 * 60))
+        } else if (difference / 60 > 1) {
+          // Minutes
+          tfn.unitOfTime = 'minutes'
+          tfn.time = Math.floor(difference / 60)
+        } else {
+          // Seconds
+          tfn.unitOfTime = 'seconds'
+          tfn.time = Math.floor(difference)
+        }
+
+        // Return time from now data
+        return `${tfn.time} ${tfn.unitOfTime}`
       }
     },
     created() {
-      this.pool = new NostrTools.SimplePool()
       setTimeout(() => {
         if (window.nostr) {
           this.hasNip07 = true
         }
       }, 1000)
-      this.startPool()
     }
   })
 }
