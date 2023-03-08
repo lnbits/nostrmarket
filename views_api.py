@@ -48,17 +48,15 @@ from .models import (
     OrderStatusUpdate,
     PartialDirectMessage,
     PartialMerchant,
-    PartialOrder,
     PartialProduct,
     PartialStall,
     PartialZone,
-    PaymentRequest,
     Product,
     Stall,
     Zone,
 )
 from .nostr.nostr_client import publish_nostr_event
-from .services import create_new_order, sign_and_send_to_nostr
+from .services import sign_and_send_to_nostr
 
 ######################################## MERCHANT ########################################
 
@@ -447,21 +445,6 @@ async def api_delete_product(
 
 
 ######################################## ORDERS ########################################
-
-
-@nostrmarket_ext.post("/api/v1/order")
-async def api_create_order(
-    data: PartialOrder, wallet: WalletTypeInfo = Depends(require_admin_key)
-) -> Optional[PaymentRequest]:
-    try:
-        # print("### new order: ", json.dumps(data.dict()))
-        return await create_new_order(wallet.wallet.user, data)
-    except Exception as ex:
-        logger.warning(ex)
-        raise HTTPException(
-            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot create order",
-        )
 
 
 nostrmarket_ext.get("/api/v1/order/{order_id}")

@@ -320,6 +320,7 @@ async def create_order(user_id: str, o: Order) -> Order:
         f"""
         INSERT INTO nostrmarket.orders (user_id, id, event_id, event_created_at, pubkey, address, contact_data, extra_data, order_items, stall_id, invoice_id, total)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(event_id) DO NOTHING
         """,
         (
             user_id,
@@ -421,6 +422,7 @@ async def create_direct_message(
         f"""
         INSERT INTO nostrmarket.direct_messages (merchant_id, id, event_id, event_created_at, message, public_key, incoming)
         VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(event_id) DO NOTHING
         """,
         (
             merchant_id,

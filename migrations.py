@@ -89,7 +89,8 @@ async def m001_initial(db):
             invoice_id TEXT NOT NULL,
             paid BOOLEAN NOT NULL DEFAULT false,
             shipped BOOLEAN NOT NULL DEFAULT false,
-            time TIMESTAMP NOT NULL DEFAULT {db.timestamp_now}
+            time TIMESTAMP NOT NULL DEFAULT {db.timestamp_now},
+            UNIQUE(event_id)
         );
         """
     )
@@ -107,7 +108,8 @@ async def m001_initial(db):
             message TEXT NOT NULL,
             public_key TEXT NOT NULL,
             incoming BOOLEAN NOT NULL DEFAULT false,
-            time TIMESTAMP NOT NULL DEFAULT {db.timestamp_now}       
+            time TIMESTAMP NOT NULL DEFAULT {db.timestamp_now},
+            UNIQUE(event_id)
         );
         """
     )

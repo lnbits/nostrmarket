@@ -1,10 +1,9 @@
 import json
 from typing import Optional
 
-import httpx
 from loguru import logger
 
-from lnbits.core import create_invoice, get_wallet, url_for
+from lnbits.core import create_invoice, get_wallet
 
 from .crud import (
     create_direct_message,
@@ -204,18 +203,8 @@ async def _handle_new_order(order: PartialOrder) -> Optional[str]:
     wallet = await get_wallet(wallet_id)
     assert wallet, f"Cannot find wallet for product id: {first_product_id}"
 
-    market_url = url_for(f"/nostrmarket/api/v1/order", external=True)
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            url=market_url,
-            headers={
-                "X-Api-Key": wallet.adminkey,
-            },
-            json=order.dict(),
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        if data:
-            return json.dumps(data, separators=(",", ":"), ensure_ascii=False)
+    new_order = await create_new_order(wallet.user, order)
+    if new_order:
+        return json.dumps(new_order.dict(), separators=(",", ":"), ensure_ascii=False)
 
     return None
