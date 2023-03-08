@@ -600,6 +600,7 @@ async def api_get_messages(
             detail="Cannot get zone",
         )
 
+
 @nostrmarket_ext.post("/api/v1/message")
 async def api_create_message(
     data: PartialDirectMessage, wallet: WalletTypeInfo = Depends(require_admin_key)
@@ -610,6 +611,7 @@ async def api_create_message(
 
         dm_event = merchant.build_dm_event(data.message, data.public_key)
         data.event_id = dm_event.id
+        data.event_created_at = dm_event.created_at
 
         dm = await create_direct_message(merchant.id, data)
         await publish_nostr_event(dm_event)

@@ -318,13 +318,14 @@ async def delete_product(user_id: str, product_id: str) -> None:
 async def create_order(user_id: str, o: Order) -> Order:
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.orders (user_id, id, event_id, pubkey, address, contact_data, extra_data, order_items, stall_id, invoice_id, total)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO nostrmarket.orders (user_id, id, event_id, event_created_at, pubkey, address, contact_data, extra_data, order_items, stall_id, invoice_id, total)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             user_id,
             o.id,
             o.event_id,
+            o.event_created_at,
             o.pubkey,
             o.address,
             json.dumps(o.contact.dict() if o.contact else {}),
@@ -418,10 +419,18 @@ async def create_direct_message(
     dm_id = urlsafe_short_hash()
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.direct_messages (merchant_id, id, event_id, message, public_key, incoming)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO nostrmarket.direct_messages (merchant_id, id, event_id, event_created_at, message, public_key, incoming)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
-        (merchant_id, dm_id, dm.event_id, dm.message, dm.public_key, dm.incoming),
+        (
+            merchant_id,
+            dm_id,
+            dm.event_id,
+            dm.event_created_at,
+            dm.message,
+            dm.public_key,
+            dm.incoming,
+        ),
     )
 
     msg = await get_direct_message(merchant_id, dm_id)
@@ -442,7 +451,7 @@ async def get_direct_message(merchant_id: str, dm_id: str) -> Optional[DirectMes
 
 async def get_direct_messages(merchant_id: str, public_key: str) -> List[DirectMessage]:
     rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.direct_messages WHERE merchant_id = ? AND public_key = ? ORDER BY time DESC",
+        "SELECT * FROM nostrmarket.direct_messages WHERE merchant_id = ? AND public_key = ? ORDER BY event_created_at",
         (merchant_id, public_key),
     )
     return [DirectMessage.from_row(row) for row in rows]

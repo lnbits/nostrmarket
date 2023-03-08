@@ -127,7 +127,7 @@ async def handle_nip04_message(public_key: str, event: NostrEvent):
 
     clear_text_msg = merchant.decrypt_message(event.content, event.pubkey)
     dm_content = await handle_dirrect_message(
-        merchant.id, event.pubkey, event.id, clear_text_msg
+        merchant.id, event.pubkey, event.id, event.created_at, clear_text_msg
     )
     if dm_content:
         dm_event = merchant.build_dm_event(dm_content, event.pubkey)
@@ -135,18 +135,20 @@ async def handle_nip04_message(public_key: str, event: NostrEvent):
 
 
 async def handle_dirrect_message(
-    merchant_id: str, from_pubkey: str, event_id: str, msg: str
+    merchant_id: str, from_pubkey: str, event_id: str, event_created_at: int, msg: str
 ) -> Optional[str]:
     order, text_msg = order_from_json(msg)
     try:
         if order:
             order["pubkey"] = from_pubkey
             order["event_id"] = event_id
+            order["event_created_at"] = event_created_at
             return await handle_new_order(PartialOrder(**order))
         else:
             print("### text_msg", text_msg)
             dm = PartialDirectMessage(
                 event_id=event_id,
+                event_created_at=event_created_at,
                 message=text_msg,
                 public_key=from_pubkey,
                 incoming=True,
@@ -158,7 +160,7 @@ async def handle_dirrect_message(
         return None
 
 
-async def handle_new_order(order: PartialOrder):
+async def handle_new_order(order: PartialOrder) -> Optional[str]:
     ### todo: check that event_id not parsed already
 
     order.validate_order()

@@ -26,7 +26,10 @@ async function directMessages(path) {
             this.inkey
           )
           this.messages = data
-          console.log('### this.messages', this.messages)
+          console.log(
+            '### this.messages',
+            this.messages.map(m => m.message)
+          )
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -38,16 +41,17 @@ async function directMessages(path) {
             '/nostrmarket/api/v1/message',
             this.adminkey,
             {
-                message: this.newMessage,
-                public_key: this.activePublicKey
+              message: this.newMessage,
+              public_key: this.activePublicKey
             }
           )
-          this.messages.push(data)
+          this.messages = this.messages.concat([data])
+          console.log('###  this.messages', this.messages)
           this.newMessage = ''
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
-      },
+      }
     },
     created: async function () {
       await this.getDirectMessages()

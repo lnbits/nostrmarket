@@ -114,7 +114,7 @@
         </q-card-section>
       </q-card>
     </div>
-    <div class="col-12">
+    <div  v-if="merchant && merchant.id" class="col-12">
       <direct-messages
         :inkey="g.user.wallets[0].inkey"
         :adminkey="g.user.wallets[0].adminkey"
@@ -152,39 +152,19 @@
 </div>
 {% endblock%}{% block scripts %} {{ window_vars(user) }}
 
-
 <style scoped>
-  .q-field__native span {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
   .chat-container {
     position: relative;
     display: grid;
     grid-template-rows: 1fr auto;
-    /*height: calc(100vh - 200px);*/
     height: 50vh;
   }
 
   .chat-box {
-    display: flex;
-    flex-direction: column-reverse;
     padding: 1rem;
     overflow-y: auto;
     margin-left: auto;
-    width: 50%;
-  }
-
-  .chat-messages {
-    width: auto;
-  }
-
-  .chat-input {
-    position: relative;
-    display: flex;
-    align-items: end;
-    margin-top: 1rem;
+    width: 100%;
   }
 </style>
 
@@ -200,6 +180,5 @@
 <script src="{{ url_for('nostrmarket_static', path='components/order-list/order-list.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/direct-messages/direct-messages.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/index.js') }}"></script>
-
 
 {% endblock %}

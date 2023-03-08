@@ -281,6 +281,7 @@ class OrderExtra(BaseModel):
 class PartialOrder(BaseModel):
     id: str
     event_id: Optional[str]
+    event_created_at: Optional[int]
     pubkey: str
     items: List[OrderItem]
     contact: Optional[OrderContact]
@@ -366,6 +367,7 @@ class PaymentRequest(BaseModel):
 
 class PartialDirectMessage(BaseModel):
     event_id: Optional[str]
+    event_created_at: Optional[int]
     message: str
     public_key: str
     incoming: bool = False
