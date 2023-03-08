@@ -100,8 +100,11 @@ async def wait_for_nostr_events(recieve_event_queue: Queue, send_req_queue: Queu
     public_keys = await get_public_keys_for_merchants()
     for p in public_keys:
         await send_req_queue.put(
-            ["REQ", f"direct-messages:{p}", {"kind": 4, "#p": [p]}]
+            ["REQ", f"direct-messages-in:{p}", {"kind": 4, "#p": [p]}]
         )
+        # await send_req_queue.put(
+        #     ["REQ", f"direct-messages-out:{p}", {"kind": 4, "authors": [p]}]
+        # )
 
     while True:
         message = await recieve_event_queue.get()
@@ -111,27 +114,49 @@ async def wait_for_nostr_events(recieve_event_queue: Queue, send_req_queue: Queu
 async def handle_message(msg: str):
     try:
         type, subscription_id, event = json.loads(msg)
-        _, public_key = subscription_id.split(":")
+        subscription_name, public_key = subscription_id.split(":")
         if type.upper() == "EVENT":
             event = NostrEvent(**event)
             if event.kind == 4:
-                await handle_nip04_message(public_key, event)
+                await handle_nip04_message(subscription_name, public_key, event)
 
     except Exception as ex:
         logger.warning(ex)
 
 
-async def handle_nip04_message(public_key: str, event: NostrEvent):
+async def handle_nip04_message(
+    subscription_name: str, public_key: str, event: NostrEvent
+):
     merchant = await get_merchant_by_pubkey(public_key)
     assert merchant, f"Merchant not found for public key '{public_key}'"
 
     clear_text_msg = merchant.decrypt_message(event.content, event.pubkey)
+    if subscription_name == "direct-messages-in":
+        await handle_incoming_dms(event, merchant, clear_text_msg)
+    else:
+        await handle_outgoing_dms(event, merchant, clear_text_msg)
+
+
+async def handle_incoming_dms(event, merchant, clear_text_msg):
     dm_content = await handle_dirrect_message(
         merchant.id, event.pubkey, event.id, event.created_at, clear_text_msg
     )
     if dm_content:
         dm_event = merchant.build_dm_event(dm_content, event.pubkey)
         await publish_nostr_event(dm_event)
+
+
+async def handle_outgoing_dms(event, merchant, clear_text_msg):
+    sent_to = event.tag_values("p")
+    if len(sent_to) != 0:
+        dm = PartialDirectMessage(
+            event_id=event.id,
+            event_created_at=event.created_at,
+            message=clear_text_msg,  # exclude if json
+            public_key=sent_to[0],
+            incoming=True,
+        )
+        await create_direct_message(merchant.id, dm)
 
 
 async def handle_dirrect_message(
