@@ -10,6 +10,12 @@
       <q-breadcrumbs-el :label="stall.name" icon="widgets"></q-breadcrumbs-el>
     </q-breadcrumbs>
     <q-toolbar-title></q-toolbar-title>
+    <chat-dialog
+      v-if="this.customerPrivkey || this.customerUseExtension"
+      :account="account"
+      :merchant="stall.pubkey"
+      :relays="relays"
+    />
     <shopping-cart
       :cart="cart"
       :cart-menu="cartMenu"
@@ -56,7 +62,8 @@
         <q-input
           filled
           dense
-          v-model.trim="checkoutDialog.data.pubkey"
+          readonly
+          v-model.trim="customerPubkey"
           label="Public key"
         >
         </q-input>
@@ -64,12 +71,12 @@
           filled
           dense
           readonly
-          hint="This your key pair! Don't lose it!"
-          v-if="checkoutDialog.data.privkey"
-          v-model="checkoutDialog.data.privkey"
+          type="password"
+          v-if="customerPrivkey"
+          v-model="customerPrivkey"
         >
         </q-input>
-        <div class="row">
+        <!-- <div class="row">
           <div class="col-5">
             <q-btn unelevated @click="generateKeyPair" color="primary"
               >Generate key pair</q-btn
@@ -80,7 +87,7 @@
               >Get from Extension</q-btn
             >
           </div>
-        </div>
+        </div> -->
         <q-input
           filled
           dense
@@ -112,14 +119,15 @@
           />
         </div>
         <div class="row q-mt-lg">
-          Total: {{ stall.currency != 'sat' ? getAmountFormated(finalCost) :
-          finalCost + 'sats' }}
-          <span v-if="stall.currency != 'sat'" class="q-ml-sm text-grey-6"
+          Total: {{ stall.currency != 'sat' ? getAmountFormated(finalCost,
+          stall.currency) : finalCost + 'sats' }}
+          <!-- <span v-if="stall.currency != 'sat'" class="q-ml-sm text-grey-6"
             >({{ getValueInSats(finalCost) }} sats)</span
-          >
+          > -->
         </div>
         <div class="row q-mt-lg">
           <q-btn
+            :loading="loading"
             unelevated
             color="primary"
             :disable="checkoutDialog.data.address == null
@@ -140,4 +148,48 @@
     </q-card>
   </q-dialog>
   <!-- END CHECKOUT DIALOG -->
+  <!-- INVOICE DIALOG -->
+  <q-dialog
+    v-model="qrCodeDialog.show"
+    position="top"
+    @hide="closeQrCodeDialog"
+  >
+    <q-card
+      v-if="!qrCodeDialog.data.payment_request"
+      class="q-pa-lg q-pt-xl lnbits__dialog-card"
+    >
+      <div class="q-gutter-md row items-center">
+        <q-spinner-cube color="white" size="5.5em" />
+      </div>
+    </q-card>
+    <q-card v-else class="q-pa-lg q-pt-xl lnbits__dialog-card">
+      <div class="text-center q-mb-lg">
+        <a :href="'lightning:' + qrCodeDialog.data.payment_request">
+          <q-responsive :ratio="1" class="q-mx-xl">
+            <qrcode
+              :value="qrCodeDialog.data.payment_request"
+              :options="{width: 340}"
+              class="rounded-borders"
+            ></qrcode>
+          </q-responsive>
+        </a>
+      </div>
+      <div class="row q-mt-lg">
+        <q-btn
+          outline
+          color="grey"
+          @click="copyText(qrCodeDialog.data.payment_request)"
+          >Copy invoice</q-btn
+        >
+        <q-btn
+          @click="closeQrCodeDialog"
+          v-close-popup
+          flat
+          color="grey"
+          class="q-ml-auto"
+          >Close</q-btn
+        >
+      </div>
+    </q-card>
+  </q-dialog>
 </div>

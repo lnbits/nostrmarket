@@ -41,7 +41,7 @@ const market = async () => {
             key: null
           }
         },
-        drawer: true,
+        drawer: false,
         pubkeys: new Set(),
         relays: new Set(),
         events: [],
@@ -49,7 +49,6 @@ const market = async () => {
         products: [],
         profiles: new Map(),
         searchText: null,
-        exchangeRates: null,
         inputPubkey: null,
         inputRelay: null,
         activePage: 'market',
@@ -136,10 +135,8 @@ const market = async () => {
       }
 
       // Get notes from Nostr
-      //await this.initNostr()
+      await this.initNostr()
 
-      // Get fiat rates (i think there's an LNbits endpoint for this)
-      //await this.getRates()
       this.$q.loading.hide()
     },
     methods: {
@@ -233,22 +230,11 @@ const market = async () => {
           obj.images = [obj.image]
           if (obj.currency != 'sat') {
             obj.formatedPrice = this.getAmountFormated(obj.price, obj.currency)
-            obj.priceInSats = this.getValueInSats(obj.price, obj.currency)
           }
           return obj
         })
         pool.close(relays)
         return
-      },
-      async getRates() {
-        let noFiat = this.stalls.map(s => s.currency).every(c => c == 'sat')
-        if (noFiat) return
-        try {
-          let rates = await axios.get('https://api.opennode.co/v1/rates')
-          this.exchangeRates = rates.data.data
-        } catch (error) {
-          LNbits.utils.notifyApiError(error)
-        }
       },
       navigateTo(page, opts = {stall: null, product: null, pubkey: null}) {
         let {stall, product, pubkey} = opts
@@ -282,13 +268,6 @@ const market = async () => {
 
         window.history.pushState({}, '', url)
         this.activePage = page
-      },
-
-      getValueInSats(amount, unit = 'USD') {
-        if (!this.exchangeRates) return 0
-        return Math.ceil(
-          (amount / this.exchangeRates[`BTC${unit}`][unit]) * 1e8
-        )
       },
       getAmountFormated(amount, unit = 'USD') {
         return LNbits.utils.formatCurrency(amount, unit)

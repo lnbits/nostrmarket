@@ -4,7 +4,7 @@ async function customerMarket(path) {
     name: 'customer-market',
     template,
 
-    props: ['products', 'exchange-rates', 'change-page'],
+    props: ['products', 'change-page'],
     data: function () {
       return {}
     },

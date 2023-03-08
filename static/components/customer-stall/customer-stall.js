@@ -6,15 +6,16 @@ async function customerStall(path) {
     template,
 
     props: [
+      'account',
       'stall',
       'products',
-      'exchange-rates',
       'product-detail',
       'change-page',
       'relays'
     ],
     data: function () {
       return {
+        loading: false,
         cart: {
           total: 0,
           size: 0,
@@ -23,8 +24,9 @@ async function customerStall(path) {
         cartMenu: [],
         hasNip07: false,
         customerPubkey: null,
-        customerPrivKey: null,
-        nostrMessages: new Map(),
+        customerPrivkey: null,
+        customerUseExtension: null,
+        activeOrder: null,
         checkoutDialog: {
           show: false,
           data: {
@@ -57,12 +59,6 @@ async function customerStall(path) {
     methods: {
       changePageS(page, opts) {
         this.$emit('change-page', page, opts)
-      },
-      getValueInSats(amount, unit = 'USD') {
-        if (!this.exchangeRates) return 0
-        return Math.ceil(
-          (amount / this.exchangeRates[`BTC${unit}`][unit]) * 1e8
-        )
       },
       getAmountFormated(amount, unit = 'USD') {
         return LNbits.utils.formatCurrency(amount, unit)
@@ -125,26 +121,12 @@ async function customerStall(path) {
           }
         }
       },
-      async getPubkey() {
-        try {
-          this.customerPubkey = await window.nostr.getPublicKey()
-          this.checkoutDialog.data.pubkey = this.customerPubkey
-          this.checkoutDialog.data.privkey = null
-        } catch (err) {
-          console.error(
-            `Failed to get a public key from a Nostr extension: ${err}`
-          )
-        }
-      },
-      generateKeyPair() {
-        let sk = NostrTools.generatePrivateKey()
-        let pk = NostrTools.getPublicKey(sk)
-        this.customerPubkey = pk
-        this.customerPrivKey = sk
-        this.checkoutDialog.data.pubkey = this.customerPubkey
-        this.checkoutDialog.data.privkey = this.customerPrivKey
+      closeQrCodeDialog() {
+        this.qrCodeDialog.dismissMsg()
+        this.qrCodeDialog.show = false
       },
       async placeOrder() {
+        this.loading = true
         LNbits.utils
           .confirmDialog(
             `Send the order to the merchant? You should receive a message with the payment details.`
@@ -170,6 +152,7 @@ async function customerStall(path) {
                 ':'
               )
             )
+            this.activeOrder = orderObj.id
             let event = {
               ...(await NostrTools.getBlankEvent()),
               kind: 4,
@@ -177,13 +160,13 @@ async function customerStall(path) {
               tags: [['p', this.stall.pubkey]],
               pubkey: this.customerPubkey
             }
-            if (this.customerPrivKey) {
+            if (this.customerPrivkey) {
               event.content = await NostrTools.nip04.encrypt(
-                this.customerPrivKey,
+                this.customerPrivkey,
                 this.stall.pubkey,
                 JSON.stringify(orderObj)
               )
-            } else {
+            } else if (this.customerUseExtension && this.hasNip07) {
               event.content = await window.nostr.nip04.encrypt(
                 this.stall.pubkey,
                 JSON.stringify(orderObj)
@@ -196,15 +179,15 @@ async function customerStall(path) {
               }
             }
             event.id = NostrTools.getEventHash(event)
-            if (this.customerPrivKey) {
+            if (this.customerPrivkey) {
               event.sig = await NostrTools.signEvent(
                 event,
-                this.customerPrivKey
+                this.customerPrivkey
               )
-            } else if (this.hasNip07) {
+            } else if (this.customerUseExtension && this.hasNip07) {
               event = await window.nostr.signEvent(event)
             }
-            console.log(event, orderObj)
+
             await this.sendOrder(event)
           })
       },
@@ -223,25 +206,32 @@ async function customerStall(path) {
             let pub = relay.publish(order)
             pub.on('ok', () => {
               console.log(`${relay.url} has accepted our event`)
+              relay.close()
             })
             pub.on('failed', reason => {
               console.log(`failed to publish to ${relay.url}: ${reason}`)
+              relay.close()
             })
           } catch (err) {
             console.error(`Error: ${err}`)
           }
         }
+        this.loading = false
         this.resetCheckout()
+        this.resetCart()
+        this.qrCodeDialog.show = true
+        this.qrCodeDialog.dismissMsg = this.$q.notify({
+          timeout: 0,
+          message: 'Waiting for invoice from merchant...'
+        })
         this.listenMessages()
       },
       async listenMessages() {
+        console.log('LISTEN')
         try {
           const pool = new NostrTools.SimplePool()
           const filters = [
-            {
-              kinds: [4],
-              authors: [this.customerPubkey]
-            },
+            // /
             {
               kinds: [4],
               '#p': [this.customerPubkey]
@@ -254,38 +244,74 @@ async function customerStall(path) {
             let sender = mine
               ? event.tags.find(([k, v]) => k === 'p' && v && v !== '')[1]
               : event.pubkey
-            if (
-              (mine && sender != this.stall.pubkey) ||
-              (!mine && sender != this.customerPubkey)
-            ) {
-              console.log(`Not relevant message!`)
-              return
-            }
+
             try {
-              let plaintext = this.customerPrivKey
-                ? await NostrTools.nip04.decrypt(
-                    this.customerPrivKey,
-                    sender,
-                    event.content
-                  )
-                : await window.nostr.nip04.decrypt(sender, event.content)
-              // console.log(`${mine ? 'Me' : 'Customer'}: ${plaintext}`)
-              this.nostrMessages.set(event.id, {
-                msg: plaintext,
-                timestamp: event.created_at,
-                sender: `${mine ? 'Me' : 'Merchant'}`
-              })
+              let plaintext
+              if (this.customerPrivkey) {
+                plaintext = await NostrTools.nip04.decrypt(
+                  this.customerPrivkey,
+                  sender,
+                  event.content
+                )
+              } else if (this.customerUseExtension && this.hasNip07) {
+                plaintext = await window.nostr.nip04.decrypt(
+                  sender,
+                  event.content
+                )
+              }
+              console.log(`${mine ? 'Me' : 'Merchant'}: ${plaintext}`)
+
+              // this.nostrMessages.set(event.id, {
+              //   msg: plaintext,
+              //   timestamp: event.created_at,
+              //   sender: `${mine ? 'Me' : 'Merchant'}`
+              // })
+              this.messageFilter(plaintext, cb => Promise.resolve(pool.close))
             } catch {
               console.error('Unable to decrypt message!')
-              return
             }
           })
         } catch (err) {
           console.error(`Error: ${err}`)
         }
+      },
+      messageFilter(text, cb = () => {}) {
+        if (!isJson(text)) return
+        let json = JSON.parse(text)
+        if (json.id != this.activeOrder) return
+        if (json?.payment_options) {
+          // this.qrCodeDialog.show = true
+          this.qrCodeDialog.data.payment_request = json.payment_options.find(
+            o => o.type == 'ln'
+          ).link
+          this.qrCodeDialog.dismissMsg = this.$q.notify({
+            timeout: 0,
+            message: 'Waiting for payment...'
+          })
+        } else if (json?.paid) {
+          this.qrCodeDialog.dismissMsg = this.$q.notify({
+            type: 'positive',
+            message: 'Sats received, thanks!',
+            icon: 'thumb_up'
+          })
+          this.closeQrCodeDialog()
+          this.activeOrder = null
+          Promise.resolve(cb())
+        } else {
+          return
+        }
       }
+      // async mockInit() {
+      //   this.customerPubkey = await window.nostr.getPublicKey()
+      //   this.activeOrder =
+      //     'e4a16aa0198022dc682b2b52ed15767438282c0e712f510332fc047eaf795313'
+      //   await this.listenMessages()
+      // }
     },
     created() {
+      this.customerPubkey = this.account.pubkey
+      this.customerPrivkey = this.account.privkey
+      this.customerUseExtension = this.account.useExtension
       setTimeout(() => {
         if (window.nostr) {
           this.hasNip07 = true
