@@ -44,12 +44,12 @@
               <q-input
                 filled
                 v-model="inputPubkey"
-                @keydown.enter="addPubkey"
+                @keydown.enter="addPubkey(null)"
                 type="text"
                 label="Pubkey/Npub"
                 hint="Add merchants"
               >
-                <q-btn @click="addPubkey" dense flat icon="add"></q-btn>
+                <q-btn @click="addPubkey(null)" dense flat icon="add"></q-btn>
               </q-input>
               <q-list class="q-mt-md">
                 <q-item v-for="pub in Array.from(pubkeys)" :key="pub">
