@@ -58,7 +58,7 @@ from .models import (
     Zone,
 )
 from .nostr.nostr_client import publish_nostr_event
-from .services import create_order
+from .services import create_new_order, sign_and_send_to_nostr
 
 ######################################## MERCHANT ########################################
 
@@ -455,7 +455,7 @@ async def api_create_order(
 ) -> Optional[PaymentRequest]:
     try:
         # print("### new order: ", json.dumps(data.dict()))
-        return await create_order(wallet.wallet.user, data)
+        return await create_new_order(wallet.wallet.user, data)
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
