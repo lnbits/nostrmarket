@@ -7,7 +7,10 @@
         @click="$emit('change-page', 'market')"
         style="cursor: pointer"
       ></q-breadcrumbs-el>
-      <q-breadcrumbs-el :label="stall.name" icon="widgets"></q-breadcrumbs-el>
+      <q-breadcrumbs-el
+        :label="stall?.name || 'Stall'"
+        icon="widgets"
+      ></q-breadcrumbs-el>
     </q-breadcrumbs>
     <q-toolbar-title></q-toolbar-title>
     <chat-dialog
@@ -151,14 +154,6 @@
     position="top"
     @hide="closeQrCodeDialog"
   >
-    <q-card
-      v-if="!qrCodeDialog.data.payment_request"
-      class="q-pa-lg q-pt-xl lnbits__dialog-card"
-    >
-      <div class="q-gutter-md row items-center">
-        <q-spinner-cube color="white" size="5.5em" />
-      </div>
-    </q-card>
     <q-card v-else class="q-pa-lg q-pt-xl lnbits__dialog-card">
       <div class="text-center q-mb-lg">
         <a :href="'lightning:' + qrCodeDialog.data.payment_request">
@@ -187,6 +182,9 @@
           >Close</q-btn
         >
       </div>
+      <q-inner-loading :showing="loading">
+        <q-spinner-cube size="50px" color="primary" />
+      </q-inner-loading>
     </q-card>
   </q-dialog>
 </div>
