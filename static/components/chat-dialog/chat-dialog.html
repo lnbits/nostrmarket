@@ -1,0 +1,89 @@
+<div class="q-mr-lg">
+  <q-btn dense round flat icon="chat" @click="dialog = true" />
+  <q-dialog
+    v-model="dialog"
+    persistent
+    :maximized="maximizedToggle"
+    transition-show="slide-up"
+    transition-hide="slide-down"
+  >
+    <q-card>
+      <q-bar>
+        <q-icon name="chat" />
+        <div>Chat Box</div>
+
+        <q-space></q-space>
+        <q-btn
+          dense
+          flat
+          icon="minimize"
+          @click="maximizedToggle = false"
+          :disable="!maximizedToggle"
+        >
+          <q-tooltip
+            v-if="maximizedToggle"
+            content-class="bg-white text-primary"
+            >Minimize</q-tooltip
+          >
+        </q-btn>
+        <q-btn
+          dense
+          flat
+          icon="crop_square"
+          @click="maximizedToggle = true"
+          :disable="maximizedToggle"
+        >
+          <q-tooltip
+            v-if="!maximizedToggle"
+            content-class="bg-white text-primary"
+            >Maximize</q-tooltip
+          >
+        </q-btn>
+        <q-btn dense flat icon="close" v-close-popup>
+          <q-tooltip content-class="bg-white text-primary">Close</q-tooltip>
+        </q-btn>
+      </q-bar>
+
+      <q-card-section class="absolute-bottom">
+        <div class="chat-container" ref="chatCard">
+          <div class="chat-box">
+            <!-- <p v-if="Object.keys(messages).length === 0">No messages yet</p> -->
+            <div class="chat-messages">
+              <q-chat-message
+                :key="index"
+                v-for="(message, index) in sortedMessages"
+                :name="message.sender"
+                :text="[message.msg]"
+                :sent="message.sender == 'Me'"
+                :bg-color="message.sender == 'Me' ? 'white' : 'light-green-2'"
+              />
+            </div>
+          </div>
+          <q-card-section>
+            <q-form @submit="sendMessage" class="full-width chat-input">
+              <q-input
+                ref="newMessage"
+                v-model="newMessage"
+                placeholder="Message"
+                class="full-width"
+                dense
+                outlined
+              >
+                <template>
+                  <q-btn
+                    round
+                    dense
+                    flat
+                    type="submit"
+                    icon="send"
+                    color="primary"
+                  />
+                </template>
+              </q-input>
+            </q-form>
+          </q-card-section>
+        </div>
+      </q-card-section>
+    </q-card>
+  </q-dialog>
+</div>
