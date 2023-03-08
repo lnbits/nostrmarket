@@ -1,18 +1,23 @@
+import json
 from typing import Optional
+from loguru import logger
 
 from lnbits.core import create_invoice
 
 from .crud import (
+    get_merchant_by_pubkey,
     get_merchant_for_user,
     get_order,
     get_order_by_event_id,
     get_products_by_ids,
     get_wallet_for_product,
+    update_order_paid_status,
 )
 from .models import (
     Nostrable,
     Order,
     OrderExtra,
+    OrderStatusUpdate,
     PartialOrder,
     PaymentOption,
     PaymentRequest,
@@ -78,3 +83,23 @@ async def sign_and_send_to_nostr(
     await publish_nostr_event(event)
 
     return event
+
+
+async def handle_order_paid(order_id: str, merchant_pubkey: str):
+    try:
+        order = await update_order_paid_status(order_id, True)
+        assert order, f"Paid order cannot be found. Order id: {order_id}"
+        order_status = OrderStatusUpdate(
+            id=order_id, message="Payment received.", paid=True, shipped=order.shipped
+        )
+
+        merchant = await get_merchant_by_pubkey(merchant_pubkey)
+        assert merchant, f"Merchant cannot be found for order {order_id}"
+        dm_content = json.dumps(
+            order_status.dict(), separators=(",", ":"), ensure_ascii=False
+        )
+
+        dm_event = merchant.build_dm_event(dm_content, order.pubkey)
+        await publish_nostr_event(dm_event)
+    except Exception as ex:
+        logger.warning(ex)
