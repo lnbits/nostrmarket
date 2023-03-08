@@ -169,15 +169,14 @@
       v-if="!isLoading && activeStall"
       :stall="stalls.find(stall => stall.id == activeStall)"
       :products="filterProducts"
-      :exchange-rates="exchangeRates"
       :product-detail="activeProduct"
       :relays="relays"
+      :account="account"
       @change-page="navigateTo"
     ></customer-stall>
     <customer-market
       v-else
       :products="filterProducts"
-      :exchange-rates="exchangeRates"
       @change-page="navigateTo"
     ></customer-market>
   </q-page-container>
