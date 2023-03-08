@@ -30,6 +30,8 @@ async function directMessages(path) {
             '### this.messages',
             this.messages.map(m => m.message)
           )
+          this.focusOnChatBox(this.messages.length - 1)
+          
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -48,9 +50,18 @@ async function directMessages(path) {
           this.messages = this.messages.concat([data])
           console.log('###  this.messages', this.messages)
           this.newMessage = ''
+            this.focusOnChatBox(this.messages.length - 1)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
+      },
+      focusOnChatBox: function(index) {
+        setTimeout(() => {
+          const lastChatBox = document.getElementsByClassName(`chat-mesage-index-${index}`);
+          if (lastChatBox && lastChatBox[0]) {
+            lastChatBox[0].scrollIntoView()
+          }
+        }, 100)
       }
     },
     created: async function () {
