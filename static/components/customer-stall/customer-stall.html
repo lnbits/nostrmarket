@@ -123,7 +123,8 @@
           :type="isPwd ? 'password' : 'text'"
           v-if="!customerUseExtension"
           v-model.trim="checkoutDialog.data.privkey"
-          hint="Enter your private key or see bellow for instructions"
+          label="Private key"
+          hint="Enter your private key"
         >
           <template v-slot:append>
             <q-icon
@@ -239,6 +240,25 @@
       <q-inner-loading :showing="loading">
         <q-spinner-cube size="50px" color="primary" />
       </q-inner-loading>
+    </q-card>
+  </q-dialog>
+  <!-- ORDER DOWNLOAD DIALOG -->
+  <q-dialog v-model="downloadOrderDialog.show" position="top">
+    <q-card class="q-pa-lg q-pt-xl lnbits__dialog-card">
+      <q-card-section>
+        <div class="text-h6">Order data</div>
+        <div class="text-subtitle2">{{ stall.pubkey }}</div>
+        <small
+          >Send the bellow message, to the merchant pubkey, in any Nostr
+          client</small
+        >
+      </q-card-section>
+
+      <q-separator dark inset />
+
+      <q-card-section>
+        <pre>{{JSON.stringify(downloadOrderDialog.data, null, 2)}}</pre>
+      </q-card-section>
     </q-card>
   </q-dialog>
 </div>

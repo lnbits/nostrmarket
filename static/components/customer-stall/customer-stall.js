@@ -39,6 +39,10 @@ async function customerStall(path) {
             payment_request: null
           },
           show: false
+        },
+        downloadOrderDialog: {
+          show: false,
+          data: {}
         }
       }
     },
@@ -115,7 +119,25 @@ async function customerStall(path) {
         }
       },
       async downloadOrder() {
-        return
+        let created_at = Math.floor(Date.now() / 1000)
+        let order = this.checkoutDialog.data
+        // this.downloadOrderDialog.data = {
+        //   name: orderData?.username,
+        //   address: orderData.address,
+        //   message: orderData?.message,
+        //   contact: {
+        //     nostr: this.customerPubkey,
+        //     phone: null,
+        //     email: orderData?.email
+        //   },
+        //   items: Array.from(this.cart.products, p => {
+        //     return {product_id: p[0], quantity: p[1].quantity}
+        //   })
+        // }
+        // orderObj.id = await hash(
+        //   [this.customerPubkey, created_at, JSON.stringify(orderObj)].join(':')
+        // )
+        this.resetCheckout()
       },
       async getFromExtension() {
         this.customerPubkey = await window.nostr.getPublicKey()
@@ -126,7 +148,7 @@ async function customerStall(path) {
         // Check if user is logged in
         if (this.customerPubkey) {
           this.checkoutDialog.data.pubkey = this.customerPubkey
-          if (this.customerPrivkey && !useExtension) {
+          if (this.customerPrivkey && !this.useExtension) {
             this.checkoutDialog.data.privkey = this.customerPrivkey
           }
         }
@@ -277,7 +299,7 @@ async function customerStall(path) {
                   event.content
                 )
               }
-              console.log(`${mine ? 'Me' : 'Merchant'}: ${plaintext}`)
+              //console.log(`${mine ? 'Me' : 'Merchant'}: ${plaintext}`)
 
               this.messageFilter(plaintext, cb => Promise.resolve(pool.close))
             } catch {
