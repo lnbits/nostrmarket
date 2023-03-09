@@ -23,18 +23,8 @@ async def index(request: Request, user: User = Depends(check_user_exists)):
 
 
 @nostrmarket_ext.get("/market", response_class=HTMLResponse)
-async def market(
-    request: Request,
-    stall_id: str = Query(None),
-    product_id: str = Query(None),
-    merchant_pubkey: str = Query(None),
-):
+async def market(request: Request):
     return nostrmarket_renderer().TemplateResponse(
         "nostrmarket/market.html",
-        {
-            "request": request,
-            "stall_id": stall_id,
-            "product_id": product_id,
-            "merchant_pubkey": merchant_pubkey,
-        },
+        {"request": request},
     )
