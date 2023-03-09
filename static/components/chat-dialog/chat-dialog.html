@@ -1,0 +1,68 @@
+<div class="q-mr-md">
+  <q-btn dense round flat icon="chat" @click="startDialog" />
+  <q-dialog
+    v-model="dialog"
+    maximized
+    transition-show="slide-up"
+    transition-hide="slide-down"
+  >
+    <q-card>
+      <q-bar>
+        <q-icon name="chat" />
+        <div>Chat Box</div>
+
+        <q-space></q-space>
+
+        <q-btn dense flat icon="close" @click="closeDialog">
+          <q-tooltip content-class="bg-white text-primary">Close</q-tooltip>
+        </q-btn>
+      </q-bar>
+
+      <q-card-section
+        style="
+          height: calc(100vh - 120px);
+          overflow-y: scroll;
+          display: flex;
+          flex-direction: column-reverse;
+        "
+      >
+        <q-chat-message
+          :key="index"
+          v-for="(message, index) in sortedMessages"
+          :name="message.sender"
+          :text="[message.msg]"
+          :sent="message.sender == 'Me'"
+          :bg-color="message.sender == 'Me' ? 'white' : 'light-green-2'"
+          :stamp="message.timestamp"
+          size="6"
+        />
+      </q-card-section>
+      <q-card-actions>
+        <q-form @submit="sendMessage" class="full-width chat-input">
+          <q-input
+            ref="newMessage"
+            v-model="newMessage"
+            placeholder="Message"
+            class="full-width"
+            dense
+            outlined
+          >
+            <template>
+              <q-btn
+                round
+                dense
+                flat
+                type="submit"
+                icon="send"
+                color="primary"
+              />
+            </template>
+          </q-input>
+        </q-form>
+      </q-card-actions>
+      <q-inner-loading :showing="loading">
+        <q-spinner-cube size="50px" color="primary" />
+      </q-inner-loading>
+    </q-card>
+  </q-dialog>
+</div>

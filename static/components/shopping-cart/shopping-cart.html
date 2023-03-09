@@ -1,0 +1,51 @@
+<q-btn dense round flat icon="shopping_cart">
+  <q-badge v-if="cart.size" color="red" class="text-bold" floating>
+    {{ cart.size }}
+  </q-badge>
+  <q-menu v-if="cart.size">
+    <q-list style="min-width: 100px">
+      <q-item :key="p.id" v-for="p in cartMenu">
+        <q-item-section side>
+          <span>{{p.quantity}} x </span>
+        </q-item-section>
+        <q-item-section avatar v-if="p.image">
+          <q-avatar color="primary">
+            <img size="sm" :src="p.image" />
+          </q-avatar>
+        </q-item-section>
+
+        <q-item-section>
+          <q-item-label>{{ p.name }}</q-item-label>
+        </q-item-section>
+
+        <q-item-section side>
+          <span>
+            {{p.currency != 'sat' ? p.formatedPrice : p.price + 'sats'}}
+            <q-btn
+              class="q-ml-md"
+              round
+              color="red"
+              size="xs"
+              icon="close"
+              @click="$emit('remove-from-cart', p)"
+            />
+          </span>
+        </q-item-section>
+      </q-item>
+      <q-separator />
+    </q-list>
+    <div class="row q-pa-md q-gutter-md">
+      <q-btn
+        color="primary"
+        icon-right="checkout"
+        label="Checkout"
+        @click="$emit('open-checkout')"
+      ></q-btn>
+      <q-btn
+        class="q-ml-lg"
+        flat
+        color="primary"
+        label="Reset"
+        @click="$emit('reset-cart')"
+      ></q-btn></div></q-menu
+></q-btn>

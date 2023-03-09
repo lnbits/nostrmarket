@@ -1,7 +1,7 @@
 import json
 from http import HTTPStatus
 
-from fastapi import Depends, Request
+from fastapi import Depends, Query, Request
 from fastapi.templating import Jinja2Templates
 from loguru import logger
 from starlette.responses import HTMLResponse
@@ -19,4 +19,12 @@ async def index(request: Request, user: User = Depends(check_user_exists)):
     return nostrmarket_renderer().TemplateResponse(
         "nostrmarket/index.html",
         {"request": request, "user": user.dict()},
+    )
+
+
+@nostrmarket_ext.get("/market", response_class=HTMLResponse)
+async def market(request: Request):
+    return nostrmarket_renderer().TemplateResponse(
+        "nostrmarket/market.html",
+        {"request": request},
     )
