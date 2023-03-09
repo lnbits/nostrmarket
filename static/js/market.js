@@ -62,12 +62,13 @@ const market = async () => {
         if (this.activeStall) {
           products = products.filter(p => p.stall_id == this.activeStall)
         }
-        if (!this.searchText || this.searchText.length < 2) return products
+        const searchText = this.searchText.toLowerCase()
+        if (!searchText || searchText.length < 2) return products
         return products.filter(p => {
           return (
-            p.name.includes(this.searchText) ||
-            p.description.includes(this.searchText) ||
-            p.categories.includes(this.searchText)
+            p.name.toLowerCase().includes(searchText) ||
+            p.description.toLowerCase().includes(searchText) ||
+            p.categories.toLowerCase().includes(searchText)
           )
         })
       },

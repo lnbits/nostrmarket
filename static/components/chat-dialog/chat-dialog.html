@@ -33,7 +33,7 @@
           :text="[message.msg]"
           :sent="message.sender == 'Me'"
           :bg-color="message.sender == 'Me' ? 'white' : 'light-green-2'"
-          :stamp="`${timeFromNow(message.timestamp * 1000)}`"
+          :stamp="message.timestamp"
           size="6"
         />
       </q-card-section>
