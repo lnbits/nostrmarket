@@ -17,7 +17,7 @@ async function chatDialog(path) {
     },
     computed: {
       sortedMessages() {
-        return this.nostrMessages.sort((a, b) => b.timestamp - a.timestamp)
+        return this.nostrMessages.sort((a, b) => b.created_at - a.created_at)
       }
     },
     methods: {
@@ -36,11 +36,11 @@ async function chatDialog(path) {
         let sub = this.pool.sub(Array.from(this.relays), [
           {
             kinds: [4],
-            authors: [this.account.pubkey]
+            authors: [this.account.pubkey, this.merchant]
           },
           {
             kinds: [4],
-            '#p': [this.account.pubkey]
+            '#p': [this.account.pubkey, this.merchant]
           }
         ])
         sub.on('eose', () => {
@@ -68,18 +68,16 @@ async function chatDialog(path) {
               )
             }
             messagesMap.set(event.id, {
+              created_at: event.created_at,
               msg: plaintext,
               timestamp: timeFromNow(event.created_at * 1000),
               sender: `${mine ? 'Me' : 'Merchant'}`
             })
+            this.nostrMessages = Array.from(messagesMap.values())
           } catch {
             console.error('Unable to decrypt message!')
           }
         })
-        setTimeout(() => {
-          this.nostrMessages = Array.from(messagesMap.values())
-          this.loading = false
-        }, 5000)
       },
       async sendMessage() {
         if (this.newMessage && this.newMessage.length < 1) return

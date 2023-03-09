@@ -15,7 +15,7 @@
     <q-toolbar-title></q-toolbar-title>
     <chat-dialog
       v-if="this.customerPrivkey || this.customerUseExtension"
-      :account="account"
+      :account="account ? account : dropIn"
       :merchant="stall.pubkey"
       :relays="relays"
     />
@@ -80,8 +80,8 @@
                 </li>
                 <li>use a Nostr Signer Extension (NIP07)</li>
                 <li>
-                  fill out the required fields, without keys, and download the
-                  order and send as a direct message to the merchant on any
+                  fill out the required fields, with your publickey, download
+                  the order and send as a direct message to the merchant on any
                   Nostr client
                 </li>
               </ol>
@@ -94,15 +94,6 @@
                 color="primary"
                 label="Get from Extension"
                 ><q-tooltip>Use a Nostr browser extension</q-tooltip></q-btn
-              >
-              <q-btn
-                unelevated
-                @click="downloadOrder"
-                color="primary"
-                label="Download order"
-                ><q-tooltip
-                  >Download the order and send manually</q-tooltip
-                ></q-btn
               >
             </q-card-actions>
           </q-card>
@@ -123,7 +114,7 @@
           :type="isPwd ? 'password' : 'text'"
           v-if="!customerUseExtension"
           v-model.trim="checkoutDialog.data.privkey"
-          label="Private key"
+          label="Private key *optional"
           hint="Enter your private key"
         >
           <template v-slot:append>
@@ -170,12 +161,13 @@
         </div>
         <div class="row q-mt-lg">
           <q-btn
-            v-if="!checkoutDialog.data.pubkey && !checkoutDialog.data.privkey"
+            v-if="!customerUseExtension && !checkoutDialog.data.privkey"
             :loading="loading"
             unelevated
             color="primary"
             :disable="checkoutDialog.data.address == null
-              || checkoutDialog.data.shippingzone == null"
+              || checkoutDialog.data.shippingzone == null
+              || checkoutDialog.data.pubkey == null"
             @click="downloadOrder"
             >Download Order</q-btn
           >
@@ -214,12 +206,16 @@
         <a :href="'lightning:' + qrCodeDialog.data.payment_request">
           <q-responsive :ratio="1" class="q-mx-xl">
             <qrcode
+              v-if="qrCodeDialog.data.payment_request"
               :value="qrCodeDialog.data.payment_request"
               :options="{width: 340}"
               class="rounded-borders"
             ></qrcode>
           </q-responsive>
         </a>
+        <q-inner-loading :showing="loading">
+          <q-spinner-cube size="50px" color="primary" />
+        </q-inner-loading>
       </div>
       <div class="row q-mt-lg">
         <q-btn
@@ -237,9 +233,6 @@
           >Close</q-btn
         >
       </div>
-      <q-inner-loading :showing="loading">
-        <q-spinner-cube size="50px" color="primary" />
-      </q-inner-loading>
     </q-card>
   </q-dialog>
   <!-- ORDER DOWNLOAD DIALOG -->
@@ -247,18 +240,36 @@
     <q-card class="q-pa-lg q-pt-xl lnbits__dialog-card">
       <q-card-section>
         <div class="text-h6">Order data</div>
-        <div class="text-subtitle2">{{ stall.pubkey }}</div>
-        <small
-          >Send the bellow message, to the merchant pubkey, in any Nostr
-          client</small
-        >
+        <div class="text-subtitle1">Merchant pubkey</div>
+        <div class="text-subtitle2" @click="copyText(stall.pubkey)">
+          {{ `${stall.pubkey.slice(0,5)}...${stall.pubkey.slice(-5)}` }}
+          <sup>
+            <q-icon name="content_copy" style="color: #ccc; font-size: 1.2em" />
+          </sup>
+          <q-tooltip>Click to copy</q-tooltip>
+        </div>
+        <p>
+          Send the bellow code as a message, to the merchant pubkey, in any
+          Nostr client
+        </p>
       </q-card-section>
 
       <q-separator dark inset />
 
       <q-card-section>
-        <pre>{{JSON.stringify(downloadOrderDialog.data, null, 2)}}</pre>
+        <pre
+          style="font-size: 0.65rem; overflow-x: auto"
+        ><code>{{JSON.stringify(downloadOrderDialog.data, null, 2)}}</code></pre>
       </q-card-section>
+      <div class="row q-mt-lg">
+        <q-btn
+          outline
+          color="primary"
+          @click="copyText(JSON.stringify(downloadOrderDialog.data))"
+          >Copy order</q-btn
+        >
+        <q-btn v-close-popup flat color="grey" class="q-ml-auto">Close</q-btn>
+      </div>
     </q-card>
   </q-dialog>
 </div>

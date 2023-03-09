@@ -59,11 +59,27 @@ async function customerStall(path) {
           z => z.id == this.checkoutDialog.data.shippingzone
         )
         return +this.cart.total + zoneCost.cost
+      },
+      dropIn() {
+        return {
+          privkey: this.customerPrivkey,
+          pubkey: this.customerPubkey,
+          useExtension: this.customerUseExtension
+        }
       }
     },
     methods: {
       changePageS(page, opts) {
         this.$emit('change-page', page, opts)
+      },
+      copyText: function (text) {
+        var notify = this.$q.notify
+        Quasar.utils.copyToClipboard(text).then(function () {
+          notify({
+            message: 'Copied to clipboard!',
+            position: 'bottom'
+          })
+        })
       },
       getAmountFormated(amount, unit = 'USD') {
         return LNbits.utils.formatCurrency(amount, unit)
@@ -120,24 +136,27 @@ async function customerStall(path) {
       },
       async downloadOrder() {
         let created_at = Math.floor(Date.now() / 1000)
-        let order = this.checkoutDialog.data
-        // this.downloadOrderDialog.data = {
-        //   name: orderData?.username,
-        //   address: orderData.address,
-        //   message: orderData?.message,
-        //   contact: {
-        //     nostr: this.customerPubkey,
-        //     phone: null,
-        //     email: orderData?.email
-        //   },
-        //   items: Array.from(this.cart.products, p => {
-        //     return {product_id: p[0], quantity: p[1].quantity}
-        //   })
-        // }
-        // orderObj.id = await hash(
-        //   [this.customerPubkey, created_at, JSON.stringify(orderObj)].join(':')
-        // )
+        let orderData = this.checkoutDialog.data
+        let orderObj = {
+          name: orderData?.username,
+          address: orderData.address,
+          message: orderData?.message,
+          contact: {
+            nostr: orderData.pubkey,
+            phone: null,
+            email: orderData?.email
+          },
+          items: Array.from(this.cart.products, p => {
+            return {product_id: p[0], quantity: p[1].quantity}
+          })
+        }
+        orderObj.id = await hash(
+          [orderData.pubkey, created_at, JSON.stringify(orderObj)].join(':')
+        )
+        this.downloadOrderDialog.data = orderObj
+        this.downloadOrderDialog.show = true
         this.resetCheckout()
+        this.resetCart()
       },
       async getFromExtension() {
         this.customerPubkey = await window.nostr.getPublicKey()
@@ -241,6 +260,8 @@ async function customerStall(path) {
             })
             relay.on('error', () => {
               console.log(`failed to connect to ${relay.url}`)
+              relay.close()
+              return
             })
 
             await relay.connect()
@@ -261,17 +282,20 @@ async function customerStall(path) {
         this.resetCheckout()
         this.resetCart()
         this.qrCodeDialog.show = true
-        this.qrCodeDialog.dismissMsg = this.$q.notify({
-          timeout: 0,
+        this.$q.notify({
           message: 'Waiting for invoice from merchant...'
         })
         this.listenMessages()
       },
       async listenMessages() {
-        console.log('LISTEN')
+        this.loading = true
         try {
           const pool = new NostrTools.SimplePool()
           const filters = [
+            {
+              kinds: [4],
+              authors: [this.stall.pubkey]
+            },
             {
               kinds: [4],
               '#p': [this.customerPubkey]
@@ -284,7 +308,6 @@ async function customerStall(path) {
             let sender = mine
               ? event.tags.find(([k, v]) => k === 'p' && v && v !== '')[1]
               : event.pubkey
-
             try {
               let plaintext
               if (this.customerPrivkey) {
@@ -314,15 +337,17 @@ async function customerStall(path) {
         if (!isJson(text)) return
         let json = JSON.parse(text)
         if (json.id != this.activeOrder) return
-        if (json?.payment_options) {
-          this.qrCodeDialog.data.payment_request = json.payment_options.find(
-            o => o.type == 'ln'
-          ).link
+        if (json.payment_options) {
+          let payment_request = json.payment_options.find(o => o.type == 'ln')
+            .link
+          if (!payment_request) return
+          this.loading = false
+          this.qrCodeDialog.data.payment_request = payment_request
           this.qrCodeDialog.dismissMsg = this.$q.notify({
             timeout: 0,
             message: 'Waiting for payment...'
           })
-        } else if (json?.paid) {
+        } else if (json.paid) {
           this.closeQrCodeDialog()
           this.$q.notify({
             type: 'positive',
