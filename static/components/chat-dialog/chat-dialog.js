@@ -9,15 +9,64 @@ async function chatDialog(path) {
     data: function () {
       return {
         dialog: false,
+        isChat: false,
         loading: false,
         pool: null,
         nostrMessages: [],
-        newMessage: ''
+        newMessage: '',
+        ordersTable: {
+          columns: [
+            {
+              name: 'id',
+              align: 'left',
+              label: 'ID',
+              field: 'id'
+            },
+            {
+              name: 'paid',
+              align: 'left',
+              label: 'Paid',
+              field: 'paid',
+              sortable: true
+            },
+            {
+              name: 'shipped',
+              align: 'left',
+              label: 'Shipped',
+              field: 'shipped',
+              sortable: true
+            },
+            {
+              name: 'invoice',
+              align: 'left',
+              label: 'Invoice',
+              field: row =>
+                row.payment_options &&
+                row.payment_options.find(p => p.type == 'ln').link
+            }
+          ],
+          pagination: {
+            rowsPerPage: 10
+          }
+        }
       }
     },
     computed: {
       sortedMessages() {
         return this.nostrMessages.sort((a, b) => b.created_at - a.created_at)
+      },
+      ordersList() {
+        let orders = this.nostrMessages
+          .sort((a, b) => b.created_at - a.created_at)
+          .filter(o => isJson(o.msg))
+          .reduce((acc, cur) => {
+            const obj = JSON.parse(cur.msg)
+            const key = obj.id
+            const curGroup = acc[key] ?? {}
+            return {...acc, [key]: {...curGroup, ...obj}}
+          }, {})
+        console.log(orders)
+        return Object.values(orders)
       }
     },
     methods: {
@@ -67,13 +116,15 @@ async function chatDialog(path) {
                 event.content
               )
             }
-            messagesMap.set(event.id, {
-              created_at: event.created_at,
-              msg: plaintext,
-              timestamp: timeFromNow(event.created_at * 1000),
-              sender: `${mine ? 'Me' : 'Merchant'}`
-            })
-            this.nostrMessages = Array.from(messagesMap.values())
+            if (plaintext) {
+              messagesMap.set(event.id, {
+                created_at: event.created_at,
+                msg: plaintext,
+                timestamp: timeFromNow(event.created_at * 1000),
+                sender: `${mine ? 'Me' : 'Merchant'}`
+              })
+              this.nostrMessages = Array.from(messagesMap.values())
+            }
           } catch {
             console.error('Unable to decrypt message!')
           }
