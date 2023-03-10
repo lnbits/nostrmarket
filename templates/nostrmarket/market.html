@@ -148,15 +148,24 @@
             {{ activePage }}
           </q-toolbar-title>
           {%endraw%}
+          <q-space></q-space>
+          <q-btn
+            v-if="!activeStall"
+            color="primary"
+            label="Search"
+            icon="travel_explore"
+            @click="searchNostr = !searchNostr"
+            ><q-tooltip>Search for products on Nostr</q-tooltip></q-btn
+          >
           <q-input
-            class="float-left q-ml-md"
+            class="q-ml-md"
             standout
             square
             dense
             outlined
             clearable
             v-model.trim="searchText"
-            label="Search for products"
+            label="Filter products"
           >
             <template v-slot:append>
               <q-icon v-if="!searchText" name="search" />
@@ -176,8 +185,11 @@
     ></customer-stall>
     <customer-market
       v-else
+      :search-nostr="searchNostr"
+      :relays="relays"
       :products="filterProducts"
       @change-page="navigateTo"
+      @update-data="updateData"
     ></customer-market>
   </q-page-container>
   <!-- ACCOUNT DIALOG -->

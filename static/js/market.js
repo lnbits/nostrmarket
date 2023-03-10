@@ -10,7 +10,8 @@ const market = async () => {
     'wss://nostr.zebedee.cloud'
   ]
   const eventToObj = event => {
-    event.content = JSON.parse(event.content)
+    console.log(event.content)
+    event.content = JSON.parse(event.content) || null
     return {
       ...event,
       ...Object.values(event.tags).reduce((acc, tag) => {
@@ -41,6 +42,7 @@ const market = async () => {
             key: null
           }
         },
+        searchNostr: false,
         drawer: false,
         pubkeys: new Set(),
         relays: new Set(),
@@ -62,13 +64,15 @@ const market = async () => {
         if (this.activeStall) {
           products = products.filter(p => p.stall_id == this.activeStall)
         }
+        if (!this.searchText || this.searchText.length < 2) return products
         const searchText = this.searchText.toLowerCase()
-        if (!searchText || searchText.length < 2) return products
         return products.filter(p => {
           return (
             p.name.toLowerCase().includes(searchText) ||
-            p.description.toLowerCase().includes(searchText) ||
-            p.categories.toLowerCase().includes(searchText)
+            (p.description &&
+              p.description.toLowerCase().includes(searchText)) ||
+            (p.categories &&
+              p.categories.toString().toLowerCase().includes(searchText))
           )
         })
       },
@@ -191,6 +195,36 @@ const market = async () => {
         this.accountDialog.data.watchOnly = true
         return
       },
+      async updateData(events) {
+        let products = new Map()
+        let stalls = new Map()
+
+        this.stalls.forEach(s => stalls.set(s.id, s))
+        this.products.forEach(p => products.set(p.id, p))
+
+        events.map(eventToObj).map(e => {
+          if (e.kind == 30018) {
+            //it's a product `d` is the prod. id
+            products.set(e.d, {...e.content, id: e.d[0], categories: e.t})
+          } else if (e.kind == 30017) {
+            // it's a stall `d` is the stall id
+            stalls.set(e.d, {...e.content, id: e.d[0], pubkey: e.pubkey})
+            return
+          }
+        })
+
+        this.stalls = await Array.from(stalls.values())
+
+        this.products = Array.from(products.values()).map(obj => {
+          let stall = this.stalls.find(s => s.id == obj.stall_id)
+          obj.stallName = stall.name
+          obj.images = [obj.image]
+          if (obj.currency != 'sat') {
+            obj.formatedPrice = this.getAmountFormated(obj.price, obj.currency)
+          }
+          return obj
+        })
+      },
       async initNostr() {
         this.$q.loading.show()
         const pool = new NostrTools.SimplePool()
@@ -205,8 +239,8 @@ const market = async () => {
               authors: Array.from(this.pubkeys)
             }
           ])
-          .then(events => {
-            console.log(events)
+          .then(async events => {
+            // ;[stalls, products] = await this.updateData(events)
             this.events = events || []
             this.events.map(eventToObj).map(e => {
               if (e.kind == 0) {
