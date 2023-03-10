@@ -9,7 +9,7 @@ async function chatDialog(path) {
     data: function () {
       return {
         dialog: false,
-        isChat: false,
+        isChat: true,
         loading: false,
         pool: null,
         nostrMessages: [],
@@ -21,6 +21,13 @@ async function chatDialog(path) {
               align: 'left',
               label: 'ID',
               field: 'id'
+            },
+            {
+              name: 'created_at',
+              align: 'left',
+              label: 'Created/Updated',
+              field: 'created_at',
+              sortable: true
             },
             {
               name: 'paid',
@@ -62,10 +69,9 @@ async function chatDialog(path) {
           .reduce((acc, cur) => {
             const obj = JSON.parse(cur.msg)
             const key = obj.id
-            const curGroup = acc[key] ?? {}
+            const curGroup = acc[key] ?? {created_at: cur.timestamp}
             return {...acc, [key]: {...curGroup, ...obj}}
           }, {})
-        console.log(orders)
         return Object.values(orders)
       }
     },
@@ -85,11 +91,11 @@ async function chatDialog(path) {
         let sub = this.pool.sub(Array.from(this.relays), [
           {
             kinds: [4],
-            authors: [this.account.pubkey, this.merchant]
+            authors: [this.account.pubkey]
           },
           {
             kinds: [4],
-            '#p': [this.account.pubkey, this.merchant]
+            '#p': [this.account.pubkey]
           }
         ])
         sub.on('eose', () => {
@@ -98,9 +104,7 @@ async function chatDialog(path) {
         })
         sub.on('event', async event => {
           let mine = event.pubkey == this.account.pubkey
-          let sender = mine
-            ? event.tags.find(([k, v]) => k === 'p' && v && v !== '')[1]
-            : event.pubkey
+          let sender = mine ? this.merchant : event.pubkey
 
           try {
             let plaintext
