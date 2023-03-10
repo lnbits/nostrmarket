@@ -10,7 +10,6 @@ const market = async () => {
     'wss://nostr.zebedee.cloud'
   ]
   const eventToObj = event => {
-    console.log(event.content)
     event.content = JSON.parse(event.content) || null
     return {
       ...event,

@@ -43,6 +43,7 @@ async function customerMarket(path) {
             authors: Array.from(merchants)
           }
         ])
+        pool.close(relays)
         await this.$emit('update-data', [...stallEvents, ...productEvents])
         this.$q.loading.hide()
       }
