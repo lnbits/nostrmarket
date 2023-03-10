@@ -80,13 +80,17 @@
                 </li>
                 <li>use a Nostr Signer Extension (NIP07)</li>
                 <li>
-                  fill out the required fields, with your publickey, download
-                  the order and send as a direct message to the merchant on any
-                  Nostr client
+                  generate a key pair to make the order (you should backup up
+                  your keys)
+                </li>
+                <li>
+                  fill out the required fields and with your public key,
+                  download the order and send as a direct message to the
+                  merchant on any Nostr client
                 </li>
               </ol>
             </q-card-section>
-            <q-card-actions v-if="hasNip07" align="right">
+            <q-card-actions align="right">
               <q-btn
                 v-if="hasNip07"
                 unelevated
@@ -94,6 +98,14 @@
                 color="primary"
                 label="Get from Extension"
                 ><q-tooltip>Use a Nostr browser extension</q-tooltip></q-btn
+              >
+              <q-btn
+                v-if="!this.account && !this.customerPubkey && !this.customerPrivkey"
+                unelevated
+                @click="generateKeyPair"
+                color="primary"
+                label="Generate Keys"
+                ><q-tooltip>Generate a new key pair</q-tooltip></q-btn
               >
             </q-card-actions>
           </q-card>

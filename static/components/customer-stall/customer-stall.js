@@ -163,6 +163,13 @@ async function customerStall(path) {
         this.customerUseExtension = true
         this.checkoutDialog.data.pubkey = this.customerPubkey
       },
+      async generateKeyPair() {
+        this.customerPrivkey = NostrTools.generatePrivateKey()
+        this.customerPubkey = NostrTools.getPublicKey(this.customerPrivkey)
+        this.customerUseExtension = false
+        this.checkoutDialog.data.pubkey = this.customerPubkey
+        this.checkoutDialog.data.privkey = this.customerPrivkey
+      },
       openCheckout() {
         // Check if user is logged in
         if (this.customerPubkey) {
