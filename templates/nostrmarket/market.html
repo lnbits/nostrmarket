@@ -7,11 +7,19 @@
     </q-toolbar>
     <div>
       <div v-if="account" class="bg-transparent q-ma-md">
-        <!-- <q-avatar size="56px" class="q-mb-sm">
-          <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
+        <q-avatar size="56px" class="q-mb-sm">
+          <img
+            :src="accountMetadata?.picture || '/nostrmarket/static/images/blank-avatar.webp'"
+          />
         </q-avatar>
-        <div class="text-weight-bold">Razvan Stoenescu</div>
-        <div>@rstoenescu</div> -->
+        {%raw%}
+        <div class="text-weight-bold">
+          {{ `${account.pubkey.slice(0, 5)}...${account.pubkey.slice(-5)}` }}
+        </div>
+        <div v-if="accountMetadata && accountMetadata.name">
+          {{ accountMetadata.name }}
+        </div>
+        {%endraw%}
         <q-btn
           label="Delete data"
           class="q-mt-md"

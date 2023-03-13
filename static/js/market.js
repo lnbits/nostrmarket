@@ -34,6 +34,7 @@ const market = async () => {
     data: function () {
       return {
         account: null,
+        accountMetadata: null,
         accountDialog: {
           show: false,
           data: {
@@ -105,6 +106,9 @@ const market = async () => {
         let relays = this.$q.localStorage.getItem(`diagonAlley.relays`)
         if (merchants && merchants.length) {
           this.pubkeys = new Set(merchants)
+        }
+        if (this.account) {
+          this.pubkeys.add(this.account.pubkey)
         }
         if (relays && relays.length) {
           this.relays = new Set([...defaultRelays, ...relays])
@@ -243,6 +247,9 @@ const market = async () => {
             this.events.map(eventToObj).map(e => {
               if (e.kind == 0) {
                 this.profiles.set(e.pubkey, e.content)
+                if (e.pubkey == this.account.pubkey) {
+                  this.accountMetadata = this.profiles.get(this.account.pubkey)
+                }
                 return
               } else if (e.kind == 30018) {
                 //it's a product `d` is the prod. id
