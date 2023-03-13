@@ -7,11 +7,19 @@
     </q-toolbar>
     <div>
       <div v-if="account" class="bg-transparent q-ma-md">
-        <!-- <q-avatar size="56px" class="q-mb-sm">
-          <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
+        <q-avatar size="56px" class="q-mb-sm">
+          <img
+            :src="accountMetadata?.picture || '/nostrmarket/static/images/blank-avatar.webp'"
+          />
         </q-avatar>
-        <div class="text-weight-bold">Razvan Stoenescu</div>
-        <div>@rstoenescu</div> -->
+        {%raw%}
+        <div class="text-weight-bold">
+          {{ `${account.pubkey.slice(0, 5)}...${account.pubkey.slice(-5)}` }}
+        </div>
+        <div v-if="accountMetadata && accountMetadata.name">
+          {{ accountMetadata.name }}
+        </div>
+        {%endraw%}
         <q-btn
           label="Delete data"
           class="q-mt-md"
@@ -148,15 +156,24 @@
             {{ activePage }}
           </q-toolbar-title>
           {%endraw%}
+          <q-space></q-space>
+          <q-btn
+            v-if="!activeStall"
+            color="primary"
+            label="Search"
+            icon="travel_explore"
+            @click="searchNostr = !searchNostr"
+            ><q-tooltip>Search for products on Nostr</q-tooltip></q-btn
+          >
           <q-input
-            class="float-left q-ml-md"
+            class="q-ml-md"
             standout
             square
             dense
             outlined
             clearable
             v-model.trim="searchText"
-            label="Search for products"
+            label="Filter products"
           >
             <template v-slot:append>
               <q-icon v-if="!searchText" name="search" />
@@ -176,8 +193,11 @@
     ></customer-stall>
     <customer-market
       v-else
+      :search-nostr="searchNostr"
+      :relays="relays"
       :products="filterProducts"
       @change-page="navigateTo"
+      @update-data="updateData"
     ></customer-market>
   </q-page-container>
   <!-- ACCOUNT DIALOG -->
@@ -196,11 +216,12 @@
       <q-card-section class="q-pt-none">
         <q-input
           dense
-          label="Private key (hex)"
+          label="nsec/npub/hex"
           v-model="accountDialog.data.key"
           autofocus
           @keyup.enter="createAccount"
-          :error="!isValidKey"
+          :error="accountDialog.data.key && !isValidKey"
+          hint="Enter you private key (recommended) or public key"
         ></q-input>
 
         <q-item tag="label">

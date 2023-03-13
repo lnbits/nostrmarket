@@ -10,7 +10,7 @@ const market = async () => {
     'wss://nostr.zebedee.cloud'
   ]
   const eventToObj = event => {
-    event.content = JSON.parse(event.content)
+    event.content = JSON.parse(event.content) || null
     return {
       ...event,
       ...Object.values(event.tags).reduce((acc, tag) => {
@@ -34,6 +34,7 @@ const market = async () => {
     data: function () {
       return {
         account: null,
+        accountMetadata: null,
         accountDialog: {
           show: false,
           data: {
@@ -41,6 +42,7 @@ const market = async () => {
             key: null
           }
         },
+        searchNostr: false,
         drawer: false,
         pubkeys: new Set(),
         relays: new Set(),
@@ -62,13 +64,15 @@ const market = async () => {
         if (this.activeStall) {
           products = products.filter(p => p.stall_id == this.activeStall)
         }
+        if (!this.searchText || this.searchText.length < 2) return products
         const searchText = this.searchText.toLowerCase()
-        if (!searchText || searchText.length < 2) return products
         return products.filter(p => {
           return (
             p.name.toLowerCase().includes(searchText) ||
-            p.description.toLowerCase().includes(searchText) ||
-            p.categories.toLowerCase().includes(searchText)
+            (p.description &&
+              p.description.toLowerCase().includes(searchText)) ||
+            (p.categories &&
+              p.categories.toString().toLowerCase().includes(searchText))
           )
         })
       },
@@ -87,9 +91,12 @@ const market = async () => {
         return window.nostr
       },
       isValidKey() {
-        return this.accountDialog.data.key
-          ?.toLowerCase()
-          ?.match(/^[0-9a-f]{64}$/)
+        let key = this.accountDialog.data.key
+        if (key && key.startsWith('n')) {
+          let {type, data} = NostrTools.nip19.decode(key)
+          key = data
+        }
+        return key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)
       }
     },
     async created() {
@@ -102,6 +109,9 @@ const market = async () => {
         let relays = this.$q.localStorage.getItem(`diagonAlley.relays`)
         if (merchants && merchants.length) {
           this.pubkeys = new Set(merchants)
+        }
+        if (this.account) {
+          this.pubkeys.add(this.account.pubkey)
         }
         if (relays && relays.length) {
           this.relays = new Set([...defaultRelays, ...relays])
@@ -141,16 +151,6 @@ const market = async () => {
       this.$q.loading.hide()
     },
     methods: {
-      naddr() {
-        let naddr = NostrTools.nip19.naddrEncode({
-          identifier: '1234',
-          pubkey:
-            'c1415f950a1e3431de2bc5ee35144639e2f514cf158279abff9ed77d50118796',
-          kind: 30018,
-          relays: defaultRelays
-        })
-        console.log(naddr)
-      },
       async deleteAccount() {
         await LNbits.utils
           .confirmDialog(
@@ -169,6 +169,10 @@ const market = async () => {
         }
         if (this.isValidKey) {
           let {key, watchOnly} = this.accountDialog.data
+          if (key.startsWith('n')) {
+            let {type, data} = NostrTools.nip19.decode(key)
+            key = data
+          }
           this.$q.localStorage.set('diagonAlley.account', {
             privkey: watchOnly ? null : key,
             pubkey: watchOnly ? key : NostrTools.getPublicKey(key),
@@ -191,6 +195,36 @@ const market = async () => {
         this.accountDialog.data.watchOnly = true
         return
       },
+      async updateData(events) {
+        let products = new Map()
+        let stalls = new Map()
+
+        this.stalls.forEach(s => stalls.set(s.id, s))
+        this.products.forEach(p => products.set(p.id, p))
+
+        events.map(eventToObj).map(e => {
+          if (e.kind == 30018) {
+            //it's a product `d` is the prod. id
+            products.set(e.d, {...e.content, id: e.d[0], categories: e.t})
+          } else if (e.kind == 30017) {
+            // it's a stall `d` is the stall id
+            stalls.set(e.d, {...e.content, id: e.d[0], pubkey: e.pubkey})
+            return
+          }
+        })
+
+        this.stalls = await Array.from(stalls.values())
+
+        this.products = Array.from(products.values()).map(obj => {
+          let stall = this.stalls.find(s => s.id == obj.stall_id)
+          obj.stallName = stall.name
+          obj.images = [obj.image]
+          if (obj.currency != 'sat') {
+            obj.formatedPrice = this.getAmountFormated(obj.price, obj.currency)
+          }
+          return obj
+        })
+      },
       async initNostr() {
         this.$q.loading.show()
         const pool = new NostrTools.SimplePool()
@@ -205,12 +239,14 @@ const market = async () => {
               authors: Array.from(this.pubkeys)
             }
           ])
-          .then(events => {
-            console.log(events)
+          .then(async events => {
             this.events = events || []
             this.events.map(eventToObj).map(e => {
               if (e.kind == 0) {
                 this.profiles.set(e.pubkey, e.content)
+                if (e.pubkey == this.account?.pubkey) {
+                  this.accountMetadata = this.profiles.get(this.account.pubkey)
+                }
                 return
               } else if (e.kind == 30018) {
                 //it's a product `d` is the prod. id
