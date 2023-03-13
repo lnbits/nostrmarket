@@ -91,9 +91,12 @@ const market = async () => {
         return window.nostr
       },
       isValidKey() {
-        return this.accountDialog.data.key
-          ?.toLowerCase()
-          ?.match(/^[0-9a-f]{64}$/)
+        let key = this.accountDialog.data.key
+        if (key && key.startsWith('n')) {
+          let {type, data} = NostrTools.nip19.decode(key)
+          key = data
+        }
+        return key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)
       }
     },
     async created() {
@@ -176,6 +179,10 @@ const market = async () => {
         }
         if (this.isValidKey) {
           let {key, watchOnly} = this.accountDialog.data
+          if (key.startsWith('n')) {
+            let {type, data} = NostrTools.nip19.decode(key)
+            key = data
+          }
           this.$q.localStorage.set('diagonAlley.account', {
             privkey: watchOnly ? null : key,
             pubkey: watchOnly ? key : NostrTools.getPublicKey(key),
@@ -247,7 +254,7 @@ const market = async () => {
             this.events.map(eventToObj).map(e => {
               if (e.kind == 0) {
                 this.profiles.set(e.pubkey, e.content)
-                if (e.pubkey == this.account.pubkey) {
+                if (e.pubkey == this.account?.pubkey) {
                   this.accountMetadata = this.profiles.get(this.account.pubkey)
                 }
                 return

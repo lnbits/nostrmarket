@@ -216,11 +216,12 @@
       <q-card-section class="q-pt-none">
         <q-input
           dense
-          label="Private key (hex)"
+          label="nsec/npub/hex"
           v-model="accountDialog.data.key"
           autofocus
           @keyup.enter="createAccount"
-          :error="!isValidKey"
+          :error="accountDialog.data.key && !isValidKey"
+          hint="Enter you private key (recommended) or public key"
         ></q-input>
 
         <q-item tag="label">
