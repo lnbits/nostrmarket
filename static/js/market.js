@@ -151,16 +151,6 @@ const market = async () => {
       this.$q.loading.hide()
     },
     methods: {
-      naddr() {
-        let naddr = NostrTools.nip19.naddrEncode({
-          identifier: '1234',
-          pubkey:
-            'c1415f950a1e3431de2bc5ee35144639e2f514cf158279abff9ed77d50118796',
-          kind: 30018,
-          relays: defaultRelays
-        })
-        console.log(naddr)
-      },
       async deleteAccount() {
         await LNbits.utils
           .confirmDialog(
