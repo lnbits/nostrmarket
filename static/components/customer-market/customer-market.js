@@ -36,6 +36,7 @@ async function customerMarket(path) {
             limit: 100
           }
         ])
+
         productEvents.map(e => merchants.add(e.pubkey))
         let stallEvents = await pool.list(relays, [
           {
