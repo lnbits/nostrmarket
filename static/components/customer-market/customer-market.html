@@ -20,6 +20,7 @@
             clearable
             v-model.trim="search"
             label="Search products"
+            @keydown.enter="searchProducts"
             hint="Enter search terms separated by spaces"
           >
             <template v-slot:after>
@@ -29,7 +30,6 @@
                 icon="search"
                 label="Search"
                 @click="searchProducts"
-                @keydown.enter="searchProducts"
               />
             </template>
           </q-input>

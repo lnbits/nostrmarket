@@ -239,7 +239,6 @@ const market = async () => {
             }
           ])
           .then(async events => {
-            // ;[stalls, products] = await this.updateData(events)
             this.events = events || []
             this.events.map(eventToObj).map(e => {
               if (e.kind == 0) {
