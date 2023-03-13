@@ -9,15 +9,70 @@ async function chatDialog(path) {
     data: function () {
       return {
         dialog: false,
+        isChat: true,
         loading: false,
         pool: null,
         nostrMessages: [],
-        newMessage: ''
+        newMessage: '',
+        ordersTable: {
+          columns: [
+            {
+              name: 'id',
+              align: 'left',
+              label: 'ID',
+              field: 'id'
+            },
+            {
+              name: 'created_at',
+              align: 'left',
+              label: 'Created/Updated',
+              field: 'created_at',
+              sortable: true
+            },
+            {
+              name: 'paid',
+              align: 'left',
+              label: 'Paid',
+              field: 'paid',
+              sortable: true
+            },
+            {
+              name: 'shipped',
+              align: 'left',
+              label: 'Shipped',
+              field: 'shipped',
+              sortable: true
+            },
+            {
+              name: 'invoice',
+              align: 'left',
+              label: 'Invoice',
+              field: row =>
+                row.payment_options &&
+                row.payment_options.find(p => p.type == 'ln').link
+            }
+          ],
+          pagination: {
+            rowsPerPage: 10
+          }
+        }
       }
     },
     computed: {
       sortedMessages() {
-        return this.nostrMessages.sort((a, b) => b.timestamp - a.timestamp)
+        return this.nostrMessages.sort((a, b) => b.created_at - a.created_at)
+      },
+      ordersList() {
+        let orders = this.nostrMessages
+          .sort((a, b) => b.created_at - a.created_at)
+          .filter(o => isJson(o.msg))
+          .reduce((acc, cur) => {
+            const obj = JSON.parse(cur.msg)
+            const key = obj.id
+            const curGroup = acc[key] ?? {created_at: cur.timestamp}
+            return {...acc, [key]: {...curGroup, ...obj}}
+          }, {})
+        return Object.values(orders)
       }
     },
     methods: {
@@ -49,9 +104,7 @@ async function chatDialog(path) {
         })
         sub.on('event', async event => {
           let mine = event.pubkey == this.account.pubkey
-          let sender = mine
-            ? event.tags.find(([k, v]) => k === 'p' && v && v !== '')[1]
-            : event.pubkey
+          let sender = mine ? this.merchant : event.pubkey
 
           try {
             let plaintext
@@ -67,19 +120,19 @@ async function chatDialog(path) {
                 event.content
               )
             }
-            messagesMap.set(event.id, {
-              msg: plaintext,
-              timestamp: timeFromNow(event.created_at * 1000),
-              sender: `${mine ? 'Me' : 'Merchant'}`
-            })
+            if (plaintext) {
+              messagesMap.set(event.id, {
+                created_at: event.created_at,
+                msg: plaintext,
+                timestamp: timeFromNow(event.created_at * 1000),
+                sender: `${mine ? 'Me' : 'Merchant'}`
+              })
+              this.nostrMessages = Array.from(messagesMap.values())
+            }
           } catch {
             console.error('Unable to decrypt message!')
           }
         })
-        setTimeout(() => {
-          this.nostrMessages = Array.from(messagesMap.values())
-          this.loading = false
-        }, 5000)
       },
       async sendMessage() {
         if (this.newMessage && this.newMessage.length < 1) return

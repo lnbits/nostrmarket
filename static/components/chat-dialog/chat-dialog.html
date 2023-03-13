@@ -8,8 +8,14 @@
   >
     <q-card>
       <q-bar>
-        <q-icon name="chat" />
-        <div>Chat Box</div>
+        <q-btn dense flat icon="chat" label="Chat" @click="isChat = true" />
+        <q-btn
+          dense
+          flat
+          icon="receipt_long"
+          label="Orders"
+          @click="isChat = false"
+        />
 
         <q-space></q-space>
 
@@ -17,49 +23,64 @@
           <q-tooltip content-class="bg-white text-primary">Close</q-tooltip>
         </q-btn>
       </q-bar>
-
-      <q-card-section
-        style="
-          height: calc(100vh - 120px);
-          overflow-y: scroll;
-          display: flex;
-          flex-direction: column-reverse;
-        "
-      >
-        <q-chat-message
-          :key="index"
-          v-for="(message, index) in sortedMessages"
-          :name="message.sender"
-          :text="[message.msg]"
-          :sent="message.sender == 'Me'"
-          :bg-color="message.sender == 'Me' ? 'white' : 'light-green-2'"
-          :stamp="message.timestamp"
-          size="6"
-        />
-      </q-card-section>
-      <q-card-actions>
-        <q-form @submit="sendMessage" class="full-width chat-input">
-          <q-input
-            ref="newMessage"
-            v-model="newMessage"
-            placeholder="Message"
-            class="full-width"
-            dense
-            outlined
-          >
-            <template>
-              <q-btn
-                round
-                dense
-                flat
-                type="submit"
-                icon="send"
-                color="primary"
-              />
-            </template>
-          </q-input>
-        </q-form>
-      </q-card-actions>
+      <div v-if="isChat">
+        <q-card-section
+          class="q-ml-auto"
+          style="
+            width: 100%;
+            max-width: 720px;
+            height: calc(100vh - 120px);
+            overflow-y: scroll;
+            display: flex;
+            flex-direction: column-reverse;
+          "
+        >
+          <q-chat-message
+            :key="index"
+            v-for="(message, index) in sortedMessages"
+            :name="message.sender"
+            :text="[message.msg]"
+            :sent="message.sender == 'Me'"
+            :bg-color="message.sender == 'Me' ? 'white' : 'light-green-2'"
+            :stamp="message.timestamp"
+            size="6"
+          />
+        </q-card-section>
+        <q-card-actions>
+          <q-form @submit="sendMessage" class="full-width chat-input">
+            <q-input
+              ref="newMessage"
+              v-model="newMessage"
+              placeholder="Message"
+              class="full-width"
+              dense
+              outlined
+            >
+              <template>
+                <q-btn
+                  round
+                  dense
+                  flat
+                  type="submit"
+                  icon="send"
+                  color="primary"
+                />
+              </template>
+            </q-input>
+          </q-form>
+        </q-card-actions>
+      </div>
+      <div v-else>
+        <q-card-section>
+          <q-table
+            title="Orders"
+            :data="ordersList"
+            :columns="ordersTable.columns"
+            :pagination.sync="ordersTable.pagination"
+            row-key="id"
+          />
+        </q-card-section>
+      </div>
       <q-inner-loading :showing="loading">
         <q-spinner-cube size="50px" color="primary" />
       </q-inner-loading>
