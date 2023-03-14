@@ -13,7 +13,6 @@ from lnbits.decorators import (
     require_admin_key,
     require_invoice_key,
 )
-from lnbits.extensions.nostrmarket.helpers import get_shared_secret
 from lnbits.utils.exchange_rates import currencies
 
 from . import nostrmarket_ext, scheduled_tasks

@@ -9,7 +9,6 @@ from .crud import (
     create_direct_message,
     create_order,
     get_merchant_by_pubkey,
-    get_merchant_for_user,
     get_order,
     get_order_by_event_id,
     get_products_by_ids,
@@ -114,7 +113,7 @@ async def handle_order_paid(order_id: str, merchant_pubkey: str):
 
 async def process_nostr_message(msg: str):
     try:
-        type, *rest= json.loads(msg)
+        type, *rest = json.loads(msg)
         if type.upper() == "EVENT":
             subscription_id, event = rest
             subscription_name, merchant_public_key = subscription_id.split(":")
