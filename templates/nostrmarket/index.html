@@ -2,7 +2,46 @@
 %} {% block page %}
 <div class="row q-col-gutter-md">
   <div class="col-12 col-md-7 q-gutter-y-md">
-    <q-card v-if="!merchant">
+    <div v-if="merchant && merchant.id">
+      <q-card>
+        <q-card-section>
+          <div class="row">
+            <div class="col-2">
+              <merchant-details
+                :merchant-id="merchant.id"
+                :inkey="g.user.wallets[0].inkey"
+                :adminkey="g.user.wallets[0].adminkey"
+                @show-keys="toggleMerchantKeys"
+              ></merchant-details>
+            </div>
+            <div class="col-8"></div>
+            <div class="col-2">
+              <shipping-zones
+                :inkey="g.user.wallets[0].inkey"
+                :adminkey="g.user.wallets[0].adminkey"
+                class="float-right"
+              ></shipping-zones>
+            </div>
+          </div>
+        </q-card-section>
+        <q-card-section v-if="showKeys">
+          <key-pair
+            :public-key="merchant.public_key"
+            :private-key="merchant.private_key"
+          ></key-pair>
+        </q-card-section>
+      </q-card>
+      <q-card class="q-mt-lg">
+        <q-card-section>
+          <stall-list
+            :adminkey="g.user.wallets[0].adminkey"
+            :inkey="g.user.wallets[0].inkey"
+            :wallet-options="g.user.walletOptions"
+          ></stall-list>
+        </q-card-section>
+      </q-card>
+    </div>
+    <q-card v-else>
       <q-card-section>
         <span class="text-h4">Wellcome to Nostr Market!</span><br />
         In Nostr Market, merchant and customer communicate via NOSTR relays, so
@@ -57,62 +96,31 @@
         </div>
       </q-card-section>
     </q-card>
-    <div v-else>
-      <q-card>
-        <q-card-section>
-          <div class="row">
-            <div class="col-8"></div>
-            <div class="col-2">
-              <shipping-zones
-                :inkey="g.user.wallets[0].inkey"
-                :adminkey="g.user.wallets[0].adminkey"
-                class="float-right"
-              ></shipping-zones>
-            </div>
-            <div class="col-2">
-              <q-btn
-                @click="showKeys = !showKeys"
-                icon="vpn_key"
-                color="primary"
-                class="float-right"
-              >
-                <q-tooltip> Show Public and Private keys </q-tooltip>
-              </q-btn>
-            </div>
-          </div>
-        </q-card-section>
-        <q-card-section v-if="showKeys">
-          <key-pair
-            :public-key="merchant.public_key"
-            :private-key="merchant.private_key"
-          ></key-pair>
-        </q-card-section>
-      </q-card>
-      <q-card class="q-mt-lg">
-        <q-card-section>
-          <stall-list
-            :adminkey="g.user.wallets[0].adminkey"
-            :inkey="g.user.wallets[0].inkey"
-            :wallet-options="g.user.walletOptions"
-          ></stall-list>
-        </q-card-section>
-      </q-card>
-    </div>
   </div>
 
   <div class="col-12 col-md-5 q-gutter-y-md">
-    <q-card>
-      <q-card-section>
-        <h6 class="text-subtitle1 q-my-none">
-          {{SITE_TITLE}} Nostr Market Extension
-        </h6>
-      </q-card-section>
-      <q-card-section class="q-pa-none">
-        <q-separator></q-separator>
-        <q-list> {% include "nostrmarket/_api_docs.html" %} </q-list>
-      </q-card-section>
-    </q-card>
+    <div class="col-12">
+      <q-card>
+        <q-card-section>
+          <h6 class="text-subtitle1 q-my-none">
+            {{SITE_TITLE}} Nostr Market Extension
+          </h6>
+        </q-card-section>
+        <q-card-section class="q-pa-none">
+          <q-separator></q-separator>
+          <q-list> {% include "nostrmarket/_api_docs.html" %} </q-list>
+        </q-card-section>
+      </q-card>
+    </div>
+    <div v-if="merchant && merchant.id" class="col-12">
+      <direct-messages
+        :inkey="g.user.wallets[0].inkey"
+        :adminkey="g.user.wallets[0].adminkey"
+      >
+      </direct-messages>
+    </div>
   </div>
+
   <div>
     <q-dialog v-model="importKeyDialog.show" position="top">
       <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
@@ -141,6 +149,23 @@
   </div>
 </div>
 {% endblock%}{% block scripts %} {{ window_vars(user) }}
+
+<style scoped>
+  .chat-container {
+    position: relative;
+    display: grid;
+    grid-template-rows: 1fr auto;
+    height: 50vh;
+  }
+
+  .chat-box {
+    padding: 1rem;
+    overflow-y: auto;
+    margin-left: auto;
+    width: 100%;
+  }
+</style>
+
 <!-- todo: serve locally -->
 <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pica@6.1.1/dist/pica.min.js"></script>
@@ -151,6 +176,8 @@
 <script src="{{ url_for('nostrmarket_static', path='components/stall-details/stall-details.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/stall-list/stall-list.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/order-list/order-list.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/direct-messages/direct-messages.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/merchant-details/merchant-details.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/index.js') }}"></script>
 
 {% endblock %}

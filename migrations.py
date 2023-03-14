@@ -18,11 +18,11 @@ async def m001_initial(db):
     """
     Initial stalls table.
     """
-    # user_id, id, wallet, name, currency, zones, meta
+
     await db.execute(
         """
         CREATE TABLE nostrmarket.stalls (
-            user_id TEXT NOT NULL,
+            merchant_id TEXT NOT NULL,
             id TEXT PRIMARY KEY,
             wallet TEXT NOT NULL,
             name TEXT NOT NULL,
@@ -39,7 +39,7 @@ async def m001_initial(db):
     await db.execute(
         """
         CREATE TABLE nostrmarket.products (
-            user_id TEXT NOT NULL,
+            merchant_id TEXT NOT NULL,
             id TEXT PRIMARY KEY,
             stall_id TEXT NOT NULL,
             name TEXT NOT NULL,
@@ -59,7 +59,7 @@ async def m001_initial(db):
         """
         CREATE TABLE nostrmarket.zones (
             id TEXT PRIMARY KEY,
-            user_id TEXT NOT NULL,
+            merchant_id TEXT NOT NULL,
             name TEXT NOT NULL,
             currency TEXT NOT NULL,
             cost REAL NOT NULL,
@@ -75,10 +75,12 @@ async def m001_initial(db):
     await db.execute(
         f"""
         CREATE TABLE nostrmarket.orders (
-            user_id TEXT NOT NULL,
+            merchant_id TEXT NOT NULL,
             id TEXT PRIMARY KEY,
             event_id TEXT,
-            pubkey TEXT NOT NULL,
+            event_created_at INTEGER NOT NULL,
+            public_key TEXT NOT NULL,
+            merchant_public_key TEXT NOT NULL,
             contact_data TEXT NOT NULL DEFAULT '{empty_object}',
             extra_data TEXT NOT NULL DEFAULT '{empty_object}',
             order_items TEXT NOT NULL,
@@ -88,20 +90,8 @@ async def m001_initial(db):
             invoice_id TEXT NOT NULL,
             paid BOOLEAN NOT NULL DEFAULT false,
             shipped BOOLEAN NOT NULL DEFAULT false,
-            time TIMESTAMP NOT NULL DEFAULT {db.timestamp_now}
-        );
-        """
-    )
-
-    """
-    Initial market table.
-    """
-    await db.execute(
-        """
-        CREATE TABLE nostrmarket.markets (
-            id TEXT PRIMARY KEY,
-            user_id TEXT NOT NULL,
-            name TEXT
+            time TIMESTAMP NOT NULL DEFAULT {db.timestamp_now},
+            UNIQUE(event_id)
         );
         """
     )
@@ -111,13 +101,17 @@ async def m001_initial(db):
     """
     await db.execute(
         f"""
-        CREATE TABLE nostrmarket.messages (
+        CREATE TABLE nostrmarket.direct_messages (
+            merchant_id TEXT NOT NULL,
             id TEXT PRIMARY KEY,
-            msg TEXT NOT NULL,
-            pubkey TEXT NOT NULL,
-            conversation_id TEXT NOT NULL,
-            timestamp TIMESTAMP NOT NULL DEFAULT {db.timestamp_now}       
-            );
+            event_id TEXT,
+            event_created_at INTEGER NOT NULL,
+            message TEXT NOT NULL,
+            public_key TEXT NOT NULL,
+            incoming BOOLEAN NOT NULL DEFAULT false,
+            time TIMESTAMP NOT NULL DEFAULT {db.timestamp_now},
+            UNIQUE(event_id)
+        );
         """
     )
 
@@ -126,8 +120,8 @@ async def m001_initial(db):
         Create indexes for message fetching
         """
         await db.execute(
-            "CREATE INDEX idx_messages_timestamp ON nostrmarket.messages (timestamp DESC)"
+            "CREATE INDEX idx_messages_timestamp ON nostrmarket.direct_messages (time DESC)"
         )
         await db.execute(
-            "CREATE INDEX idx_messages_conversations ON nostrmarket.messages (conversation_id)"
+            "CREATE INDEX idx_event_id ON nostrmarket.direct_messages (event_id)"
         )

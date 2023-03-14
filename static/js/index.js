@@ -6,6 +6,10 @@ const merchant = async () => {
   await stallDetails('static/components/stall-details/stall-details.html')
   await stallList('static/components/stall-list/stall-list.html')
   await orderList('static/components/order-list/order-list.html')
+  await directMessages('static/components/direct-messages/direct-messages.html')
+  await merchantDetails(
+    'static/components/merchant-details/merchant-details.html'
+  )
 
   const nostr = window.NostrTools
 
@@ -50,6 +54,9 @@ const merchant = async () => {
       },
       showImportKeysDialog: async function () {
         this.importKeyDialog.show = true
+      },
+      toggleMerchantKeys: function (value) {
+        this.showKeys = value
       },
       createMerchant: async function (privateKey) {
         try {

@@ -43,8 +43,8 @@
           ></q-checkbox>
         </q-td>
 
-        <q-td key="pubkey" :props="props">
-          {{toShortId(props.row.pubkey)}}
+        <q-td key="public_key" :props="props">
+          {{toShortId(props.row.public_key)}}
         </q-td>
         <q-td key="time" :props="props"> {{formatDate(props.row.time)}} </q-td>
       </q-tr>
@@ -115,7 +115,7 @@
                 dense
                 readonly
                 disabled
-                v-model.trim="props.row.pubkey"
+                v-model.trim="props.row.public_key"
                 type="text"
               ></q-input>
             </div>

@@ -16,6 +16,8 @@ def get_shared_secret(privkey: str, pubkey: str):
 
 def decrypt_message(encoded_message: str, encryption_key) -> str:
     encoded_data = encoded_message.split("?iv=")
+    if len(encoded_data) == 1:
+        return encoded_data[0]
     encoded_content, encoded_iv = encoded_data[0], encoded_data[1]
 
     iv = base64.b64decode(encoded_iv)

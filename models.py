@@ -281,7 +281,9 @@ class OrderExtra(BaseModel):
 class PartialOrder(BaseModel):
     id: str
     event_id: Optional[str]
-    pubkey: str
+    event_created_at: Optional[int]
+    public_key: str
+    merchant_public_key: str
     items: List[OrderItem]
     contact: Optional[OrderContact]
     address: Optional[str]
@@ -359,3 +361,24 @@ class PaymentRequest(BaseModel):
     id: str
     message: Optional[str]
     payment_options: List[PaymentOption]
+
+
+######################################## MESSAGE ########################################
+
+
+class PartialDirectMessage(BaseModel):
+    event_id: Optional[str]
+    event_created_at: Optional[int]
+    message: str
+    public_key: str
+    incoming: bool = False
+    time: Optional[int]
+
+
+class DirectMessage(PartialDirectMessage):
+    id: str
+
+    @classmethod
+    def from_row(cls, row: Row) -> "DirectMessage":
+        dm = cls(**dict(row))
+        return dm

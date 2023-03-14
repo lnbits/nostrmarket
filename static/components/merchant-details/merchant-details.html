@@ -1,0 +1,37 @@
+<div>
+  <q-btn-dropdown
+    split
+    unelevated
+    color="primary"
+    icon="storefront"
+    label="Merchant"
+  >
+    <q-list>
+      <q-item disable clickable v-close-popup>
+        <q-item-section>
+          <q-item-label>Merchant Profile</q-item-label>
+          <q-item-label caption
+            >Edit the merchand name, description, etc</q-item-label
+          >
+        </q-item-section>
+      </q-item>
+      <q-item @click="toggleMerchantKeys" clickable v-close-popup>
+        <q-item-section>
+          <q-item-label v-if="!showKeys">Show Keys</q-item-label>
+          <q-item-label v-else>Hide Keys</q-item-label>
+          <q-item-label caption
+            >Show merchant public and private keys</q-item-label
+          >
+        </q-item-section>
+      </q-item>
+      <q-item @click="deleteMerchant" clickable v-close-popup>
+        <q-item-section>
+          <q-item-label>Delete Merchant</q-item-label>
+          <q-item-label caption
+            >Delete all stalls, products and orders</q-item-label
+          >
+        </q-item-section>
+      </q-item>
+    </q-list></q-btn-dropdown
+  >
+</div>
