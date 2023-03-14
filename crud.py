@@ -492,7 +492,10 @@ async def get_direct_message(merchant_id: str, dm_id: str) -> Optional[DirectMes
     )
     return DirectMessage.from_row(row) if row else None
 
-async def get_direct_message_by_event_id(merchant_id: str, event_id: str) -> Optional[DirectMessage]:
+
+async def get_direct_message_by_event_id(
+    merchant_id: str, event_id: str
+) -> Optional[DirectMessage]:
     row = await db.fetchone(
         "SELECT * FROM nostrmarket.direct_messages WHERE merchant_id = ? AND event_id = ?",
         (
