@@ -40,8 +40,6 @@ async def on_invoice_paid(payment: Payment) -> None:
 
 
 async def subscribe_to_nostr_client(recieve_event_queue: Queue, send_req_queue: Queue):
-    print("### subscribe_nostrclient_ws")
-
     def on_open(_):
         logger.info("Connected to 'nostrclient' websocket")
 
@@ -68,7 +66,6 @@ async def subscribe_to_nostr_client(recieve_event_queue: Queue, send_req_queue: 
 
 
 async def wait_for_nostr_events(recieve_event_queue: Queue, send_req_queue: Queue):
-    print("### wait_for_nostr_events")
     public_keys = await get_public_keys_for_merchants()
     for p in public_keys:
         last_order_time = await get_last_order_time(p)
