@@ -33,7 +33,7 @@ async def connect_to_nostrclient_ws(
 
     logger.debug(f"Subscribing to websockets for nostrclient extension")
     ws = WebSocketApp(
-        f"ws://localhost:{settings.port}/nostrclient/api/v1/filters",
+        f"ws://localhost:{settings.port}/nostrclient/api/v1/relay",
         on_message=on_message,
         on_open=on_open,
         on_error=on_error,

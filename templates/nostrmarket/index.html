@@ -2,7 +2,45 @@
 %} {% block page %}
 <div class="row q-col-gutter-md">
   <div class="col-12 col-md-7 q-gutter-y-md">
-    <q-card v-if="!merchant">
+    <div v-if="merchant && merchant.id">
+      <q-card>
+        <q-card-section>
+          <div class="row">
+            <div class="col-2">
+              <merchant-details
+                :inkey="g.user.wallets[0].inkey"
+                :adminkey="g.user.wallets[0].adminkey"
+                @show-keys="toggleMerchantKeys"
+              ></merchant-details>
+            </div>
+            <div class="col-8"></div>
+            <div class="col-2">
+              <shipping-zones
+                :inkey="g.user.wallets[0].inkey"
+                :adminkey="g.user.wallets[0].adminkey"
+                class="float-right"
+              ></shipping-zones>
+            </div>
+          </div>
+        </q-card-section>
+        <q-card-section v-if="showKeys">
+          <key-pair
+            :public-key="merchant.public_key"
+            :private-key="merchant.private_key"
+          ></key-pair>
+        </q-card-section>
+      </q-card>
+      <q-card class="q-mt-lg">
+        <q-card-section>
+          <stall-list
+            :adminkey="g.user.wallets[0].adminkey"
+            :inkey="g.user.wallets[0].inkey"
+            :wallet-options="g.user.walletOptions"
+          ></stall-list>
+        </q-card-section>
+      </q-card>
+    </div>
+    <q-card v-else>
       <q-card-section>
         <span class="text-h4">Wellcome to Nostr Market!</span><br />
         In Nostr Market, merchant and customer communicate via NOSTR relays, so
@@ -57,44 +95,6 @@
         </div>
       </q-card-section>
     </q-card>
-    <div v-else>
-      <q-card>
-        <q-card-section>
-          <div class="row">
-            <div class="col-2">
-              <merchant-details
-                :inkey="g.user.wallets[0].inkey"
-                :adminkey="g.user.wallets[0].adminkey"
-                @show-keys="toggleMerchantKeys"
-              ></merchant-details>
-            </div>
-            <div class="col-8"></div>
-            <div class="col-2">
-              <shipping-zones
-                :inkey="g.user.wallets[0].inkey"
-                :adminkey="g.user.wallets[0].adminkey"
-                class="float-right"
-              ></shipping-zones>
-            </div>
-          </div>
-        </q-card-section>
-        <q-card-section v-if="showKeys">
-          <key-pair
-            :public-key="merchant.public_key"
-            :private-key="merchant.private_key"
-          ></key-pair>
-        </q-card-section>
-      </q-card>
-      <q-card class="q-mt-lg">
-        <q-card-section>
-          <stall-list
-            :adminkey="g.user.wallets[0].adminkey"
-            :inkey="g.user.wallets[0].inkey"
-            :wallet-options="g.user.walletOptions"
-          ></stall-list>
-        </q-card-section>
-      </q-card>
-    </div>
   </div>
 
   <div class="col-12 col-md-5 q-gutter-y-md">

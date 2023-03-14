@@ -46,11 +46,9 @@ async def subscribe_to_nostr_client(recieve_event_queue: Queue, send_req_queue: 
         logger.info("Connected to 'nostrclient' websocket")
 
     def on_message(_, message):
-        print("### on_message", message)
+        # print("### on_message", message)
         recieve_event_queue.put_nowait(message)
 
-    # wait for 'nostrclient' extension to initialize
-    await asyncio.sleep(5)
     ws: WebSocketApp = None
     while True:
         try:
@@ -70,6 +68,7 @@ async def subscribe_to_nostr_client(recieve_event_queue: Queue, send_req_queue: 
 
 
 async def wait_for_nostr_events(recieve_event_queue: Queue, send_req_queue: Queue):
+    print("### wait_for_nostr_events")
     public_keys = await get_public_keys_for_merchants()
     for p in public_keys:
         last_order_time = await get_last_order_time(p)
@@ -77,13 +76,17 @@ async def wait_for_nostr_events(recieve_event_queue: Queue, send_req_queue: Queu
         since = max(last_order_time, last_dm_time)
 
         in_messages_filter = {"kind": 4, "#p": [p]}
+        out_messages_filter = {"kind": 4, "authors": [p]}
         if since != 0:
             in_messages_filter["since"] = since
+            # out_messages_filter["since"] = since
         print("### in_messages_filter", in_messages_filter)
+        print("### out_messages_filter", out_messages_filter)
+
         await send_req_queue.put(["REQ", f"direct-messages-in:{p}", in_messages_filter])
-        # await send_req_queue.put(
-        #     ["REQ", f"direct-messages-out:{p}", {"kind": 4, "authors": [p]}]
-        # )
+        await send_req_queue.put(
+            ["REQ", f"direct-messages-out:{p}", out_messages_filter]
+        )
 
     while True:
         message = await recieve_event_queue.get()

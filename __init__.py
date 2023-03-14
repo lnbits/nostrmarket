@@ -42,9 +42,13 @@ from .views_api import *  # noqa
 
 def nostrmarket_start():
     async def _subscribe_to_nostr_client():
+        # wait for 'nostrclient' extension to initialize
+        await asyncio.sleep(10)
         await subscribe_to_nostr_client(recieve_event_queue, send_req_queue)
 
     async def _wait_for_nostr_events():
+        # wait for this extension to initialize
+        await asyncio.sleep(5)
         await wait_for_nostr_events(recieve_event_queue, send_req_queue)
 
     loop = asyncio.get_event_loop()

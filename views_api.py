@@ -13,6 +13,7 @@ from lnbits.decorators import (
     require_admin_key,
     require_invoice_key,
 )
+from lnbits.extensions.nostrmarket.helpers import get_shared_secret
 from lnbits.utils.exchange_rates import currencies
 
 from . import nostrmarket_ext, scheduled_tasks
@@ -22,6 +23,7 @@ from .crud import (
     create_product,
     create_stall,
     create_zone,
+    delete_merchant_zones,
     delete_product,
     delete_stall,
     delete_zone,
@@ -69,6 +71,7 @@ async def api_create_merchant(
 
     try:
         merchant = await create_merchant(wallet.wallet.user, data)
+
         return merchant
     except Exception as ex:
         logger.warning(ex)
@@ -94,13 +97,33 @@ async def api_get_merchant(
         )
 
 
+@nostrmarket_ext.delete("/api/v1/merchant")
+async def api_delete_merchant(
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+):
+
+    try:
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+
+        await delete_merchant_zones(wallet.wallet.user)
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot get merchant",
+        )
+
+
 ######################################## ZONES ########################################
 
 
 @nostrmarket_ext.get("/api/v1/zone")
 async def api_get_zones(wallet: WalletTypeInfo = Depends(get_key_type)) -> List[Zone]:
     try:
-        return await get_zones(wallet.wallet.user)
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+        return await get_zones(merchant.id)
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -114,7 +137,9 @@ async def api_create_zone(
     data: PartialZone, wallet: WalletTypeInfo = Depends(require_admin_key)
 ):
     try:
-        zone = await create_zone(wallet.wallet.user, data)
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+        zone = await create_zone(merchant.id, data)
         return zone
     except Exception as ex:
         logger.warning(ex)
@@ -131,7 +156,9 @@ async def api_update_zone(
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Zone:
     try:
-        zone = await get_zone(wallet.wallet.user, zone_id)
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+        zone = await get_zone(merchant.id, zone_id)
         if not zone:
             raise HTTPException(
                 status_code=HTTPStatus.NOT_FOUND,
@@ -153,7 +180,9 @@ async def api_update_zone(
 @nostrmarket_ext.delete("/api/v1/zone/{zone_id}")
 async def api_delete_zone(zone_id, wallet: WalletTypeInfo = Depends(require_admin_key)):
     try:
-        zone = await get_zone(wallet.wallet.user, zone_id)
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+        zone = await get_zone(merchant.id, zone_id)
 
         if not zone:
             raise HTTPException(
@@ -161,7 +190,7 @@ async def api_delete_zone(zone_id, wallet: WalletTypeInfo = Depends(require_admi
                 detail="Zone does not exist.",
             )
 
-        await delete_zone(zone_id)
+        await delete_zone(wallet.wallet.user, zone_id)
 
     except Exception as ex:
         logger.warning(ex)
@@ -182,12 +211,14 @@ async def api_create_stall(
     try:
         data.validate_stall()
 
-        stall = await create_stall(wallet.wallet.user, data=data)
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+        stall = await create_stall(merchant.id, data=data)
 
-        event = await sign_and_send_to_nostr(wallet.wallet.user, stall)
+        event = await sign_and_send_to_nostr(merchant, stall)
 
         stall.config.event_id = event.id
-        await update_stall(wallet.wallet.user, stall)
+        await update_stall(merchant.id, stall)
 
         return stall
     except ValueError as ex:
@@ -211,13 +242,16 @@ async def api_update_stall(
     try:
         data.validate_stall()
 
-        stall = await update_stall(wallet.wallet.user, data)
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+
+        stall = await update_stall(merchant.id, data)
         assert stall, "Cannot update stall"
 
-        event = await sign_and_send_to_nostr(wallet.wallet.user, stall)
+        event = await sign_and_send_to_nostr(merchant, stall)
 
         stall.config.event_id = event.id
-        await update_stall(wallet.wallet.user, stall)
+        await update_stall(merchant.id, stall)
 
         return stall
     except HTTPException as ex:
@@ -238,7 +272,9 @@ async def api_update_stall(
 @nostrmarket_ext.get("/api/v1/stall/{stall_id}")
 async def api_get_stall(stall_id: str, wallet: WalletTypeInfo = Depends(get_key_type)):
     try:
-        stall = await get_stall(wallet.wallet.user, stall_id)
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+        stall = await get_stall(merchant.id, stall_id)
         if not stall:
             raise HTTPException(
                 status_code=HTTPStatus.NOT_FOUND,
@@ -258,7 +294,9 @@ async def api_get_stall(stall_id: str, wallet: WalletTypeInfo = Depends(get_key_
 @nostrmarket_ext.get("/api/v1/stall")
 async def api_get_stalls(wallet: WalletTypeInfo = Depends(get_key_type)):
     try:
-        stalls = await get_stalls(wallet.wallet.user)
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+        stalls = await get_stalls(merchant.id)
         return stalls
     except Exception as ex:
         logger.warning(ex)
@@ -274,7 +312,9 @@ async def api_get_stall_products(
     wallet: WalletTypeInfo = Depends(require_invoice_key),
 ):
     try:
-        products = await get_products(wallet.wallet.user, stall_id)
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+        products = await get_products(merchant.id, stall_id)
         return products
     except Exception as ex:
         logger.warning(ex)
@@ -290,7 +330,9 @@ async def api_get_stall_orders(
     wallet: WalletTypeInfo = Depends(require_invoice_key),
 ):
     try:
-        orders = await get_orders_for_stall(wallet.wallet.user, stall_id)
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+        orders = await get_orders_for_stall(merchant.id, stall_id)
         return orders
     except Exception as ex:
         logger.warning(ex)
@@ -305,19 +347,21 @@ async def api_delete_stall(
     stall_id: str, wallet: WalletTypeInfo = Depends(require_admin_key)
 ):
     try:
-        stall = await get_stall(wallet.wallet.user, stall_id)
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+        stall = await get_stall(merchant.id, stall_id)
         if not stall:
             raise HTTPException(
                 status_code=HTTPStatus.NOT_FOUND,
                 detail="Stall does not exist.",
             )
 
-        await delete_stall(wallet.wallet.user, stall_id)
+        await delete_stall(merchant.id, stall_id)
 
-        event = await sign_and_send_to_nostr(wallet.wallet.user, stall, True)
+        event = await sign_and_send_to_nostr(merchant, stall, True)
 
         stall.config.event_id = event.id
-        await update_stall(wallet.wallet.user, stall)
+        await update_stall(merchant.id, stall)
 
     except HTTPException as ex:
         raise ex
@@ -339,17 +383,19 @@ async def api_create_product(
 ) -> Product:
     try:
         data.validate_product()
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
 
-        stall = await get_stall(wallet.wallet.user, data.stall_id)
+        stall = await get_stall(merchant.id, data.stall_id)
         assert stall, "Stall missing for product"
         data.config.currency = stall.currency
 
-        product = await create_product(wallet.wallet.user, data=data)
+        product = await create_product(merchant.id, data=data)
 
-        event = await sign_and_send_to_nostr(wallet.wallet.user, product)
+        event = await sign_and_send_to_nostr(merchant, product)
 
         product.config.event_id = event.id
-        await update_product(wallet.wallet.user, product)
+        await update_product(merchant.id, product)
 
         return product
     except ValueError as ex:
@@ -376,17 +422,19 @@ async def api_update_product(
             raise ValueError("Bad product ID")
 
         product.validate_product()
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
 
-        stall = await get_stall(wallet.wallet.user, product.stall_id)
+        stall = await get_stall(merchant.id, product.stall_id)
         assert stall, "Stall missing for product"
         product.config.currency = stall.currency
 
-        product = await update_product(wallet.wallet.user, product)
+        product = await update_product(merchant.id, product)
 
-        event = await sign_and_send_to_nostr(wallet.wallet.user, product)
+        event = await sign_and_send_to_nostr(merchant, product)
 
         product.config.event_id = event.id
-        await update_product(wallet.wallet.user, product)
+        await update_product(merchant.id, product)
 
         return product
     except ValueError as ex:
@@ -408,7 +456,10 @@ async def api_get_product(
     wallet: WalletTypeInfo = Depends(require_invoice_key),
 ) -> Optional[Product]:
     try:
-        products = await get_product(wallet.wallet.user, product_id)
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+
+        products = await get_product(merchant.id, product_id)
         return products
     except Exception as ex:
         logger.warning(ex)
@@ -424,15 +475,18 @@ async def api_delete_product(
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ):
     try:
-        product = await get_product(wallet.wallet.user, product_id)
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+
+        product = await get_product(merchant.id, product_id)
         if not product:
             raise HTTPException(
                 status_code=HTTPStatus.NOT_FOUND,
                 detail="Product does not exist.",
             )
 
-        await delete_product(wallet.wallet.user, product_id)
-        await sign_and_send_to_nostr(wallet.wallet.user, product, True)
+        await delete_product(merchant.id, product_id)
+        await sign_and_send_to_nostr(merchant, product, True)
 
     except HTTPException as ex:
         raise ex
@@ -452,7 +506,10 @@ nostrmarket_ext.get("/api/v1/order/{order_id}")
 
 async def api_get_order(order_id: str, wallet: WalletTypeInfo = Depends(get_key_type)):
     try:
-        order = await get_order(wallet.wallet.user, order_id)
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+
+        order = await get_order(merchant.id, order_id)
         if not order:
             raise HTTPException(
                 status_code=HTTPStatus.NOT_FOUND,
@@ -472,7 +529,10 @@ async def api_get_order(order_id: str, wallet: WalletTypeInfo = Depends(get_key_
 @nostrmarket_ext.get("/api/v1/order")
 async def api_get_orders(wallet: WalletTypeInfo = Depends(get_key_type)):
     try:
-        orders = await get_orders(wallet.wallet.user)
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+
+        orders = await get_orders(merchant.id)
         return orders
     except Exception as ex:
         logger.warning(ex)
@@ -489,12 +549,13 @@ async def api_update_order_status(
 ) -> Order:
     try:
         assert data.shipped != None, "Shipped value is required for order"
-        order = await update_order_shipped_status(
-            wallet.wallet.user, data.id, data.shipped
-        )
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+
+        order = await update_order_shipped_status(merchant.id, data.id, data.shipped)
         assert order, "Cannot find updated order"
 
-        merchant = await get_merchant_for_user(wallet.wallet.user)
+        merchant = await get_merchant_for_user(merchant.id)
         assert merchant, f"Merchant cannot be found for order {data.id}"
 
         data.paid = order.paid
@@ -530,7 +591,7 @@ async def api_get_messages(
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot get zone",
+            detail="Cannot get direct message",
         )
 
 

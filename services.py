@@ -33,17 +33,19 @@ from .nostr.nostr_client import publish_nostr_event
 
 
 async def create_new_order(
-    user_id: str, data: PartialOrder
+    merchant_public_key: str, data: PartialOrder
 ) -> Optional[PaymentRequest]:
-    if await get_order(user_id, data.id):
-        return None
-    if data.event_id and await get_order_by_event_id(user_id, data.event_id):
-        return None
-
-    merchant = await get_merchant_for_user(user_id)
+    merchant = await get_merchant_by_pubkey(merchant_public_key)
     assert merchant, "Cannot find merchant!"
 
-    products = await get_products_by_ids(user_id, [p.product_id for p in data.items])
+    if await get_order(merchant.id, data.id):
+        return None
+    if data.event_id and await get_order_by_event_id(merchant.id, data.event_id):
+        return None
+
+    products = await get_products_by_ids(
+        merchant.id, [p.product_id for p in data.items]
+    )
     data.validate_order_items(products)
 
     total_amount = await data.total_sats(products)
@@ -69,7 +71,7 @@ async def create_new_order(
         total=total_amount,
         extra=await OrderExtra.from_products(products),
     )
-    await create_order(user_id, order)
+    await create_order(merchant.id, order)
 
     return PaymentRequest(
         id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)]
@@ -77,11 +79,8 @@ async def create_new_order(
 
 
 async def sign_and_send_to_nostr(
-    user_id: str, n: Nostrable, delete=False
+    merchant: Merchant, n: Nostrable, delete=False
 ) -> NostrEvent:
-    merchant = await get_merchant_for_user(user_id)
-    assert merchant, "Cannot find merchant!"
-
     event = (
         n.to_nostr_delete_event(merchant.public_key)
         if delete
@@ -115,24 +114,28 @@ async def handle_order_paid(order_id: str, merchant_pubkey: str):
 
 async def process_nostr_message(msg: str):
     try:
-        type, subscription_id, event = json.loads(msg)
-        subscription_name, public_key = subscription_id.split(":")
+        type, *rest= json.loads(msg)
         if type.upper() == "EVENT":
+            subscription_id, event = rest
+            subscription_name, merchant_public_key = subscription_id.split(":")
             event = NostrEvent(**event)
             if event.kind == 4:
-                await _handle_nip04_message(subscription_name, public_key, event)
-
+                await _handle_nip04_message(
+                    subscription_name, merchant_public_key, event
+                )
+            return
     except Exception as ex:
         logger.warning(ex)
 
 
 async def _handle_nip04_message(
-    subscription_name: str, public_key: str, event: NostrEvent
+    subscription_name: str, merchant_public_key: str, event: NostrEvent
 ):
-    merchant = await get_merchant_by_pubkey(public_key)
-    assert merchant, f"Merchant not found for public key '{public_key}'"
+    merchant = await get_merchant_by_pubkey(merchant_public_key)
+    assert merchant, f"Merchant not found for public key '{merchant_public_key}'"
 
     clear_text_msg = merchant.decrypt_message(event.content, event.pubkey)
+    # print("### clear_text_msg", subscription_name, clear_text_msg)
     if subscription_name == "direct-messages-in":
         await _handle_incoming_dms(event, merchant, clear_text_msg)
     else:
@@ -187,7 +190,7 @@ async def _handle_dirrect_message(
             order["event_created_at"] = event_created_at
             return await _handle_new_order(PartialOrder(**order))
         else:
-            print("### text_msg", text_msg, event_created_at, event_id)
+            # print("### text_msg", text_msg, event_created_at, event_id)
             dm = PartialDirectMessage(
                 event_id=event_id,
                 event_created_at=event_created_at,
