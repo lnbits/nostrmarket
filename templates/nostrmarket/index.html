@@ -61,6 +61,13 @@
       <q-card>
         <q-card-section>
           <div class="row">
+            <div class="col-2">
+              <merchant-details
+                :inkey="g.user.wallets[0].inkey"
+                :adminkey="g.user.wallets[0].adminkey"
+                @show-keys="toggleMerchantKeys"
+              ></merchant-details>
+            </div>
             <div class="col-8"></div>
             <div class="col-2">
               <shipping-zones
@@ -68,16 +75,6 @@
                 :adminkey="g.user.wallets[0].adminkey"
                 class="float-right"
               ></shipping-zones>
-            </div>
-            <div class="col-2">
-              <q-btn
-                @click="showKeys = !showKeys"
-                icon="vpn_key"
-                color="primary"
-                class="float-right"
-              >
-                <q-tooltip> Show Public and Private keys </q-tooltip>
-              </q-btn>
             </div>
           </div>
         </q-card-section>
@@ -179,6 +176,7 @@
 <script src="{{ url_for('nostrmarket_static', path='components/stall-list/stall-list.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/order-list/order-list.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/direct-messages/direct-messages.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/merchant-details/merchant-details.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/index.js') }}"></script>
 
 {% endblock %}
