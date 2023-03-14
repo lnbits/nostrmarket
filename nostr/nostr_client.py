@@ -11,7 +11,7 @@ from .event import NostrEvent
 
 
 async def publish_nostr_event(e: NostrEvent):
-    print('### publish_nostr_event', e.dict())
+    print("### publish_nostr_event", e.dict())
     await send_req_queue.put(["EVENT", e.dict()])
 
 

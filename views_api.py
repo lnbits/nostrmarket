@@ -22,7 +22,12 @@ from .crud import (
     create_product,
     create_stall,
     create_zone,
+    delete_merchant_direct_messages,
+    delete_merchant_orders,
+    delete_merchant_products,
+    delete_merchant_stalls,
     delete_merchant_zones,
+    delete_merchants,
     delete_product,
     delete_stall,
     delete_zone,
@@ -96,16 +101,23 @@ async def api_get_merchant(
         )
 
 
-@nostrmarket_ext.delete("/api/v1/merchant")
+@nostrmarket_ext.delete("/api/v1/merchant/{merchant_id}")
 async def api_delete_merchant(
+    merchant_id: str,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ):
 
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
+        assert merchant.id == merchant_id, "Wrong merchant ID"
 
-        await delete_merchant_zones(wallet.wallet.user)
+        await delete_merchant_orders(merchant.id)
+        await delete_merchant_products(merchant.id)
+        await delete_merchant_stalls(merchant.id)
+        await delete_merchant_direct_messages(merchant.id)
+        await delete_merchant_zones(merchant.id)
+        await delete_merchants(merchant.id)
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(

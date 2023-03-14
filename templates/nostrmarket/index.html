@@ -8,6 +8,7 @@
           <div class="row">
             <div class="col-2">
               <merchant-details
+                :merchant-id="merchant.id"
                 :inkey="g.user.wallets[0].inkey"
                 :adminkey="g.user.wallets[0].adminkey"
                 @show-keys="toggleMerchantKeys"

@@ -73,6 +73,13 @@ async def get_merchant_for_user(user_id: str) -> Optional[Merchant]:
     return Merchant.from_row(row) if row else None
 
 
+async def delete_merchants(merchant_id: str) -> None:
+    await db.execute(
+        "DELETE FROM nostrmarket.merchants WHERE id = ?",
+        (merchant_id,),
+    )
+
+
 ######################################## ZONES ########################################
 
 
@@ -220,6 +227,13 @@ async def delete_stall(merchant_id: str, stall_id: str) -> None:
     )
 
 
+async def delete_merchant_stalls(merchant_id: str) -> None:
+    await db.execute(
+        "DELETE FROM nostrmarket.stalls WHERE merchant_id = ?",
+        (merchant_id,),
+    )
+
+
 ######################################## PRODUCTS ########################################
 
 
@@ -323,6 +337,13 @@ async def delete_product(merchant_id: str, product_id: str) -> None:
             merchant_id,
             product_id,
         ),
+    )
+
+
+async def delete_merchant_products(merchant_id: str) -> None:
+    await db.execute(
+        "DELETE FROM nostrmarket.products WHERE merchant_id = ?",
+        (merchant_id,),
     )
 
 
@@ -451,6 +472,13 @@ async def update_order_shipped_status(
     return Order.from_row(row) if row else None
 
 
+async def delete_merchant_orders(merchant_id: str) -> None:
+    await db.execute(
+        "DELETE FROM nostrmarket.orders WHERE merchant_id = ?",
+        (merchant_id,),
+    )
+
+
 ######################################## MESSAGES ########################################L
 
 
@@ -520,6 +548,13 @@ async def get_last_direct_messages_time(public_key: str) -> int:
             SELECT event_created_at FROM nostrmarket.direct_messages 
             WHERE public_key = ? ORDER BY event_created_at DESC LIMIT 1
         """,
-        (public_key),
+        (public_key,),
     )
     return row[0] if row else 0
+
+
+async def delete_merchant_direct_messages(merchant_id: str) -> None:
+    await db.execute(
+        "DELETE FROM nostrmarket.direct_messages WHERE merchant_id = ?",
+        (merchant_id,),
+    )
