@@ -253,19 +253,22 @@ async function customerStall(path) {
             } else if (this.customerUseExtension && this.hasNip07) {
               event = await window.nostr.signEvent(event)
             }
-
+            this.resetCheckout()
             await this.sendOrder(event)
           })
       },
       async sendOrder(order) {
+        this.$q.notify({
+          message: 'Waiting for invoice from merchant...'
+        })
         for (const url of Array.from(this.relays)) {
           try {
             let relay = NostrTools.relayInit(url)
             relay.on('connect', () => {
-              console.log(`connected to ${relay.url}`)
+              console.debug(`connected to ${relay.url}`)
             })
             relay.on('error', () => {
-              console.log(`failed to connect to ${relay.url}`)
+              console.debug(`failed to connect to ${relay.url}`)
               relay.close()
               return
             })
@@ -273,11 +276,11 @@ async function customerStall(path) {
             await relay.connect()
             let pub = relay.publish(order)
             pub.on('ok', () => {
-              console.log(`${relay.url} has accepted our event`)
+              console.debug(`${relay.url} has accepted our event`)
               relay.close()
             })
             pub.on('failed', reason => {
-              console.log(`failed to publish to ${relay.url}: ${reason}`)
+              console.debug(`failed to publish to ${relay.url}: ${reason}`)
               relay.close()
             })
           } catch (err) {
@@ -285,12 +288,8 @@ async function customerStall(path) {
           }
         }
         this.loading = false
-        this.resetCheckout()
         this.resetCart()
         this.qrCodeDialog.show = true
-        this.$q.notify({
-          message: 'Waiting for invoice from merchant...'
-        })
         this.listenMessages()
       },
       async listenMessages() {
@@ -328,7 +327,6 @@ async function customerStall(path) {
                   event.content
                 )
               }
-              //console.log(`${mine ? 'Me' : 'Merchant'}: ${plaintext}`)
 
               this.messageFilter(plaintext, cb => Promise.resolve(pool.close))
             } catch {
