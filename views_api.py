@@ -175,7 +175,7 @@ async def api_update_zone(
                 status_code=HTTPStatus.NOT_FOUND,
                 detail="Zone does not exist.",
             )
-        zone = await update_zone(wallet.wallet.user, data)
+        zone = await update_zone(merchant.id, data)
         assert zone, "Cannot find updated zone"
         return zone
     except HTTPException as ex:
@@ -201,7 +201,7 @@ async def api_delete_zone(zone_id, wallet: WalletTypeInfo = Depends(require_admi
                 detail="Zone does not exist.",
             )
 
-        await delete_zone(wallet.wallet.user, zone_id)
+        await delete_zone(merchant.id, zone_id)
 
     except Exception as ex:
         logger.warning(ex)

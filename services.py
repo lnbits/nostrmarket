@@ -35,7 +35,7 @@ async def create_new_order(
     merchant_public_key: str, data: PartialOrder
 ) -> Optional[PaymentRequest]:
     merchant = await get_merchant_by_pubkey(merchant_public_key)
-    assert merchant, "Cannot find merchant!"
+    assert merchant, "Cannot find merchant for order!"
 
     if await get_order(merchant.id, data.id):
         return None
@@ -116,29 +116,31 @@ async def process_nostr_message(msg: str):
         type, *rest = json.loads(msg)
         if type.upper() == "EVENT":
             subscription_id, event = rest
-            subscription_name, merchant_public_key = subscription_id.split(":")
+            _, merchant_public_key = subscription_id.split(":")
             event = NostrEvent(**event)
             if event.kind == 4:
-                await _handle_nip04_message(
-                    subscription_name, merchant_public_key, event
-                )
+                await _handle_nip04_message(merchant_public_key, event)
             return
     except Exception as ex:
+        print("####### bad message", msg)
         logger.warning(ex)
 
 
-async def _handle_nip04_message(
-    subscription_name: str, merchant_public_key: str, event: NostrEvent
-):
+async def _handle_nip04_message(merchant_public_key: str, event: NostrEvent):
     merchant = await get_merchant_by_pubkey(merchant_public_key)
     assert merchant, f"Merchant not found for public key '{merchant_public_key}'"
 
-    clear_text_msg = merchant.decrypt_message(event.content, event.pubkey)
+    
     # print("### clear_text_msg", subscription_name, clear_text_msg)
-    if subscription_name == "direct-messages-in":
+    if event.pubkey == merchant_public_key:
+        assert len(event.tag_values("p")) != 0, "Outgong message has no 'p' tag"
+        clear_text_msg = merchant.decrypt_message(event.content, event.tag_values("p")[0])
+        await _handle_outgoing_dms(event, merchant, clear_text_msg)
+    elif event.has_tag_value("p", merchant_public_key):
+        clear_text_msg = merchant.decrypt_message(event.content, event.pubkey)
         await _handle_incoming_dms(event, merchant, clear_text_msg)
     else:
-        await _handle_outgoing_dms(event, merchant, clear_text_msg)
+        logger.warning(f"Bad NIP04 event: '{event.id}'")
 
 
 async def _handle_incoming_dms(
@@ -166,8 +168,7 @@ async def _handle_outgoing_dms(
             event_id=event.id,
             event_created_at=event.created_at,
             message=clear_text_msg,  # exclude if json
-            public_key=sent_to[0],
-            incoming=True,
+            public_key=sent_to[0]
         )
         await create_direct_message(merchant.id, dm)
 
@@ -216,7 +217,7 @@ async def _handle_new_order(order: PartialOrder) -> Optional[str]:
     wallet = await get_wallet(wallet_id)
     assert wallet, f"Cannot find wallet for product id: {first_product_id}"
 
-    new_order = await create_new_order(wallet.user, order)
+    new_order = await create_new_order(order.merchant_public_key, order)
     if new_order:
         return json.dumps(new_order.dict(), separators=(",", ":"), ensure_ascii=False)
 

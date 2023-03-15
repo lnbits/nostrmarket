@@ -8,7 +8,7 @@ async function directMessages(path) {
     data: function () {
       return {
         activePublicKey:
-          '83d07a79496f4cbdc50ca585741a79a2df1fd938cfa449f0fccb0ab7352115dd',
+          '186895a32209c3a92f0efaa7c65c3f8da690c75b952b815718c0d55d3eed821e',
         messages: [],
         newMessage: ''
       }
