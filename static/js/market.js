@@ -114,7 +114,7 @@ const market = async () => {
           this.pubkeys.add(this.account.pubkey)
         }
         if (relays && relays.length) {
-          this.relays = new Set([...defaultRelays, ...relays])
+          this.relays = new Set(relays)
         } else {
           this.relays = new Set(defaultRelays)
         }
@@ -196,6 +196,12 @@ const market = async () => {
         return
       },
       async updateData(events) {
+        if (events.length < 1) {
+          this.$q.notify({
+            message: 'No matches were found!'
+          })
+          return
+        }
         let products = new Map()
         let stalls = new Map()
 
@@ -215,15 +221,21 @@ const market = async () => {
 
         this.stalls = await Array.from(stalls.values())
 
-        this.products = Array.from(products.values()).map(obj => {
-          let stall = this.stalls.find(s => s.id == obj.stall_id)
-          obj.stallName = stall.name
-          obj.images = [obj.image]
-          if (obj.currency != 'sat') {
-            obj.formatedPrice = this.getAmountFormated(obj.price, obj.currency)
-          }
-          return obj
-        })
+        this.products = Array.from(products.values())
+          .map(obj => {
+            let stall = this.stalls.find(s => s.id == obj.stall_id)
+            if (!stall) return
+            obj.stallName = stall.name
+            obj.images = [obj.image]
+            if (obj.currency != 'sat') {
+              obj.formatedPrice = this.getAmountFormated(
+                obj.price,
+                obj.currency
+              )
+            }
+            return obj
+          })
+          .filter(f => f)
       },
       async initNostr() {
         this.$q.loading.show()
@@ -261,15 +273,21 @@ const market = async () => {
         await Promise.resolve(sub)
         this.stalls = await Array.from(stalls.values())
 
-        this.products = Array.from(products.values()).map(obj => {
-          let stall = this.stalls.find(s => s.id == obj.stall_id)
-          obj.stallName = stall.name
-          obj.images = [obj.image]
-          if (obj.currency != 'sat') {
-            obj.formatedPrice = this.getAmountFormated(obj.price, obj.currency)
-          }
-          return obj
-        })
+        this.products = Array.from(products.values())
+          .map(obj => {
+            let stall = this.stalls.find(s => s.id == obj.stall_id)
+            if (!stall) return
+            obj.stallName = stall.name
+            obj.images = [obj.image]
+            if (obj.currency != 'sat') {
+              obj.formatedPrice = this.getAmountFormated(
+                obj.price,
+                obj.currency
+              )
+            }
+            return obj
+          })
+          .filter(f => f)
         this.$q.loading.hide()
         pool.close(relays)
         return
