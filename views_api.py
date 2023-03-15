@@ -22,12 +22,12 @@ from .crud import (
     create_product,
     create_stall,
     create_zone,
+    delete_merchant,
     delete_merchant_direct_messages,
     delete_merchant_orders,
     delete_merchant_products,
     delete_merchant_stalls,
     delete_merchant_zones,
-    delete_merchants,
     delete_product,
     delete_stall,
     delete_zone,
@@ -61,7 +61,11 @@ from .models import (
     Stall,
     Zone,
 )
-from .nostr.nostr_client import publish_nostr_event
+from .nostr.nostr_client import (
+    publish_nostr_event,
+    subscribe_to_direct_messages,
+    unsubscribe_from_direct_messages,
+)
 from .services import sign_and_send_to_nostr
 
 ######################################## MERCHANT ########################################
@@ -74,7 +78,11 @@ async def api_create_merchant(
 ) -> Merchant:
 
     try:
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant == None, "A merchant already exists for this user"
+
         merchant = await create_merchant(wallet.wallet.user, data)
+        await subscribe_to_direct_messages(data.public_key, 0)
 
         return merchant
     except Exception as ex:
@@ -117,7 +125,9 @@ async def api_delete_merchant(
         await delete_merchant_stalls(merchant.id)
         await delete_merchant_direct_messages(merchant.id)
         await delete_merchant_zones(merchant.id)
-        await delete_merchants(merchant.id)
+
+        await unsubscribe_from_direct_messages(merchant.public_key)
+        await delete_merchant(merchant.id)
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -646,4 +656,5 @@ async def api_stop(wallet: WalletTypeInfo = Depends(check_admin)):
         except Exception as ex:
             logger.warning(ex)
 
+    # todo: close websocket
     return {"success": True}

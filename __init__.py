@@ -49,7 +49,7 @@ def nostrmarket_start():
     async def _wait_for_nostr_events():
         # wait for this extension to initialize
         await asyncio.sleep(5)
-        await wait_for_nostr_events(recieve_event_queue, send_req_queue)
+        await wait_for_nostr_events(recieve_event_queue)
 
     loop = asyncio.get_event_loop()
     task1 = loop.create_task(catch_everything_and_restart(wait_for_paid_invoices))

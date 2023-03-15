@@ -34,3 +34,25 @@ async def connect_to_nostrclient_ws(
     wst.start()
 
     return ws
+
+
+async def subscribe_to_direct_messages(public_key: str, since: int):
+    in_messages_filter = {"kind": 4, "#p": [public_key]}
+    out_messages_filter = {"kind": 4, "authors": [public_key]}
+    if since != 0:
+        in_messages_filter["since"] = since
+        out_messages_filter["since"] = since
+    print("### in_messages_filter", in_messages_filter)
+    print("### out_messages_filter", out_messages_filter)
+
+    await send_req_queue.put(
+        ["REQ", f"direct-messages-in:{public_key}", in_messages_filter]
+    )
+    await send_req_queue.put(
+        ["REQ", f"direct-messages-out:{public_key}", out_messages_filter]
+    )
+
+
+async def unsubscribe_from_direct_messages(public_key: str):
+    await send_req_queue.put(["CLOSE", f"direct-messages-in:{public_key}"])
+    await send_req_queue.put(["CLOSE", f"direct-messages-out:{public_key}"])
