@@ -114,7 +114,7 @@ const market = async () => {
           this.pubkeys.add(this.account.pubkey)
         }
         if (relays && relays.length) {
-          this.relays = relays
+          this.relays = new Set(relays)
         } else {
           this.relays = new Set(defaultRelays)
         }
