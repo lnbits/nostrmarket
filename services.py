@@ -130,11 +130,12 @@ async def _handle_nip04_message(merchant_public_key: str, event: NostrEvent):
     merchant = await get_merchant_by_pubkey(merchant_public_key)
     assert merchant, f"Merchant not found for public key '{merchant_public_key}'"
 
-    
     # print("### clear_text_msg", subscription_name, clear_text_msg)
     if event.pubkey == merchant_public_key:
         assert len(event.tag_values("p")) != 0, "Outgong message has no 'p' tag"
-        clear_text_msg = merchant.decrypt_message(event.content, event.tag_values("p")[0])
+        clear_text_msg = merchant.decrypt_message(
+            event.content, event.tag_values("p")[0]
+        )
         await _handle_outgoing_dms(event, merchant, clear_text_msg)
     elif event.has_tag_value("p", merchant_public_key):
         clear_text_msg = merchant.decrypt_message(event.content, event.pubkey)
@@ -168,7 +169,7 @@ async def _handle_outgoing_dms(
             event_id=event.id,
             event_created_at=event.created_at,
             message=clear_text_msg,  # exclude if json
-            public_key=sent_to[0]
+            public_key=sent_to[0],
         )
         await create_direct_message(merchant.id, dm)
 
