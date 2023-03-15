@@ -141,7 +141,8 @@
           filled
           dense
           v-model.trim="checkoutDialog.data.address"
-          label="Address"
+          label="Address *optional"
+          hint="If ordering a physical product make sure to fill this"
         ></q-input>
         <q-input
           v-model="checkoutDialog.data.email"
@@ -177,8 +178,7 @@
             :loading="loading"
             unelevated
             color="primary"
-            :disable="checkoutDialog.data.address == null
-              || checkoutDialog.data.shippingzone == null
+            :disable="checkoutDialog.data.shippingzone == null
               || checkoutDialog.data.pubkey == null"
             @click="downloadOrder"
             >Download Order</q-btn
@@ -188,8 +188,7 @@
             :loading="loading"
             unelevated
             color="primary"
-            :disable="checkoutDialog.data.address == null
-              || checkoutDialog.data.shippingzone == null
+            :disable="checkoutDialog.data.shippingzone == null
               || checkoutDialog.data.pubkey == null"
             type="submit"
             >Checkout</q-btn
