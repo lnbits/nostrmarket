@@ -60,7 +60,7 @@
           filled
           dense
           v-model.trim="checkoutDialog.data.username"
-          label="Name *optional"
+          label="Name (optional)"
         ></q-input>
         <q-expansion-item
           v-if="!account"
@@ -126,7 +126,7 @@
           :type="isPwd ? 'password' : 'text'"
           v-if="!customerUseExtension"
           v-model.trim="checkoutDialog.data.privkey"
-          label="Private key *optional"
+          label="Private key (optional)"
           hint="Enter your private key"
         >
           <template v-slot:append>
@@ -141,7 +141,7 @@
           filled
           dense
           v-model.trim="checkoutDialog.data.address"
-          label="Address *optional"
+          label="Address (optional)"
           hint="If ordering a physical product make sure to fill this"
         ></q-input>
         <q-input
@@ -149,7 +149,7 @@
           filled
           dense
           type="email"
-          label="Email *optional"
+          label="Email (optional)"
           hint="Merchant may not use email"
         ></q-input>
         <q-input
@@ -157,7 +157,7 @@
           filled
           dense
           type="text"
-          label="Message *optional"
+          label="Message (optional)"
         ></q-input>
         <p>Select the shipping zone:</p>
         <div class="row q-mt-lg">
