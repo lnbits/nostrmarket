@@ -273,15 +273,21 @@ const market = async () => {
         await Promise.resolve(sub)
         this.stalls = await Array.from(stalls.values())
 
-        this.products = Array.from(products.values()).map(obj => {
-          let stall = this.stalls.find(s => s.id == obj.stall_id)
-          obj.stallName = stall.name
-          obj.images = [obj.image]
-          if (obj.currency != 'sat') {
-            obj.formatedPrice = this.getAmountFormated(obj.price, obj.currency)
-          }
-          return obj
-        })
+        this.products = Array.from(products.values())
+          .map(obj => {
+            let stall = this.stalls.find(s => s.id == obj.stall_id)
+            if (!stall) return
+            obj.stallName = stall.name
+            obj.images = [obj.image]
+            if (obj.currency != 'sat') {
+              obj.formatedPrice = this.getAmountFormated(
+                obj.price,
+                obj.currency
+              )
+            }
+            return obj
+          })
+          .filter(f => f)
         this.$q.loading.hide()
         pool.close(relays)
         return
