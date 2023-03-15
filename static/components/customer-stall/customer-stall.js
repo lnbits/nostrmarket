@@ -189,7 +189,6 @@ async function customerStall(path) {
         }
       },
       closeQrCodeDialog() {
-        this.qrCodeDialog.dismissMsg()
         this.qrCodeDialog.show = false
       },
       async placeOrder() {
@@ -345,9 +344,8 @@ async function customerStall(path) {
         let json = JSON.parse(text)
         if (json.id != this.activeOrder) return
         if (json.payment_options) {
-          let payment_request = json.payment_options.find(
-            o => o.type == 'ln'
-          ).link
+          let payment_request = json.payment_options.find(o => o.type == 'ln')
+            .link
           if (!payment_request) return
           this.loading = false
           this.qrCodeDialog.data.payment_request = payment_request
