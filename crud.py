@@ -73,7 +73,7 @@ async def get_merchant_for_user(user_id: str) -> Optional[Merchant]:
     return Merchant.from_row(row) if row else None
 
 
-async def delete_merchants(merchant_id: str) -> None:
+async def delete_merchant(merchant_id: str) -> None:
     await db.execute(
         "DELETE FROM nostrmarket.merchants WHERE id = ?",
         (merchant_id,),

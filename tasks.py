@@ -14,7 +14,7 @@ from .crud import (
     get_last_order_time,
     get_public_keys_for_merchants,
 )
-from .nostr.nostr_client import connect_to_nostrclient_ws
+from .nostr.nostr_client import connect_to_nostrclient_ws, subscribe_to_direct_messages
 from .services import handle_order_paid, process_nostr_message
 
 
@@ -65,25 +65,14 @@ async def subscribe_to_nostr_client(recieve_event_queue: Queue, send_req_queue: 
             await asyncio.sleep(5)
 
 
-async def wait_for_nostr_events(recieve_event_queue: Queue, send_req_queue: Queue):
+async def wait_for_nostr_events(recieve_event_queue: Queue):
     public_keys = await get_public_keys_for_merchants()
     for p in public_keys:
         last_order_time = await get_last_order_time(p)
         last_dm_time = await get_last_direct_messages_time(p)
         since = max(last_order_time, last_dm_time)
 
-        in_messages_filter = {"kind": 4, "#p": [p]}
-        out_messages_filter = {"kind": 4, "authors": [p]}
-        if since != 0:
-            in_messages_filter["since"] = since
-            # out_messages_filter["since"] = since
-        print("### in_messages_filter", in_messages_filter)
-        print("### out_messages_filter", out_messages_filter)
-
-        await send_req_queue.put(["REQ", f"direct-messages-in:{p}", in_messages_filter])
-        await send_req_queue.put(
-            ["REQ", f"direct-messages-out:{p}", out_messages_filter]
-        )
+        await subscribe_to_direct_messages(p, since)
 
     while True:
         message = await recieve_event_queue.get()

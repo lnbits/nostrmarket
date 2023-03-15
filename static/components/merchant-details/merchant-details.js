@@ -30,6 +30,7 @@ async function merchantDetails(path) {
                 '/nostrmarket/api/v1/merchant/' + this.merchantId,
                 this.adminkey
               )
+              // todo: refresh parent page
               this.$emit('merchant-deleted', this.merchantId)
               this.$q.notify({
                 type: 'positive',
