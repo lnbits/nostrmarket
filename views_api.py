@@ -39,6 +39,8 @@ from .crud import (
     get_orders_for_stall,
     get_product,
     get_products,
+    get_public_keys_for_direct_messages,
+    get_public_keys_for_orders,
     get_stall,
     get_stalls,
     get_zone,
@@ -714,6 +716,35 @@ async def api_create_message(
         await nostr_client.publish_nostr_event(dm_event)
 
         return dm
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot create message",
+        )
+
+
+######################################## CUSTOMERS ########################################
+
+
+@nostrmarket_ext.get("/api/v1/customers")
+async def api_create_message(
+    wallet: WalletTypeInfo = Depends(get_key_type),
+) -> DirectMessage:
+    try:
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, f"Merchant cannot be found"
+
+        dm_pubkeys = await get_public_keys_for_direct_messages(merchant.id)
+        orders_pubkeys = await get_public_keys_for_orders(merchant.id)
+
+        return list(dict.fromkeys(dm_pubkeys + orders_pubkeys))
+
     except AssertionError as ex:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
