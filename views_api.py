@@ -32,6 +32,7 @@ from .crud import (
     delete_stall,
     delete_zone,
     get_direct_messages,
+    get_merchant_by_pubkey,
     get_merchant_for_user,
     get_order,
     get_orders,
@@ -78,6 +79,9 @@ async def api_create_merchant(
 ) -> Merchant:
 
     try:
+        merchant = await get_merchant_by_pubkey(data.public_key)
+        assert merchant == None, "A merchant already uses this public key"
+
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant == None, "A merchant already exists for this user"
 
@@ -85,6 +89,11 @@ async def api_create_merchant(
         await subscribe_to_direct_messages(data.public_key, 0)
 
         return merchant
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -128,6 +137,11 @@ async def api_delete_merchant(
 
         await unsubscribe_from_direct_messages(merchant.public_key)
         await delete_merchant(merchant.id)
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -145,6 +159,11 @@ async def api_get_zones(wallet: WalletTypeInfo = Depends(get_key_type)) -> List[
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
         return await get_zones(merchant.id)
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -162,6 +181,11 @@ async def api_create_zone(
         assert merchant, "Merchant cannot be found"
         zone = await create_zone(merchant.id, data)
         return zone
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -188,6 +212,11 @@ async def api_update_zone(
         zone = await update_zone(merchant.id, data)
         assert zone, "Cannot find updated zone"
         return zone
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except HTTPException as ex:
         raise ex
     except Exception as ex:
@@ -212,7 +241,11 @@ async def api_delete_zone(zone_id, wallet: WalletTypeInfo = Depends(require_admi
             )
 
         await delete_zone(merchant.id, zone_id)
-
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -242,7 +275,8 @@ async def api_create_stall(
         await update_stall(merchant.id, stall)
 
         return stall
-    except ValueError as ex:
+
+    except (ValueError, AssertionError) as ex:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
@@ -277,7 +311,7 @@ async def api_update_stall(
         return stall
     except HTTPException as ex:
         raise ex
-    except ValueError as ex:
+    except (ValueError, AssertionError) as ex:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
@@ -302,6 +336,11 @@ async def api_get_stall(stall_id: str, wallet: WalletTypeInfo = Depends(get_key_
                 detail="Stall does not exist.",
             )
         return stall
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except HTTPException as ex:
         raise ex
     except Exception as ex:
@@ -319,6 +358,11 @@ async def api_get_stalls(wallet: WalletTypeInfo = Depends(get_key_type)):
         assert merchant, "Merchant cannot be found"
         stalls = await get_stalls(merchant.id)
         return stalls
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -337,6 +381,11 @@ async def api_get_stall_products(
         assert merchant, "Merchant cannot be found"
         products = await get_products(merchant.id, stall_id)
         return products
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -355,6 +404,11 @@ async def api_get_stall_orders(
         assert merchant, "Merchant cannot be found"
         orders = await get_orders_for_stall(merchant.id, stall_id)
         return orders
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -384,6 +438,11 @@ async def api_delete_stall(
         stall.config.event_id = event.id
         await update_stall(merchant.id, stall)
 
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except HTTPException as ex:
         raise ex
     except Exception as ex:
@@ -419,7 +478,7 @@ async def api_create_product(
         await update_product(merchant.id, product)
 
         return product
-    except ValueError as ex:
+    except (ValueError, AssertionError) as ex:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
@@ -451,14 +510,12 @@ async def api_update_product(
         product.config.currency = stall.currency
 
         product = await update_product(merchant.id, product)
-
         event = await sign_and_send_to_nostr(merchant, product)
-
         product.config.event_id = event.id
         await update_product(merchant.id, product)
 
         return product
-    except ValueError as ex:
+    except (ValueError, AssertionError) as ex:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
@@ -482,6 +539,11 @@ async def api_get_product(
 
         products = await get_product(merchant.id, product_id)
         return products
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -509,6 +571,11 @@ async def api_delete_product(
         await delete_product(merchant.id, product_id)
         await sign_and_send_to_nostr(merchant, product, True)
 
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except HTTPException as ex:
         raise ex
     except Exception as ex:
@@ -537,6 +604,11 @@ async def api_get_order(order_id: str, wallet: WalletTypeInfo = Depends(get_key_
                 detail="Order does not exist.",
             )
         return order
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except HTTPException as ex:
         raise ex
     except Exception as ex:
@@ -555,6 +627,11 @@ async def api_get_orders(wallet: WalletTypeInfo = Depends(get_key_type)):
 
         orders = await get_orders(merchant.id)
         return orders
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -587,6 +664,11 @@ async def api_update_order_status(
 
         return order
 
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -608,6 +690,11 @@ async def api_get_messages(
 
         messages = await get_direct_messages(merchant.id, public_key)
         return messages
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
@@ -632,6 +719,11 @@ async def api_create_message(
         await publish_nostr_event(dm_event)
 
         return dm
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
