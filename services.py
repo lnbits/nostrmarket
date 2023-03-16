@@ -23,6 +23,7 @@ from .models import (
     Nostrable,
     Order,
     OrderExtra,
+    OrderItem,
     OrderStatusUpdate,
     PartialDirectMessage,
     PartialOrder,
@@ -54,6 +55,13 @@ async def create_new_order(
 
     wallet_id = await get_wallet_for_product(data.items[0].product_id)
     assert wallet_id, "Missing wallet for order `{data.id}`"
+
+    product_ids = [i.product_id for i in data.items]
+    success, _, message = await compute_products_new_quantity(
+        merchant.id, product_ids, data.items
+    )
+    if not success:
+        return PaymentRequest(id=data.id, message=message, payment_options=[])
 
     payment_hash, invoice = await create_invoice(
         wallet_id=wallet_id,
@@ -134,21 +142,11 @@ async def update_products_for_order(
     merchant: Merchant, order: Order
 ) -> Tuple[bool, str]:
     product_ids = [i.product_id for i in order.items]
-    products: List[Product] = await get_products_by_ids(merchant.id, product_ids)
-
-    for p in products:
-        required_quantity = next(
-            (i.quantity for i in order.items if i.product_id == p.id), None
-        )
-        if not required_quantity:
-            return False, f"Product not found for order: {p.id}"
-        if p.quantity < required_quantity:
-            return (
-                False,
-                f"Quantity not sufficient for product: {p.id}. Required {required_quantity} but only have {p.quantity}",
-            )
-
-        p.quantity -= required_quantity
+    success, products, message = await compute_products_new_quantity(
+        merchant.id, product_ids, order.items
+    )
+    if not success:
+        return success, message
 
     for p in products:
         product = await update_product_quantity(p.id, p.quantity)
@@ -157,6 +155,29 @@ async def update_products_for_order(
         await update_product(merchant.id, product)
 
     return True, "ok"
+
+
+async def compute_products_new_quantity(
+    merchant_id: str, product_ids: List[str], items: List[OrderItem]
+) -> Tuple[bool, List[Product], str]:
+    products: List[Product] = await get_products_by_ids(merchant_id, product_ids)
+
+    for p in products:
+        required_quantity = next(
+            (i.quantity for i in items if i.product_id == p.id), None
+        )
+        if not required_quantity:
+            return False, [], f"Product not found for order: {p.id}"
+        if p.quantity < required_quantity:
+            return (
+                False,
+                [],
+                f"Quantity not sufficient for product: {p.id}. Required {required_quantity} but only have {p.quantity}",
+            )
+
+        p.quantity -= required_quantity
+
+    return True, products, "ok"
 
 
 async def process_nostr_message(msg: str):
