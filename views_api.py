@@ -743,5 +743,5 @@ async def api_stop(wallet: WalletTypeInfo = Depends(check_admin)):
         except Exception as ex:
             logger.warning(ex)
 
-    # todo: close websocket
+    nostr_client.stop()
     return {"success": True}
