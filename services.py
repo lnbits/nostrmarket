@@ -110,7 +110,7 @@ async def handle_order_paid(order_id: str, merchant_pubkey: str):
         merchant = await get_merchant_by_pubkey(merchant_pubkey)
         assert merchant, f"Merchant cannot be found for order {order_id}"
 
-        # lock
+        # todo: lock
         success, message = await update_products_for_order(merchant, order)
         await notify_client_of_order_status(order, merchant, success, message)
     except Exception as ex:
