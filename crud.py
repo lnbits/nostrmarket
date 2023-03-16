@@ -287,6 +287,20 @@ async def update_product(merchant_id: str, product: Product) -> Product:
     return updated_product
 
 
+async def update_product_quantity(
+    product_id: str, new_quantity: int
+) -> Optional[Product]:
+    await db.execute(
+        f"UPDATE nostrmarket.products SET quantity = ?  WHERE id = ?",
+        (new_quantity, product_id),
+    )
+    row = await db.fetchone(
+        "SELECT * FROM nostrmarket.products WHERE id = ?",
+        (product_id,),
+    )
+    return Product.from_row(row) if row else None
+
+
 async def get_product(merchant_id: str, product_id: str) -> Optional[Product]:
     row = await db.fetchone(
         "SELECT * FROM nostrmarket.products WHERE merchant_id =? AND id = ?",

@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import List, Optional, Tuple
 
 from loguru import logger
 
@@ -14,6 +14,8 @@ from .crud import (
     get_products_by_ids,
     get_wallet_for_product,
     update_order_paid_status,
+    update_product,
+    update_product_quantity,
 )
 from .helpers import order_from_json
 from .models import (
@@ -26,6 +28,7 @@ from .models import (
     PartialOrder,
     PaymentOption,
     PaymentRequest,
+    Product,
 )
 from .nostr.event import NostrEvent
 from .nostr.nostr_client import publish_nostr_event
@@ -95,20 +98,65 @@ async def handle_order_paid(order_id: str, merchant_pubkey: str):
     try:
         order = await update_order_paid_status(order_id, True)
         assert order, f"Paid order cannot be found. Order id: {order_id}"
-        order_status = OrderStatusUpdate(
-            id=order_id, message="Payment received.", paid=True, shipped=order.shipped
-        )
 
         merchant = await get_merchant_by_pubkey(merchant_pubkey)
         assert merchant, f"Merchant cannot be found for order {order_id}"
+
+        # lock
+        success, message = await update_products_for_order(merchant, order)
+        await notify_client_of_order_status(order, merchant, success, message)
+    except Exception as ex:
+        logger.warning(ex)
+
+
+async def notify_client_of_order_status(
+    order: Order, merchant: Merchant, success: bool, message: str
+):
+    dm_content = ""
+    if success:
+        order_status = OrderStatusUpdate(
+            id=order.id,
+            message="Payment received.",
+            paid=True,
+            shipped=order.shipped,
+        )
         dm_content = json.dumps(
             order_status.dict(), separators=(",", ":"), ensure_ascii=False
         )
+    else:
+        dm_content = f"Order cannot be fulfilled. Reason: {message}"
 
-        dm_event = merchant.build_dm_event(dm_content, order.public_key)
-        await publish_nostr_event(dm_event)
-    except Exception as ex:
-        logger.warning(ex)
+    dm_event = merchant.build_dm_event(dm_content, order.public_key)
+    await publish_nostr_event(dm_event)
+
+
+async def update_products_for_order(
+    merchant: Merchant, order: Order
+) -> Tuple[bool, str]:
+    product_ids = [i.product_id for i in order.items]
+    products: List[Product] = await get_products_by_ids(merchant.id, product_ids)
+
+    for p in products:
+        required_quantity = next(
+            (i.quantity for i in order.items if i.product_id == p.id), None
+        )
+        if not required_quantity:
+            return False, f"Product not found for order: {p.id}"
+        if p.quantity < required_quantity:
+            return (
+                False,
+                f"Quantity not sufficient for product: {p.id}. Required {required_quantity} but only have {p.quantity}",
+            )
+
+        p.quantity -= required_quantity
+
+    for p in products:
+        product = await update_product_quantity(p.id, p.quantity)
+        event = await sign_and_send_to_nostr(merchant, product)
+        product.config.event_id = event.id
+        await update_product(merchant.id, product)
+
+    return True, "ok"
 
 
 async def process_nostr_message(msg: str):

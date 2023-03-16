@@ -460,9 +460,7 @@ async def api_update_product(
         product.config.currency = stall.currency
 
         product = await update_product(merchant.id, product)
-
         event = await sign_and_send_to_nostr(merchant, product)
-
         product.config.event_id = event.id
         await update_product(merchant.id, product)
 
