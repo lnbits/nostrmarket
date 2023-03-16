@@ -15,7 +15,7 @@ from lnbits.decorators import (
 )
 from lnbits.utils.exchange_rates import currencies
 
-from . import nostrmarket_ext, scheduled_tasks
+from . import nostr_client, nostrmarket_ext, scheduled_tasks
 from .crud import (
     create_direct_message,
     create_merchant,
@@ -62,11 +62,6 @@ from .models import (
     Stall,
     Zone,
 )
-from .nostr.nostr_client import (
-    publish_nostr_event,
-    subscribe_to_direct_messages,
-    unsubscribe_from_direct_messages,
-)
 from .services import sign_and_send_to_nostr
 
 ######################################## MERCHANT ########################################
@@ -86,7 +81,7 @@ async def api_create_merchant(
         assert merchant == None, "A merchant already exists for this user"
 
         merchant = await create_merchant(wallet.wallet.user, data)
-        await subscribe_to_direct_messages(data.public_key, 0)
+        await nostr_client.subscribe_to_direct_messages(data.public_key, 0)
 
         return merchant
     except AssertionError as ex:
@@ -135,7 +130,7 @@ async def api_delete_merchant(
         await delete_merchant_direct_messages(merchant.id)
         await delete_merchant_zones(merchant.id)
 
-        await unsubscribe_from_direct_messages(merchant.public_key)
+        await nostr_client.unsubscribe_from_direct_messages(merchant.public_key)
         await delete_merchant(merchant.id)
     except AssertionError as ex:
         raise HTTPException(
@@ -660,7 +655,7 @@ async def api_update_order_status(
         dm_content = json.dumps(data.dict(), separators=(",", ":"), ensure_ascii=False)
 
         dm_event = merchant.build_dm_event(dm_content, order.public_key)
-        await publish_nostr_event(dm_event)
+        await nostr_client.publish_nostr_event(dm_event)
 
         return order
 
@@ -716,7 +711,7 @@ async def api_create_message(
         data.event_created_at = dm_event.created_at
 
         dm = await create_direct_message(merchant.id, data)
-        await publish_nostr_event(dm_event)
+        await nostr_client.publish_nostr_event(dm_event)
 
         return dm
     except AssertionError as ex:

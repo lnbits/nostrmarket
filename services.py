@@ -5,6 +5,7 @@ from loguru import logger
 
 from lnbits.core import create_invoice, get_wallet
 
+from . import nostr_client
 from .crud import (
     create_direct_message,
     create_order,
@@ -32,7 +33,6 @@ from .models import (
     Product,
 )
 from .nostr.event import NostrEvent
-from .nostr.nostr_client import publish_nostr_event
 
 
 async def create_new_order(
@@ -97,7 +97,7 @@ async def sign_and_send_to_nostr(
         else n.to_nostr_event(merchant.public_key)
     )
     event.sig = merchant.sign_hash(bytes.fromhex(event.id))
-    await publish_nostr_event(event)
+    await nostr_client.publish_nostr_event(event)
 
     return event
 
@@ -135,7 +135,7 @@ async def notify_client_of_order_status(
         dm_content = f"Order cannot be fulfilled. Reason: {message}"
 
     dm_event = merchant.build_dm_event(dm_content, order.public_key)
-    await publish_nostr_event(dm_event)
+    await nostr_client.publish_nostr_event(dm_event)
 
 
 async def update_products_for_order(
@@ -226,7 +226,7 @@ async def _handle_incoming_dms(
     )
     if dm_content:
         dm_event = merchant.build_dm_event(dm_content, event.pubkey)
-        await publish_nostr_event(dm_event)
+        await nostr_client.publish_nostr_event(dm_event)
 
 
 async def _handle_outgoing_dms(
