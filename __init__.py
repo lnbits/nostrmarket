@@ -1,5 +1,5 @@
 import asyncio
-from asyncio import Queue, Task
+from asyncio import Task
 from typing import List
 
 from fastapi import APIRouter
@@ -26,16 +26,14 @@ def nostrmarket_renderer():
     return template_renderer(["lnbits/extensions/nostrmarket/templates"])
 
 
-recieve_event_queue: Queue = Queue()
-send_req_queue: Queue = Queue()
+from .nostr.nostr_client import NostrClient
+
+nostr_client = NostrClient()
+
 scheduled_tasks: List[Task] = []
 
 
-from .tasks import (
-    subscribe_to_nostr_client,
-    wait_for_nostr_events,
-    wait_for_paid_invoices,
-)
+from .tasks import wait_for_nostr_events, wait_for_paid_invoices
 from .views import *  # noqa
 from .views_api import *  # noqa
 
@@ -44,12 +42,12 @@ def nostrmarket_start():
     async def _subscribe_to_nostr_client():
         # wait for 'nostrclient' extension to initialize
         await asyncio.sleep(10)
-        await subscribe_to_nostr_client(recieve_event_queue, send_req_queue)
+        await nostr_client.run_forever()
 
     async def _wait_for_nostr_events():
         # wait for this extension to initialize
         await asyncio.sleep(5)
-        await wait_for_nostr_events(recieve_event_queue)
+        await wait_for_nostr_events(nostr_client)
 
     loop = asyncio.get_event_loop()
     task1 = loop.create_task(catch_everything_and_restart(wait_for_paid_invoices))
