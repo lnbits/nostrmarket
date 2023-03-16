@@ -18,13 +18,6 @@ class NostrClient:
         self.send_req_queue: Queue = Queue()
         self.ws: WebSocketApp = None
 
-    async def get_event(self):
-        return await self.recieve_event_queue.get()
-
-    async def publish_nostr_event(self, e: NostrEvent):
-        print("### publish_nostr_event", e.dict())
-        await self.send_req_queue.put(["EVENT", e.dict()])
-
     async def connect_to_nostrclient_ws(
         self, on_open: Callable, on_message: Callable
     ) -> WebSocketApp:
@@ -45,23 +38,10 @@ class NostrClient:
 
         return ws
 
-    async def subscribe_to_direct_messages(self, public_key: str, since: int):
-        in_messages_filter = {"kind": 4, "#p": [public_key]}
-        out_messages_filter = {"kind": 4, "authors": [public_key]}
-        if since != 0:
-            in_messages_filter["since"] = since
-            out_messages_filter["since"] = since
-        print("### in_messages_filter", in_messages_filter)
-        print("### out_messages_filter", out_messages_filter)
+    async def get_event(self):
+        return await self.recieve_event_queue.get()
 
-        await self.send_req_queue.put(
-            ["REQ", f"direct-messages-in:{public_key}", in_messages_filter]
-        )
-        await self.send_req_queue.put(
-            ["REQ", f"direct-messages-out:{public_key}", out_messages_filter]
-        )
-
-    async def subscribe_to_nostr_client(self):
+    async def run_forever(self):
         def on_open(_):
             logger.info("Connected to 'nostrclient' websocket")
 
@@ -85,6 +65,32 @@ class NostrClient:
                 self.ws = None  # todo close
                 await asyncio.sleep(5)
 
+    async def publish_nostr_event(self, e: NostrEvent):
+        print("### publish_nostr_event", e.dict())
+        await self.send_req_queue.put(["EVENT", e.dict()])
+
+    async def subscribe_to_direct_messages(self, public_key: str, since: int):
+        in_messages_filter = {"kind": 4, "#p": [public_key]}
+        out_messages_filter = {"kind": 4, "authors": [public_key]}
+        if since != 0:
+            in_messages_filter["since"] = since
+            out_messages_filter["since"] = since
+        print("### in_messages_filter", in_messages_filter)
+        print("### out_messages_filter", out_messages_filter)
+
+        await self.send_req_queue.put(
+            ["REQ", f"direct-messages-in:{public_key}", in_messages_filter]
+        )
+        await self.send_req_queue.put(
+            ["REQ", f"direct-messages-out:{public_key}", out_messages_filter]
+        )
+
     async def unsubscribe_from_direct_messages(self, public_key: str):
         await self.send_req_queue.put(["CLOSE", f"direct-messages-in:{public_key}"])
         await self.send_req_queue.put(["CLOSE", f"direct-messages-out:{public_key}"])
+
+    def stop(self):
+        try:
+            self.ws.close()
+        except Exception as ex:
+            logger.warning(ex)

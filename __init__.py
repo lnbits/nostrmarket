@@ -42,7 +42,7 @@ def nostrmarket_start():
     async def _subscribe_to_nostr_client():
         # wait for 'nostrclient' extension to initialize
         await asyncio.sleep(10)
-        await nostr_client.subscribe_to_nostr_client()
+        await nostr_client.run_forever()
 
     async def _wait_for_nostr_events():
         # wait for this extension to initialize
