@@ -191,7 +191,6 @@ async def process_nostr_message(msg: str):
                 await _handle_nip04_message(merchant_public_key, event)
             return
     except Exception as ex:
-        print("####### bad message", msg)
         logger.warning(ex)
 
 
@@ -199,7 +198,6 @@ async def _handle_nip04_message(merchant_public_key: str, event: NostrEvent):
     merchant = await get_merchant_by_pubkey(merchant_public_key)
     assert merchant, f"Merchant not found for public key '{merchant_public_key}'"
 
-    # print("### clear_text_msg", subscription_name, clear_text_msg)
     if event.pubkey == merchant_public_key:
         assert len(event.tag_values("p")) != 0, "Outgong message has no 'p' tag"
         clear_text_msg = merchant.decrypt_message(
@@ -260,7 +258,6 @@ async def _handle_dirrect_message(
             order["event_created_at"] = event_created_at
             return await _handle_new_order(PartialOrder(**order))
         else:
-            # print("### text_msg", text_msg, event_created_at, event_id)
             dm = PartialDirectMessage(
                 event_id=event_id,
                 event_created_at=event_created_at,
