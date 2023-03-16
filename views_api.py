@@ -32,6 +32,7 @@ from .crud import (
     delete_stall,
     delete_zone,
     get_direct_messages,
+    get_merchant_by_pubkey,
     get_merchant_for_user,
     get_order,
     get_orders,
@@ -78,6 +79,9 @@ async def api_create_merchant(
 ) -> Merchant:
 
     try:
+        merchant = await get_merchant_by_pubkey(data.public_key)
+        assert merchant == None, "A merchant already uses this public key"
+
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant == None, "A merchant already exists for this user"
 
@@ -85,6 +89,11 @@ async def api_create_merchant(
         await subscribe_to_direct_messages(data.public_key, 0)
 
         return merchant
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(

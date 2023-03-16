@@ -78,10 +78,7 @@ const merchant = async () => {
             message: 'Merchant Created!'
           })
         } catch (error) {
-          this.$q.notify({
-            type: 'negative',
-            message: `${error}`
-          })
+          LNbits.utils.notifyApiError(error)
         }
       },
       getMerchant: async function () {
