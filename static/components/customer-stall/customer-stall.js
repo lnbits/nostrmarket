@@ -86,7 +86,6 @@ async function customerStall(path) {
         return LNbits.utils.formatCurrency(amount, unit)
       },
       addToCart(item) {
-        console.log('add to cart', item)
         let prod = this.cart.products
         if (prod.has(item.id)) {
           let qty = prod.get(item.id).quantity
@@ -115,7 +114,6 @@ async function customerStall(path) {
         this.updateCart(+item.price, true)
       },
       updateCart(price, del = false) {
-        console.log(this.cart, this.cartMenu)
         if (del) {
           this.cart.total -= price
           this.cart.size--
@@ -126,7 +124,10 @@ async function customerStall(path) {
         this.cartMenu = Array.from(this.cart.products, item => {
           return {id: item[0], ...item[1]}
         })
-        console.log(this.cart, this.cartMenu)
+        this.$q.localStorage.set(`diagonAlley.carts.${this.stall.id}`, {
+          ...this.cart,
+          products: Object.fromEntries(this.cart.products)
+        })
       },
       resetCart() {
         this.cart = {
@@ -134,6 +135,7 @@ async function customerStall(path) {
           size: 0,
           products: new Map()
         }
+        this.$q.localStorage.remove(`diagonAlley.carts.${this.stall.id}`)
       },
       async downloadOrder() {
         let created_at = Math.floor(Date.now() / 1000)
@@ -372,6 +374,18 @@ async function customerStall(path) {
       this.customerPubkey = this.account?.pubkey
       this.customerPrivkey = this.account?.privkey
       this.customerUseExtension = this.account?.useExtension
+      let storedCart = this.$q.localStorage.getItem(
+        `diagonAlley.carts.${this.stall.id}`
+      )
+      if (storedCart) {
+        this.cart.total = storedCart.total
+        this.cart.size = storedCart.size
+        this.cart.products = new Map(Object.entries(storedCart.products))
+
+        this.cartMenu = Array.from(this.cart.products, item => {
+          return {id: item[0], ...item[1]}
+        })
+      }
       setTimeout(() => {
         if (window.nostr) {
           this.hasNip07 = true
