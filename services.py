@@ -273,8 +273,6 @@ async def _handle_dirrect_message(
 
 
 async def _handle_new_order(order: PartialOrder) -> Optional[str]:
-    ### todo: check that event_id not parsed already
-
     order.validate_order()
 
     first_product_id = order.items[0].product_id
