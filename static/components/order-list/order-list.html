@@ -1,4 +1,20 @@
 <div>
+  <div class="row q-mb-md">
+    <div class="col">
+      <q-btn
+      unelevated
+      color="secondary"
+      outline
+      icon="refresh"
+      @click="getOrders()"
+      target="_blank"
+      class="float-left"
+      >Refresh Orders</q-btn
+    >
+      </div>
+      </div>
+  <div class="row">
+    <div class="col">
   <q-table
     flat
     dense
@@ -179,7 +195,8 @@
       </q-tr>
     </template>
   </q-table>
-
+</div>
+</div>
   <q-dialog v-model="showShipDialog" position="top">
     <q-card v-if="selectedOrder" class="q-pa-lg q-pt-xl" style="width: 500px">
       <q-form @submit="updateOrderShipped" class="q-gutter-md">
