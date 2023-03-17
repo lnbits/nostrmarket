@@ -11,7 +11,8 @@ async function customerStall(path) {
       'products',
       'product-detail',
       'change-page',
-      'relays'
+      'relays',
+      'pool'
     ],
     data: function () {
       return {

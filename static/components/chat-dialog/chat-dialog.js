@@ -5,13 +5,12 @@ async function chatDialog(path) {
     name: 'chat-dialog',
     template,
 
-    props: ['account', 'merchant', 'relays'],
+    props: ['account', 'merchant', 'relays', 'pool'],
     data: function () {
       return {
         dialog: false,
         isChat: true,
         loading: false,
-        pool: null,
         nostrMessages: [],
         newMessage: '',
         ordersTable: {
@@ -82,11 +81,10 @@ async function chatDialog(path) {
       },
       async closeDialog() {
         this.dialog = false
-        await this.pool.close(Array.from(this.relays))
+        await this.sub.unsub()
       },
       async startPool() {
         this.loading = true
-        this.pool = new NostrTools.SimplePool()
         let messagesMap = new Map()
         let sub = this.pool.sub(Array.from(this.relays), [
           {
@@ -98,6 +96,7 @@ async function chatDialog(path) {
             '#p': [this.account.pubkey]
           }
         ])
+
         sub.on('eose', () => {
           this.loading = false
           this.nostrMessages = Array.from(messagesMap.values())
@@ -133,6 +132,7 @@ async function chatDialog(path) {
             console.error('Unable to decrypt message!')
           }
         })
+        this.sub = sub
       },
       async sendMessage() {
         if (this.newMessage && this.newMessage.length < 1) return
@@ -146,6 +146,10 @@ async function chatDialog(path) {
         }
         event.id = NostrTools.getEventHash(event)
         event.sig = this.signEvent(event)
+        // This doesn't work yet
+        // this.pool.publish(Array.from(this.relays), event)
+        // this.newMessage = ''
+        // We need this hack
         for (const url of Array.from(this.relays)) {
           try {
             let relay = NostrTools.relayInit(url)
