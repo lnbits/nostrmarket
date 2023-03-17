@@ -205,7 +205,9 @@ async function customerStall(path) {
           data: {
             payment_request: null
           },
-          dismissMsg: null,
+          dismissMsg: this.$q.notify({
+            message: 'Waiting for invoice from merchant...'
+          }),
           show: true
         }
       },
@@ -271,9 +273,6 @@ async function customerStall(path) {
         await this.sendOrder(event)
       },
       async sendOrder(order) {
-        this.$q.notify({
-          message: 'Waiting for invoice from merchant...'
-        })
         for (const url of Array.from(this.relays)) {
           try {
             let relay = NostrTools.relayInit(url)
