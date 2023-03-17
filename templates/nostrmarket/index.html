@@ -25,10 +25,27 @@
           </div>
         </q-card-section>
         <q-card-section v-if="showKeys">
-          <key-pair
-            :public-key="merchant.public_key"
-            :private-key="merchant.private_key"
-          ></key-pair>
+          <div class="row q-mb-md">
+            <div class="col">
+              <q-btn
+                unelevated
+                color="gray"
+                outline
+                @click="showKeys = false"
+                class="float-left"
+                >Hide Keys</q-btn
+              >
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <key-pair
+                :public-key="merchant.public_key"
+                :private-key="merchant.private_key"
+              ></key-pair>
+            </div>
+          </div>
         </q-card-section>
       </q-card>
       <q-card class="q-mt-lg">
