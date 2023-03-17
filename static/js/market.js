@@ -11,11 +11,16 @@ const market = async () => {
   ]
   const eventToObj = event => {
     event.content = JSON.parse(event.content) || null
+
     return {
       ...event,
       ...Object.values(event.tags).reduce((acc, tag) => {
         let [key, value] = tag
-        return {...acc, [key]: [...(acc[key] || []), value]}
+        if (key == 't') {
+          return {...acc, [key]: [...(acc[key] || []), value]}
+        } else {
+          return {...acc, [key]: value}
+        }
       }, {})
     }
   }
@@ -55,7 +60,8 @@ const market = async () => {
         inputRelay: null,
         activePage: 'market',
         activeStall: null,
-        activeProduct: null
+        activeProduct: null,
+        pool: null
       }
     },
     computed: {
@@ -209,13 +215,18 @@ const market = async () => {
         this.products.forEach(p => products.set(p.id, p))
 
         events.map(eventToObj).map(e => {
-          if (e.kind == 30018) {
+          if (e.kind == 0) {
+            this.profiles.set(e.pubkey, e.content)
+            if (e.pubkey == this.account?.pubkey) {
+              this.accountMetadata = this.profiles.get(this.account.pubkey)
+            }
+            return
+          } else if (e.kind == 30018) {
             //it's a product `d` is the prod. id
-            products.set(e.d, {...e.content, id: e.d[0], categories: e.t})
+            products.set(e.d, {...e.content, id: e.d, categories: e.t})
           } else if (e.kind == 30017) {
             // it's a stall `d` is the stall id
-            stalls.set(e.d, {...e.content, id: e.d[0], pubkey: e.pubkey})
-            return
+            stalls.set(e.d, {...e.content, id: e.d, pubkey: e.pubkey})
           }
         })
 
@@ -241,10 +252,9 @@ const market = async () => {
         this.$q.loading.show()
         const pool = new NostrTools.SimplePool()
         let relays = Array.from(this.relays)
-        let products = new Map()
-        let stalls = new Map()
+
         // Get metadata and market data from the pubkeys
-        let sub = await pool
+        await pool
           .list(relays, [
             {
               kinds: [0, 30017, 30018], // for production kind is 30017
@@ -252,45 +262,30 @@ const market = async () => {
             }
           ])
           .then(async events => {
-            this.events = events || []
-            this.events.map(eventToObj).map(e => {
-              if (e.kind == 0) {
-                this.profiles.set(e.pubkey, e.content)
-                if (e.pubkey == this.account?.pubkey) {
-                  this.accountMetadata = this.profiles.get(this.account.pubkey)
-                }
-                return
-              } else if (e.kind == 30018) {
-                //it's a product `d` is the prod. id
-                products.set(e.d, {...e.content, id: e.d[0], categories: e.t})
-              } else if (e.kind == 30017) {
-                // it's a stall `d` is the stall id
-                stalls.set(e.d, {...e.content, id: e.d[0], pubkey: e.pubkey})
-                return
-              }
-            })
+            if (!events || events.length == 0) return
+            await this.updateData(events)
           })
-        await Promise.resolve(sub)
-        this.stalls = await Array.from(stalls.values())
 
-        this.products = Array.from(products.values())
-          .map(obj => {
-            let stall = this.stalls.find(s => s.id == obj.stall_id)
-            if (!stall) return
-            obj.stallName = stall.name
-            obj.images = [obj.image]
-            if (obj.currency != 'sat') {
-              obj.formatedPrice = this.getAmountFormated(
-                obj.price,
-                obj.currency
-              )
-            }
-            return obj
-          })
-          .filter(f => f)
         this.$q.loading.hide()
-        pool.close(relays)
+        this.pool = pool
+        this.poolSubscribe()
         return
+      },
+      async poolSubscribe() {
+        this.poolSub = this.pool.sub(Array.from(this.relays), [
+          {
+            kinds: [0, 30017, 30018],
+            authors: Array.from(this.pubkeys),
+            since: Date.now() / 1000
+          }
+        ])
+        this.poolSub.on(
+          'event',
+          event => {
+            this.updateData([event])
+          },
+          {id: 'masterSub'} //pass ID to cancel previous sub
+        )
       },
       navigateTo(page, opts = {stall: null, product: null, pubkey: null}) {
         let {stall, product, pubkey} = opts
@@ -356,7 +351,7 @@ const market = async () => {
           `diagonAlley.merchants`,
           Array.from(this.pubkeys)
         )
-        await this.initNostr()
+        this.initNostr()
       },
       removePubkey(pubkey) {
         // Needs a hack for Vue reactivity
@@ -368,7 +363,7 @@ const market = async () => {
           `diagonAlley.merchants`,
           Array.from(this.pubkeys)
         )
-        Promise.resolve(this.initNostr())
+        this.initNostr()
       },
       async addRelay() {
         let relay = String(this.inputRelay).trim()
@@ -379,7 +374,7 @@ const market = async () => {
         this.relays.add(relay)
         this.$q.localStorage.set(`diagonAlley.relays`, Array.from(this.relays))
         this.inputRelay = null
-        await this.initNostr()
+        this.initNostr()
       },
       removeRelay(relay) {
         // Needs a hack for Vue reactivity
@@ -387,6 +382,7 @@ const market = async () => {
         relays.delete(relay)
         this.relays = new Set(Array.from(relays))
         this.$q.localStorage.set(`diagonAlley.relays`, Array.from(this.relays))
+        this.initNostr()
       }
     }
   })
