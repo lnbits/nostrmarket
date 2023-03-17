@@ -190,9 +190,20 @@ async function customerStall(path) {
           }
         }
       },
+      openQrCodeDialog() {
+        this.qrCodeDialog = {
+          data: {
+            payment_request: null
+          },
+          dismissMsg: null,
+          show: false
+        }
+      },
       closeQrCodeDialog() {
         this.qrCodeDialog.show = false
-        this.qrCodeDialog.dismissMsg = null
+        setTimeout(() => {
+          this.qrCodeDialog.dismissMsg()
+        }, 1000)
       },
       async placeOrder() {
         this.loading = true
@@ -281,7 +292,7 @@ async function customerStall(path) {
         }
         this.loading = false
         this.resetCart()
-        this.qrCodeDialog.show = true
+        this.openQrCodeDialog()
         this.listenMessages()
       },
       async listenMessages() {
