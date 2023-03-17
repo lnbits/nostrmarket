@@ -89,6 +89,14 @@ async function customerStall(path) {
         let prod = this.cart.products
         if (prod.has(item.id)) {
           let qty = prod.get(item.id).quantity
+          if (qty == item.quantity) {
+            this.$q.notify({
+              type: 'warning',
+              message: `${item.name} only has ${item.quantity} units!`,
+              icon: 'production_quantity_limits'
+            })
+            return
+          }
           prod.set(item.id, {
             ...prod.get(item.id),
             quantity: qty + 1
