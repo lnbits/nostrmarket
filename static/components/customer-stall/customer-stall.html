@@ -18,6 +18,7 @@
       :account="account ? account : dropIn"
       :merchant="stall.pubkey"
       :relays="relays"
+      :pool="pool"
     />
     <shopping-cart
       :cart="cart"
@@ -235,12 +236,7 @@
           @click="copyText(qrCodeDialog.data.payment_request)"
           >Copy invoice</q-btn
         >
-        <q-btn
-          @click="closeQrCodeDialog"
-          v-close-popup
-          flat
-          color="grey"
-          class="q-ml-auto"
+        <q-btn @click="closeQrCodeDialog" flat color="grey" class="q-ml-auto"
           >Close</q-btn
         >
       </div>

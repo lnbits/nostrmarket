@@ -11,7 +11,8 @@ async function customerStall(path) {
       'products',
       'product-detail',
       'change-page',
-      'relays'
+      'relays',
+      'pool'
     ],
     data: function () {
       return {
@@ -38,6 +39,7 @@ async function customerStall(path) {
           data: {
             payment_request: null
           },
+          dismissMsg: null,
           show: false
         },
         downloadOrderDialog: {
@@ -85,10 +87,17 @@ async function customerStall(path) {
         return LNbits.utils.formatCurrency(amount, unit)
       },
       addToCart(item) {
-        console.log('add to cart', item)
         let prod = this.cart.products
         if (prod.has(item.id)) {
           let qty = prod.get(item.id).quantity
+          if (qty == item.quantity) {
+            this.$q.notify({
+              type: 'warning',
+              message: `${item.name} only has ${item.quantity} units!`,
+              icon: 'production_quantity_limits'
+            })
+            return
+          }
           prod.set(item.id, {
             ...prod.get(item.id),
             quantity: qty + 1
@@ -114,7 +123,6 @@ async function customerStall(path) {
         this.updateCart(+item.price, true)
       },
       updateCart(price, del = false) {
-        console.log(this.cart, this.cartMenu)
         if (del) {
           this.cart.total -= price
           this.cart.size--
@@ -125,7 +133,10 @@ async function customerStall(path) {
         this.cartMenu = Array.from(this.cart.products, item => {
           return {id: item[0], ...item[1]}
         })
-        console.log(this.cart, this.cartMenu)
+        this.$q.localStorage.set(`diagonAlley.carts.${this.stall.id}`, {
+          ...this.cart,
+          products: Object.fromEntries(this.cart.products)
+        })
       },
       resetCart() {
         this.cart = {
@@ -133,6 +144,7 @@ async function customerStall(path) {
           size: 0,
           products: new Map()
         }
+        this.$q.localStorage.remove(`diagonAlley.carts.${this.stall.id}`)
       },
       async downloadOrder() {
         let created_at = Math.floor(Date.now() / 1000)
@@ -181,6 +193,7 @@ async function customerStall(path) {
         this.checkoutDialog.show = true
       },
       resetCheckout() {
+        this.loading = false
         this.checkoutDialog = {
           show: false,
           data: {
@@ -188,8 +201,22 @@ async function customerStall(path) {
           }
         }
       },
+      openQrCodeDialog() {
+        this.qrCodeDialog = {
+          data: {
+            payment_request: null
+          },
+          dismissMsg: this.$q.notify({
+            message: 'Waiting for invoice from merchant...'
+          }),
+          show: true
+        }
+      },
       closeQrCodeDialog() {
         this.qrCodeDialog.show = false
+        setTimeout(() => {
+          this.qrCodeDialog.dismissMsg()
+        }, 1000)
       },
       async placeOrder() {
         this.loading = true
@@ -247,9 +274,6 @@ async function customerStall(path) {
         await this.sendOrder(event)
       },
       async sendOrder(order) {
-        this.$q.notify({
-          message: 'Waiting for invoice from merchant...'
-        })
         for (const url of Array.from(this.relays)) {
           try {
             let relay = NostrTools.relayInit(url)
@@ -278,7 +302,7 @@ async function customerStall(path) {
         }
         this.loading = false
         this.resetCart()
-        this.qrCodeDialog.show = true
+        this.openQrCodeDialog()
         this.listenMessages()
       },
       async listenMessages() {
@@ -319,7 +343,7 @@ async function customerStall(path) {
 
               this.messageFilter(plaintext, cb => Promise.resolve(pool.close))
             } catch {
-              console.error('Unable to decrypt message!')
+              console.debug('Unable to decrypt message! Probably not for us!')
             }
           })
         } catch (err) {
@@ -331,9 +355,8 @@ async function customerStall(path) {
         let json = JSON.parse(text)
         if (json.id != this.activeOrder) return
         if (json.payment_options) {
-          let payment_request = json.payment_options.find(
-            o => o.type == 'ln'
-          ).link
+          let payment_request = json.payment_options.find(o => o.type == 'ln')
+            .link
           if (!payment_request) return
           this.loading = false
           this.qrCodeDialog.data.payment_request = payment_request
@@ -359,6 +382,18 @@ async function customerStall(path) {
       this.customerPubkey = this.account?.pubkey
       this.customerPrivkey = this.account?.privkey
       this.customerUseExtension = this.account?.useExtension
+      let storedCart = this.$q.localStorage.getItem(
+        `diagonAlley.carts.${this.stall.id}`
+      )
+      if (storedCart) {
+        this.cart.total = storedCart.total
+        this.cart.size = storedCart.size
+        this.cart.products = new Map(Object.entries(storedCart.products))
+
+        this.cartMenu = Array.from(this.cart.products, item => {
+          return {id: item[0], ...item[1]}
+        })
+      }
       setTimeout(() => {
         if (window.nostr) {
           this.hasNip07 = true
