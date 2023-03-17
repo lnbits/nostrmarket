@@ -206,7 +206,7 @@ async function customerStall(path) {
             payment_request: null
           },
           dismissMsg: null,
-          show: false
+          show: true
         }
       },
       closeQrCodeDialog() {
