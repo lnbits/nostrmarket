@@ -1,6 +1,6 @@
 {
   "name": "Nostr Market",
   "short_description": "Nostr Webshop/market on LNbits",
-  "tile": "",
+  "tile": "/nostrmarket/static/images/bitcoin-shop.png",
   "contributors": []
 }
