@@ -38,6 +38,7 @@ async function customerStall(path) {
           data: {
             payment_request: null
           },
+          dismissMsg: null,
           show: false
         },
         downloadOrderDialog: {
@@ -181,6 +182,7 @@ async function customerStall(path) {
         this.checkoutDialog.show = true
       },
       resetCheckout() {
+        this.loading = false
         this.checkoutDialog = {
           show: false,
           data: {
@@ -190,6 +192,7 @@ async function customerStall(path) {
       },
       closeQrCodeDialog() {
         this.qrCodeDialog.show = false
+        this.qrCodeDialog.dismissMsg = null
       },
       async placeOrder() {
         this.loading = true
@@ -319,7 +322,7 @@ async function customerStall(path) {
 
               this.messageFilter(plaintext, cb => Promise.resolve(pool.close))
             } catch {
-              console.error('Unable to decrypt message!')
+              console.debug('Unable to decrypt message! Probably not for us!')
             }
           })
         } catch (err) {
@@ -331,9 +334,8 @@ async function customerStall(path) {
         let json = JSON.parse(text)
         if (json.id != this.activeOrder) return
         if (json.payment_options) {
-          let payment_request = json.payment_options.find(
-            o => o.type == 'ln'
-          ).link
+          let payment_request = json.payment_options.find(o => o.type == 'ln')
+            .link
           if (!payment_request) return
           this.loading = false
           this.qrCodeDialog.data.payment_request = payment_request
