@@ -226,7 +226,7 @@ const market = async () => {
             let stall = this.stalls.find(s => s.id == obj.stall_id)
             if (!stall) return
             obj.stallName = stall.name
-            obj.images = [obj.image]
+            obj.images = obj.images || [obj.image]
             if (obj.currency != 'sat') {
               obj.formatedPrice = this.getAmountFormated(
                 obj.price,
