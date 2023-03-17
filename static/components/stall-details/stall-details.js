@@ -119,8 +119,6 @@ async function stallDetails(path) {
             this.inkey
           )
           this.stall = this.mapStall(data)
-
-          console.log('### this.stall', this.stall)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -197,8 +195,6 @@ async function stallDetails(path) {
             this.inkey
           )
           this.products = data
-
-          console.log('### this.products', this.products)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -305,6 +301,9 @@ async function stallDetails(path) {
           }
         }
         this.productDialog.showDialog = true
+      },
+      customerSelectedForOrder: function (customerPubkey) {
+        this.$emit('customer-selected-for-order', customerPubkey)
       }
     },
     created: async function () {

@@ -44,7 +44,12 @@
         </q-td>
 
         <q-td key="public_key" :props="props">
-          {{toShortId(props.row.public_key)}}
+          <span
+            @click="customerSelected(props.row.public_key)"
+            class="cursor-pointer"
+          >
+            {{toShortId(props.row.public_key)}}
+          </span>
         </q-td>
         <q-td key="time" :props="props"> {{formatDate(props.row.time)}} </q-td>
       </q-tr>

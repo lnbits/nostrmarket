@@ -46,9 +46,7 @@
         </q-td>
 
         <q-td key="id" :props="props">
-          <a style="color: unset" :href="props.row.id" target="_blank">
-            {{props.row.name}}</a
-          >
+            {{props.row.name}}
         </q-td>
         <q-td key="currency" :props="props"> {{props.row.currency}} </q-td>
         <q-td key="description" :props="props">
@@ -74,6 +72,7 @@
                 :currencies="currencies"
                 @stall-deleted="handleStallDeleted"
                 @stall-updated="handleStallUpdated"
+                @customer-selected-for-order="customerSelectedForOrder"
               ></stall-details>
             </div>
           </div>

@@ -37,6 +37,7 @@
             :adminkey="g.user.wallets[0].adminkey"
             :inkey="g.user.wallets[0].inkey"
             :wallet-options="g.user.walletOptions"
+            @customer-selected-for-order="customerSelectedForOrder"
           ></stall-list>
         </q-card-section>
       </q-card>
@@ -114,6 +115,7 @@
     </div>
     <div v-if="merchant && merchant.id" class="col-12">
       <direct-messages
+        :active-public-key="activeChatCustomer"
         :inkey="g.user.wallets[0].inkey"
         :adminkey="g.user.wallets[0].adminkey"
       >

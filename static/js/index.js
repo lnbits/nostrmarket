@@ -20,6 +20,7 @@ const merchant = async () => {
       return {
         merchant: {},
         shippingZones: [],
+        activeChatCustomer: '',
         showKeys: false,
         importKeyDialog: {
           show: false,
@@ -92,6 +93,9 @@ const merchant = async () => {
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
+      },
+      customerSelectedForOrder: function (customerPubkey) {
+        this.activeChatCustomer = customerPubkey
       }
     },
     created: async function () {

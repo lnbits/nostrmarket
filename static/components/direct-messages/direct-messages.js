@@ -2,13 +2,17 @@ async function directMessages(path) {
   const template = await loadTemplateAsync(path)
   Vue.component('direct-messages', {
     name: 'direct-messages',
-    props: ['adminkey', 'inkey'],
+    props: ['active-public-key', 'adminkey', 'inkey'],
     template,
 
+    watch: {
+      activePublicKey: async function (n) {
+        await this.getDirectMessages(n)
+      }
+    },
     data: function () {
       return {
         customersPublicKeys: [],
-        activePublicKey: '',
         messages: [],
         newMessage: ''
       }
@@ -44,7 +48,6 @@ async function directMessages(path) {
             this.inkey
           )
           this.customersPublicKeys = data
-          console.log('### this.customersPublicKeys', this.customersPublicKeys)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -61,7 +64,6 @@ async function directMessages(path) {
             }
           )
           this.messages = this.messages.concat([data])
-          console.log('###  this.messages', this.messages)
           this.newMessage = ''
           this.focusOnChatBox(this.messages.length - 1)
         } catch (error) {
@@ -69,7 +71,6 @@ async function directMessages(path) {
         }
       },
       selectActiveCustomer: async function () {
-        console.log('### selectActiveCustomer', this.activePublicKey)
         await this.getDirectMessages(this.activePublicKey)
       },
       focusOnChatBox: function (index) {

@@ -102,13 +102,11 @@ async function shippingZones(path) {
             this.inkey
           )
           this.zones = data
-          console.log('### data', data)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
       },
       sendZoneFormData: async function () {
-        console.log('### data', this.zoneDialog.data)
         this.zoneDialog.showDialog = false
         if (this.zoneDialog.data.id) {
           await this.updateShippingZone(this.zoneDialog.data)
@@ -118,7 +116,6 @@ async function shippingZones(path) {
         await this.getZones()
       },
       createShippingZone: async function (newZone) {
-        console.log('### newZone', newZone)
         try {
           await LNbits.api.request(
             'POST',

@@ -645,13 +645,10 @@ async def api_update_order_status(
     try:
         assert data.shipped != None, "Shipped value is required for order"
         merchant = await get_merchant_for_user(wallet.wallet.user)
-        assert merchant, "Merchant cannot be found"
+        assert merchant, "Merchant cannot be found for order {data.id}"
 
         order = await update_order_shipped_status(merchant.id, data.id, data.shipped)
         assert order, "Cannot find updated order"
-
-        merchant = await get_merchant_for_user(merchant.id)
-        assert merchant, f"Merchant cannot be found for order {data.id}"
 
         data.paid = order.paid
         dm_content = json.dumps(data.dict(), separators=(",", ":"), ensure_ascii=False)
