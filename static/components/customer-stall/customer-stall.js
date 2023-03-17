@@ -193,69 +193,58 @@ async function customerStall(path) {
       },
       async placeOrder() {
         this.loading = true
-        LNbits.utils
-          .confirmDialog(
-            `Send the order to the merchant? You should receive a message with the payment details.`
-          )
-          .onOk(async () => {
-            let orderData = this.checkoutDialog.data
-            let orderObj = {
-              name: orderData?.username,
-              address: orderData.address,
-              message: orderData?.message,
-              contact: {
-                nostr: this.customerPubkey,
-                phone: null,
-                email: orderData?.email
-              },
-              items: Array.from(this.cart.products, p => {
-                return {product_id: p[0], quantity: p[1].quantity}
-              })
-            }
-            let created_at = Math.floor(Date.now() / 1000)
-            orderObj.id = await hash(
-              [this.customerPubkey, created_at, JSON.stringify(orderObj)].join(
-                ':'
-              )
-            )
-            this.activeOrder = orderObj.id
-            let event = {
-              ...(await NostrTools.getBlankEvent()),
-              kind: 4,
-              created_at,
-              tags: [['p', this.stall.pubkey]],
-              pubkey: this.customerPubkey
-            }
-            if (this.customerPrivkey) {
-              event.content = await NostrTools.nip04.encrypt(
-                this.customerPrivkey,
-                this.stall.pubkey,
-                JSON.stringify(orderObj)
-              )
-            } else if (this.customerUseExtension && this.hasNip07) {
-              event.content = await window.nostr.nip04.encrypt(
-                this.stall.pubkey,
-                JSON.stringify(orderObj)
-              )
-              let userRelays = Object.keys(
-                (await window.nostr?.getRelays?.()) || []
-              )
-              if (userRelays.length != 0) {
-                userRelays.map(r => this.relays.add(r))
-              }
-            }
-            event.id = NostrTools.getEventHash(event)
-            if (this.customerPrivkey) {
-              event.sig = await NostrTools.signEvent(
-                event,
-                this.customerPrivkey
-              )
-            } else if (this.customerUseExtension && this.hasNip07) {
-              event = await window.nostr.signEvent(event)
-            }
-            this.resetCheckout()
-            await this.sendOrder(event)
+        let orderData = this.checkoutDialog.data
+        let orderObj = {
+          name: orderData?.username,
+          address: orderData.address,
+          message: orderData?.message,
+          contact: {
+            nostr: this.customerPubkey,
+            phone: null,
+            email: orderData?.email
+          },
+          items: Array.from(this.cart.products, p => {
+            return {product_id: p[0], quantity: p[1].quantity}
           })
+        }
+        let created_at = Math.floor(Date.now() / 1000)
+        orderObj.id = await hash(
+          [this.customerPubkey, created_at, JSON.stringify(orderObj)].join(':')
+        )
+        this.activeOrder = orderObj.id
+        let event = {
+          ...(await NostrTools.getBlankEvent()),
+          kind: 4,
+          created_at,
+          tags: [['p', this.stall.pubkey]],
+          pubkey: this.customerPubkey
+        }
+        if (this.customerPrivkey) {
+          event.content = await NostrTools.nip04.encrypt(
+            this.customerPrivkey,
+            this.stall.pubkey,
+            JSON.stringify(orderObj)
+          )
+        } else if (this.customerUseExtension && this.hasNip07) {
+          event.content = await window.nostr.nip04.encrypt(
+            this.stall.pubkey,
+            JSON.stringify(orderObj)
+          )
+          let userRelays = Object.keys(
+            (await window.nostr?.getRelays?.()) || []
+          )
+          if (userRelays.length != 0) {
+            userRelays.map(r => this.relays.add(r))
+          }
+        }
+        event.id = NostrTools.getEventHash(event)
+        if (this.customerPrivkey) {
+          event.sig = await NostrTools.signEvent(event, this.customerPrivkey)
+        } else if (this.customerUseExtension && this.hasNip07) {
+          event = await window.nostr.signEvent(event)
+        }
+        this.resetCheckout()
+        await this.sendOrder(event)
       },
       async sendOrder(order) {
         this.$q.notify({
@@ -276,7 +265,7 @@ async function customerStall(path) {
             await relay.connect()
             let pub = relay.publish(order)
             pub.on('ok', () => {
-              console.debug(`${relay.url} has accepted our event`)
+              console.debug(`${relay.url} has accepted our event: ${order.id}`)
               relay.close()
             })
             pub.on('failed', reason => {
