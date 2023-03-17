@@ -448,6 +448,14 @@ async def get_orders_for_stall(merchant_id: str, stall_id: str) -> List[Order]:
     return [Order.from_row(row) for row in rows]
 
 
+async def get_public_keys_for_orders(merchant_id: str) -> List[str]:
+    rows = await db.fetchall(
+        "SELECT DISTINCT public_key FROM nostrmarket.orders WHERE merchant_id = ?",
+        (merchant_id,),
+    )
+    return [row[0] for row in rows]
+
+
 async def get_last_order_time(public_key: str) -> int:
     row = await db.fetchone(
         """
@@ -572,3 +580,11 @@ async def delete_merchant_direct_messages(merchant_id: str) -> None:
         "DELETE FROM nostrmarket.direct_messages WHERE merchant_id = ?",
         (merchant_id,),
     )
+
+
+async def get_public_keys_for_direct_messages(merchant_id: str) -> List[str]:
+    rows = await db.fetchall(
+        "SELECT DISTINCT public_key FROM nostrmarket.direct_messages WHERE merchant_id = ?",
+        (merchant_id),
+    )
+    return [row[0] for row in rows]

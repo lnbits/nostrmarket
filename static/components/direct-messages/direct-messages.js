@@ -2,27 +2,32 @@ async function directMessages(path) {
   const template = await loadTemplateAsync(path)
   Vue.component('direct-messages', {
     name: 'direct-messages',
-    props: ['adminkey', 'inkey'],
+    props: ['active-public-key', 'adminkey', 'inkey'],
     template,
 
+    watch: {
+      activePublicKey: async function (n) {
+        await this.getDirectMessages(n)
+      }
+    },
     data: function () {
       return {
-        activePublicKey:
-          '186895a32209c3a92f0efaa7c65c3f8da690c75b952b815718c0d55d3eed821e',
+        customersPublicKeys: [],
         messages: [],
         newMessage: ''
       }
     },
     methods: {
       sendMessage: async function () {},
-      getDirectMessages: async function () {
-        if (!this.activePublicKey) {
+      getDirectMessages: async function (pubkey) {
+        if (!pubkey) {
+          this.messages = []
           return
         }
         try {
           const {data} = await LNbits.api.request(
             'GET',
-            '/nostrmarket/api/v1/message/' + this.activePublicKey,
+            '/nostrmarket/api/v1/message/' + pubkey,
             this.inkey
           )
           this.messages = data
@@ -31,6 +36,18 @@ async function directMessages(path) {
             this.messages.map(m => m.message)
           )
           this.focusOnChatBox(this.messages.length - 1)
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        }
+      },
+      getCustomersPublicKeys: async function () {
+        try {
+          const {data} = await LNbits.api.request(
+            'GET',
+            '/nostrmarket/api/v1/customers',
+            this.inkey
+          )
+          this.customersPublicKeys = data
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -47,12 +64,14 @@ async function directMessages(path) {
             }
           )
           this.messages = this.messages.concat([data])
-          console.log('###  this.messages', this.messages)
           this.newMessage = ''
           this.focusOnChatBox(this.messages.length - 1)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
+      },
+      selectActiveCustomer: async function () {
+        await this.getDirectMessages(this.activePublicKey)
       },
       focusOnChatBox: function (index) {
         setTimeout(() => {
@@ -66,7 +85,7 @@ async function directMessages(path) {
       }
     },
     created: async function () {
-      await this.getDirectMessages()
+      await this.getCustomersPublicKeys()
     }
   })
 }

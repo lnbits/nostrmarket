@@ -170,6 +170,9 @@ async function stallList(path) {
           shippingZones: []
         }
         this.stallDialog.show = true
+      },
+      customerSelectedForOrder: function (customerPubkey) {
+        this.$emit('customer-selected-for-order', customerPubkey)
       }
     },
     created: async function () {

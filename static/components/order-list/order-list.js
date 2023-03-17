@@ -45,7 +45,7 @@ async function orderList(path) {
               field: 'shipped'
             },
             {
-              name: 'pubkey',
+              name: 'public_key',
               align: 'left',
               label: 'Customer',
               field: 'pubkey'
@@ -91,13 +91,11 @@ async function orderList(path) {
             this.inkey
           )
           this.orders = data.map(s => ({...s, expanded: false}))
-          console.log('### this.orders', this.orders)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
       },
       updateOrderShipped: async function () {
-        console.log('### order', this.selectedOrder)
         this.selectedOrder.shipped = !this.selectedOrder.shipped
         try {
           await LNbits.api.request(
@@ -128,6 +126,9 @@ async function orderList(path) {
         // do not change the status yet
         this.selectedOrder.shipped = !order.shipped
         this.showShipDialog = true
+      },
+      customerSelected: function (customerPubkey) {
+        this.$emit('customer-selected', customerPubkey)
       }
     },
     created: async function () {

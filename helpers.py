@@ -61,7 +61,6 @@ def test_decrypt_encrypt(encoded_message: str, encryption_key):
     assert (
         encoded_message == ecrypted_msg
     ), f"expected '{encoded_message}', but got '{ecrypted_msg}'"
-    print("### test_decrypt_encrypt", encoded_message == ecrypted_msg)
 
 
 ffi = FFI()
