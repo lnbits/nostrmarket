@@ -181,7 +181,7 @@ async def compute_products_new_quantity(
 
 
 async def process_nostr_message(msg: str):
-    print("### process_nostr_message", msg)
+    logger.warning("### process_nostr_message: " + msg)
     try:
         type, *rest = json.loads(msg)
         if type.upper() == "EVENT":
@@ -191,7 +191,7 @@ async def process_nostr_message(msg: str):
             if event.kind == 4:
                 await _handle_nip04_message(merchant_public_key, event)
             return
-        print("### NOT EVENT")
+        logger.warning("### NOT EVENT")
     except Exception as ex:
         logger.warning(ex)
 
@@ -205,11 +205,11 @@ async def _handle_nip04_message(merchant_public_key: str, event: NostrEvent):
         clear_text_msg = merchant.decrypt_message(
             event.content, event.tag_values("p")[0]
         )
-        print("### outgoing dm", clear_text_msg)
+        logger.warning("### outgoing dm" + clear_text_msg)
         await _handle_outgoing_dms(event, merchant, clear_text_msg)
     elif event.has_tag_value("p", merchant_public_key):
         clear_text_msg = merchant.decrypt_message(event.content, event.pubkey)
-        print("### incomming dm", clear_text_msg)
+        logger.warning("### incomming dm: " + clear_text_msg)
         await _handle_incoming_dms(event, merchant, clear_text_msg)
     else:
         logger.warning(f"Bad NIP04 event: '{event.id}'")
@@ -277,7 +277,7 @@ async def _handle_dirrect_message(
 
 
 async def _handle_new_order(order: PartialOrder) -> Optional[str]:
-    print("### _handle_new_order", order)
+    logger.warning("### _handle_new_order" + json.dumps(order.dict()))
     order.validate_order()
 
     first_product_id = order.items[0].product_id

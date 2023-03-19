@@ -1,4 +1,7 @@
 from asyncio import Queue
+import json
+
+from loguru import logger
 
 from lnbits.core.models import Payment
 from lnbits.tasks import register_invoice_listener
@@ -25,7 +28,7 @@ async def on_invoice_paid(payment: Payment) -> None:
     if payment.extra.get("tag") != "nostrmarket":
         return
 
-    print("### on_invoice_paid")
+    logger.warning("### on_invoice_paid")
     order_id = payment.extra.get("order_id")
     merchant_pubkey = payment.extra.get("merchant_pubkey")
     if not order_id or not merchant_pubkey:
@@ -36,6 +39,7 @@ async def on_invoice_paid(payment: Payment) -> None:
 
 async def wait_for_nostr_events(nostr_client: NostrClient):
     public_keys = await get_public_keys_for_merchants()
+    logger.warning("### wait_for_nostr_events" + json.dumps(public_keys))
     for p in public_keys:
         last_order_time = await get_last_order_time(p)
         last_dm_time = await get_last_direct_messages_time(p)
