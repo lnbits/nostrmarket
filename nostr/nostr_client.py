@@ -46,6 +46,7 @@ class NostrClient:
             logger.info("Connected to 'nostrclient' websocket")
 
         def on_message(_, message):
+            print("### on_message", message)
             self.recieve_event_queue.put_nowait(message)
 
         while True:
@@ -74,6 +75,9 @@ class NostrClient:
             in_messages_filter["since"] = since
             out_messages_filter["since"] = since
 
+        print("### in_messages_filter", in_messages_filter)
+        print("### out_messages_filter", out_messages_filter)
+
         await self.send_req_queue.put(
             ["REQ", f"direct-messages-in:{public_key}", in_messages_filter]
         )
@@ -82,6 +86,7 @@ class NostrClient:
         )
 
     async def unsubscribe_from_direct_messages(self, public_key: str):
+        print("### unsubscribe_from_direct_messages", public_key)
         await self.send_req_queue.put(["CLOSE", f"direct-messages-in:{public_key}"])
         await self.send_req_queue.put(["CLOSE", f"direct-messages-out:{public_key}"])
 

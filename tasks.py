@@ -25,6 +25,7 @@ async def on_invoice_paid(payment: Payment) -> None:
     if payment.extra.get("tag") != "nostrmarket":
         return
 
+    print("### on_invoice_paid")
     order_id = payment.extra.get("order_id")
     merchant_pubkey = payment.extra.get("merchant_pubkey")
     if not order_id or not merchant_pubkey:
