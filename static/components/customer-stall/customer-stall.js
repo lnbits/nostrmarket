@@ -182,8 +182,14 @@ async function customerStall(path) {
         this.checkoutDialog.data.pubkey = this.customerPubkey
         this.checkoutDialog.data.privkey = this.customerPrivkey
       },
+      checkLogIn() {
+        this.customerPubkey = this.account?.pubkey
+        this.customerPrivkey = this.account?.privkey
+        this.customerUseExtension = this.account?.useExtension
+      },
       openCheckout() {
         // Check if user is logged in
+        this.checkLogIn()
         if (this.customerPubkey) {
           this.checkoutDialog.data.pubkey = this.customerPubkey
           if (this.customerPrivkey && !this.useExtension) {
@@ -337,12 +343,12 @@ async function customerStall(path) {
         let json = JSON.parse(text)
         if (json.id != this.activeOrder) return
 
-        if (json.payment_options.length == 0 && json.message) {
-          this.loading = false
-          this.qrCodeDialog.data.message = json.message
-          return cb()
-        }
         if (json.payment_options) {
+          if (json.payment_options.length == 0 && json.message) {
+            this.loading = false
+            this.qrCodeDialog.data.message = json.message
+            return cb()
+          }
           let payment_request = json.payment_options.find(o => o.type == 'ln')
             .link
           if (!payment_request) return
@@ -367,9 +373,7 @@ async function customerStall(path) {
       }
     },
     created() {
-      this.customerPubkey = this.account?.pubkey
-      this.customerPrivkey = this.account?.privkey
-      this.customerUseExtension = this.account?.useExtension
+      this.checkLogIn()
       let storedCart = this.$q.localStorage.getItem(
         `diagonAlley.carts.${this.stall.id}`
       )
