@@ -215,7 +215,10 @@
   >
     <q-card class="q-pa-lg q-pt-xl lnbits__dialog-card">
       <div class="text-center q-mb-lg">
-        <a :href="'lightning:' + qrCodeDialog.data.payment_request">
+        <div class="q-my-lg" v-if="qrCodeDialog.data.message">
+          <p>{{ qrCodeDialog.data.message }}</p>
+        </div>
+        <a v-else :href="'lightning:' + qrCodeDialog.data.payment_request">
           <q-responsive :ratio="1" class="q-mx-xl">
             <qrcode
               v-if="qrCodeDialog.data.payment_request"

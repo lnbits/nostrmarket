@@ -182,8 +182,14 @@ async function customerStall(path) {
         this.checkoutDialog.data.pubkey = this.customerPubkey
         this.checkoutDialog.data.privkey = this.customerPrivkey
       },
+      checkLogIn() {
+        this.customerPubkey = this.account?.pubkey
+        this.customerPrivkey = this.account?.privkey
+        this.customerUseExtension = this.account?.useExtension
+      },
       openCheckout() {
         // Check if user is logged in
+        this.checkLogIn()
         if (this.customerPubkey) {
           this.checkoutDialog.data.pubkey = this.customerPubkey
           if (this.customerPrivkey && !this.useExtension) {
@@ -204,7 +210,8 @@ async function customerStall(path) {
       openQrCodeDialog() {
         this.qrCodeDialog = {
           data: {
-            payment_request: null
+            payment_request: null,
+            message: null
           },
           dismissMsg: this.$q.notify({
             message: 'Waiting for invoice from merchant...'
@@ -214,6 +221,10 @@ async function customerStall(path) {
       },
       closeQrCodeDialog() {
         this.qrCodeDialog.show = false
+        this.qrCodeDialog.data = {
+          payment_request: null,
+          message: null
+        }
         setTimeout(() => {
           this.qrCodeDialog.dismissMsg()
         }, 1000)
@@ -274,32 +285,10 @@ async function customerStall(path) {
         await this.sendOrder(event)
       },
       async sendOrder(order) {
-        for (const url of Array.from(this.relays)) {
-          try {
-            let relay = NostrTools.relayInit(url)
-            relay.on('connect', () => {
-              console.debug(`connected to ${relay.url}`)
-            })
-            relay.on('error', () => {
-              console.debug(`failed to connect to ${relay.url}`)
-              relay.close()
-              return
-            })
+        let pub = this.pool.publish(Array.from(this.relays), order)
+        pub.on('ok', () => console.debug(`Order event was sent`))
+        pub.on('failed', error => console.error(error))
 
-            await relay.connect()
-            let pub = relay.publish(order)
-            pub.on('ok', () => {
-              console.debug(`${relay.url} has accepted our event: ${order.id}`)
-              relay.close()
-            })
-            pub.on('failed', reason => {
-              console.debug(`failed to publish to ${relay.url}: ${reason}`)
-              relay.close()
-            })
-          } catch (err) {
-            console.error(`Error: ${err}`)
-          }
-        }
         this.loading = false
         this.resetCart()
         this.openQrCodeDialog()
@@ -308,7 +297,6 @@ async function customerStall(path) {
       async listenMessages() {
         this.loading = true
         try {
-          const pool = new NostrTools.SimplePool()
           const filters = [
             {
               kinds: [4],
@@ -320,7 +308,7 @@ async function customerStall(path) {
             }
           ]
           let relays = Array.from(this.relays)
-          let subs = pool.sub(relays, filters)
+          let subs = this.pool.sub(relays, filters)
           subs.on('event', async event => {
             let mine = event.pubkey == this.customerPubkey
             let sender = mine
@@ -341,7 +329,7 @@ async function customerStall(path) {
                 )
               }
 
-              this.messageFilter(plaintext, cb => Promise.resolve(pool.close))
+              this.messageFilter(plaintext, cb => subs.unsub())
             } catch {
               console.debug('Unable to decrypt message! Probably not for us!')
             }
@@ -354,10 +342,15 @@ async function customerStall(path) {
         if (!isJson(text)) return
         let json = JSON.parse(text)
         if (json.id != this.activeOrder) return
+
         if (json.payment_options) {
-          let payment_request = json.payment_options.find(
-            o => o.type == 'ln'
-          ).link
+          if (json.payment_options.length == 0 && json.message) {
+            this.loading = false
+            this.qrCodeDialog.data.message = json.message
+            return cb()
+          }
+          let payment_request = json.payment_options.find(o => o.type == 'ln')
+            .link
           if (!payment_request) return
           this.loading = false
           this.qrCodeDialog.data.payment_request = payment_request
@@ -373,16 +366,14 @@ async function customerStall(path) {
             icon: 'thumb_up'
           })
           this.activeOrder = null
-          Promise.resolve(cb())
+          return cb()
         } else {
           return
         }
       }
     },
     created() {
-      this.customerPubkey = this.account?.pubkey
-      this.customerPrivkey = this.account?.privkey
-      this.customerUseExtension = this.account?.useExtension
+      this.checkLogIn()
       let storedCart = this.$q.localStorage.getItem(
         `diagonAlley.carts.${this.stall.id}`
       )
