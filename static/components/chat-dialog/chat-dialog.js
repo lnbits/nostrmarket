@@ -129,7 +129,7 @@ async function chatDialog(path) {
               this.nostrMessages = Array.from(messagesMap.values())
             }
           } catch {
-            console.error('Unable to decrypt message!')
+            console.debug('Unable to decrypt message! Not for us...')
           }
         })
         this.sub = sub
@@ -146,33 +146,11 @@ async function chatDialog(path) {
         }
         event.id = NostrTools.getEventHash(event)
         event.sig = this.signEvent(event)
-        // This doesn't work yet
-        // this.pool.publish(Array.from(this.relays), event)
-        // this.newMessage = ''
-        // We need this hack
-        for (const url of Array.from(this.relays)) {
-          try {
-            let relay = NostrTools.relayInit(url)
-            relay.on('connect', () => {
-              console.debug(`connected to ${relay.url}`)
-            })
-            relay.on('error', () => {
-              console.debug(`failed to connect to ${relay.url}`)
-            })
 
-            await relay.connect()
-            let pub = relay.publish(event)
-            pub.on('ok', () => {
-              console.debug(`${relay.url} has accepted our event`)
-            })
-            pub.on('failed', reason => {
-              console.debug(`failed to publish to ${relay.url}: ${reason}`)
-            })
-            this.newMessage = ''
-          } catch (e) {
-            console.error(e)
-          }
-        }
+        let pub = this.pool.publish(Array.from(this.relays), event)
+        pub.on('ok', () => console.debug(`Event was sent`))
+        pub.on('failed', error => console.error(error))
+        this.newMessage = ''
       },
       async encryptMsg() {
         try {
