@@ -103,11 +103,10 @@
               <q-btn
                 v-if="!this.account && !this.customerPubkey && !this.customerPrivkey"
                 unelevated
-                @click="generateKeyPair"
+                @click="makeLogin"
                 color="primary"
-                label="Generate Keys"
-                ><q-tooltip>Generate a new key pair</q-tooltip></q-btn
-              >
+                label="Login"
+              ></q-btn>
             </q-card-actions>
           </q-card>
         </q-expansion-item>

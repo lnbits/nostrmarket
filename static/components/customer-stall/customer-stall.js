@@ -7,6 +7,7 @@ async function customerStall(path) {
 
     props: [
       'account',
+      'login-dialog',
       'stall',
       'products',
       'product-detail',
@@ -73,6 +74,10 @@ async function customerStall(path) {
     methods: {
       changePageS(page, opts) {
         this.$emit('change-page', page, opts)
+      },
+      makeLogin() {
+        this.resetCheckout()
+        this.$emit('login-dialog')
       },
       copyText: function (text) {
         var notify = this.$q.notify
