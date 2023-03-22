@@ -81,10 +81,6 @@
                 </li>
                 <li>use a Nostr Signer Extension (NIP07)</li>
                 <li>
-                  generate a key pair to make the order (you should backup up
-                  your keys)
-                </li>
-                <li>
                   fill out the required fields and with your public key,
                   download the order and send as a direct message to the
                   merchant on any Nostr client
@@ -103,11 +99,10 @@
               <q-btn
                 v-if="!this.account && !this.customerPubkey && !this.customerPrivkey"
                 unelevated
-                @click="generateKeyPair"
+                @click="makeLogin"
                 color="primary"
-                label="Generate Keys"
-                ><q-tooltip>Generate a new key pair</q-tooltip></q-btn
-              >
+                label="Login"
+              ></q-btn>
             </q-card-actions>
           </q-card>
         </q-expansion-item>

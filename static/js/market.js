@@ -201,6 +201,9 @@ const market = async () => {
         this.accountDialog.data.watchOnly = true
         return
       },
+      openAccountDialog() {
+        this.accountDialog.show = true
+      },
       async updateData(events) {
         if (events.length < 1) {
           this.$q.notify({
