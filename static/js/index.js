@@ -59,6 +59,12 @@ const merchant = async () => {
       toggleMerchantKeys: function (value) {
         this.showKeys = value
       },
+      handleMerchantDeleted: function() {
+        this.merchant = null
+        this.shippingZones = []
+        this.activeChatCustomer = ''
+        this.showKeys = false
+      },
       createMerchant: async function (privateKey) {
         try {
           const pubkey = nostr.getPublicKey(privateKey)
