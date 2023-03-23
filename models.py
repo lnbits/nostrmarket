@@ -166,6 +166,7 @@ class Stall(PartialStall, Nostrable):
 
     def to_nostr_event(self, pubkey: str) -> NostrEvent:
         content = {
+            "id": self.id,
             "name": self.name,
             "description": self.config.description,
             "currency": self.currency,
@@ -245,6 +246,7 @@ class Product(PartialProduct, Nostrable):
 
     def to_nostr_event(self, pubkey: str) -> NostrEvent:
         content = {
+            "id": self.id,
             "stall_id": self.stall_id,
             "name": self.name,
             "description": self.config.description,
