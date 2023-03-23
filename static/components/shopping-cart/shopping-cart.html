@@ -4,17 +4,19 @@
   </q-badge>
   <q-menu v-if="cart.size">
     <q-list style="min-width: 100px">
-      <q-item :key="p.id" v-for="p in cartMenu">
-        <q-item-section side>
-          <span>{{p.quantity}} x </span>
+      <q-item :id="p.id" :key="p.id" v-for="p in cartMenu">
+        <q-btn color="red" size="xs" icon="remove" @click="remove(p.id)" />
+        <q-item-section>
+          <span class="text-center q-ma-xs">{{p.quantity}} x </span>
         </q-item-section>
+        <q-btn color="green" size="xs" icon="add" @click="add(p.id)" />
         <q-item-section avatar v-if="p.image">
           <q-avatar color="primary">
-            <img size="sm" :src="p.image" />
+            <img :src="p.image" />
           </q-avatar>
         </q-item-section>
 
-        <q-item-section>
+        <q-item-section top class="q-mx-sm">
           <q-item-label>{{ p.name }}</q-item-label>
         </q-item-section>
 
@@ -42,7 +44,7 @@
         @click="$emit('open-checkout')"
       ></q-btn>
       <q-btn
-        class="q-ml-lg"
+        class="q-ml-auto"
         flat
         color="primary"
         label="Reset"

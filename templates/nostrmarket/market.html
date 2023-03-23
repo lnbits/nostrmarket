@@ -186,6 +186,7 @@
       v-if="!isLoading && activeStall"
       :stall="stalls.find(stall => stall.id == activeStall)"
       :products="filterProducts"
+      :stallproducts="products.filter(p => p.stall_id == activeStall)"
       :product-detail="activeProduct"
       :relays="relays"
       :account="account"
