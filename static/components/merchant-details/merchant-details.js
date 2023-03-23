@@ -15,6 +15,31 @@ async function merchantDetails(path) {
         this.showKeys = !this.showKeys
         this.$emit('show-keys', this.showKeys)
       },
+      
+      republishMerchantData: function () {
+        LNbits.utils
+          .confirmDialog(
+            `You are about to republish to Nostr`
+          )
+          .onOk(async () => {
+            try {
+              await LNbits.api.request(
+                'PATCH',
+                `/nostrmarket/api/v1/merchant/${this.merchantId}/nostr`,
+                this.adminkey
+              )
+              this.$emit('merchant-deleted', this.merchantId)
+              this.$q.notify({
+                type: 'positive',
+                message: 'Merchant Deleted',
+                timeout: 5000
+              })
+            } catch (error) {
+              console.warn(error)
+              LNbits.utils.notifyApiError(error)
+            }
+          })
+      },
       deleteMerchantTables: function () {
         LNbits.utils
           .confirmDialog(

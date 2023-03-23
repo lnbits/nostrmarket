@@ -24,9 +24,17 @@
           >
         </q-item-section>
       </q-item>
+      <q-item @click="republishMerchantData" disable clickable v-close-popup>
+        <q-item-section>
+          <q-item-label>Republish to Nostr</q-item-label>
+          <q-item-label caption
+            >Republish all stalls, products and orders to Nostr</q-item-label
+          >
+        </q-item-section>
+      </q-item>
       <q-item @click="deleteMerchantTables" clickable v-close-popup>
         <q-item-section>
-          <q-item-label>Delete Merchant from DB</q-item-label>
+          <q-item-label>Delete from DB</q-item-label>
           <q-item-label caption
             >Delete all stalls, products and orders from database</q-item-label
           >
@@ -34,7 +42,7 @@
       </q-item>
       <q-item @click="deleteMerchantFromNostr" clickable v-close-popup>
         <q-item-section>
-          <q-item-label>Delete Merchant from Nostr</q-item-label>
+          <q-item-label>Delete from Nostr</q-item-label>
           <q-item-label caption
             >Delete all stalls, products and orders from Nostr</q-item-label
           >

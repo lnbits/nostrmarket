@@ -153,7 +153,6 @@ async def api_delete_merchant(
     merchant_id: str,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ):
-
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
