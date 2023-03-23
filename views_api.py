@@ -45,6 +45,7 @@ from .crud import (
     get_stalls,
     get_zone,
     get_zones,
+    update_merchant,
     update_order_shipped_status,
     update_product,
     update_stall,
@@ -134,6 +135,44 @@ async def api_delete_merchant(
 
         await nostr_client.unsubscribe_from_direct_messages(merchant.public_key)
         await delete_merchant(merchant.id)
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot get merchant",
+        )
+
+
+@nostrmarket_ext.delete("/api/v1/merchant/{merchant_id}/nostr")
+async def api_delete_merchant(
+    merchant_id: str,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+):
+
+    try:
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+        assert merchant.id == merchant_id, "Wrong merchant ID"
+
+        stalls = await get_stalls(merchant.id)
+        for stall in stalls:
+            products = await get_products(merchant.id, stall.id)
+            for product in products:
+                event = await sign_and_send_to_nostr(merchant, product, True)
+                product.config.event_id = event.id
+                await update_product(merchant.id, product)
+            event = await sign_and_send_to_nostr(merchant, stall, True)
+            stall.config.event_id = event.id
+            await update_stall(merchant.id, stall)
+        event = await sign_and_send_to_nostr(merchant, merchant, True)
+        merchant.config.event_id = event.id
+        await update_merchant(wallet.wallet.user, merchant.id, merchant.config)
+
     except AssertionError as ex:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
@@ -566,7 +605,9 @@ async def api_delete_product(
             )
 
         await delete_product(merchant.id, product_id)
-        await sign_and_send_to_nostr(merchant, product, True)
+        event = await sign_and_send_to_nostr(merchant, product, True)
+        product.config.event_id = event.id
+        await update_product(merchant.id, product)
 
     except AssertionError as ex:
         raise HTTPException(

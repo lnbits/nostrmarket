@@ -30,8 +30,16 @@ class Nostrable:
 
 
 ######################################## MERCHANT ########################################
-class MerchantConfig(BaseModel):
+
+
+class MerchantProfile(BaseModel):
     name: Optional[str]
+    about: Optional[str]
+    picture: Optional[str]
+
+
+class MerchantConfig(MerchantProfile):
+    event_id: Optional[str]
 
 
 class PartialMerchant(BaseModel):
@@ -40,7 +48,7 @@ class PartialMerchant(BaseModel):
     config: MerchantConfig = MerchantConfig()
 
 
-class Merchant(PartialMerchant):
+class Merchant(PartialMerchant, Nostrable):
     id: str
 
     def sign_hash(self, hash: bytes) -> str:
@@ -73,6 +81,40 @@ class Merchant(PartialMerchant):
         merchant = cls(**dict(row))
         merchant.config = MerchantConfig(**json.loads(row["meta"]))
         return merchant
+
+    def to_nostr_event(self, pubkey: str) -> NostrEvent:
+        content = {
+            "name": self.config.name,
+            "about": self.config.about,
+            "picture": self.config.picture,
+        }
+        event = NostrEvent(
+            pubkey=pubkey,
+            created_at=round(time.time()),
+            kind=0,
+            tags=[],
+            content=json.dumps(content, separators=(",", ":"), ensure_ascii=False),
+        )
+        event.id = event.event_id
+
+        return event
+
+    def to_nostr_delete_event(self, pubkey: str) -> NostrEvent:
+        content = {
+            "name": f"{self.config.name} (deleted)",
+            "about": "Merchant Deleted",
+            "picture": "",
+        }
+        delete_event = NostrEvent(
+            pubkey=pubkey,
+            created_at=round(time.time()),
+            kind=0,
+            tags=[],
+            content=json.dumps(content, separators=(",", ":"), ensure_ascii=False),
+        )
+        delete_event.id = delete_event.event_id
+
+        return delete_event
 
 
 ######################################## ZONES ########################################

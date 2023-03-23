@@ -59,7 +59,7 @@ const merchant = async () => {
       toggleMerchantKeys: function (value) {
         this.showKeys = value
       },
-      handleMerchantDeleted: function() {
+      handleMerchantDeleted: function () {
         this.merchant = null
         this.shippingZones = []
         this.activeChatCustomer = ''

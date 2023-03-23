@@ -15,7 +15,7 @@ async function merchantDetails(path) {
         this.showKeys = !this.showKeys
         this.$emit('show-keys', this.showKeys)
       },
-      deleteMerchant: function () {
+      deleteMerchantTables: function () {
         LNbits.utils
           .confirmDialog(
             `
@@ -30,11 +30,35 @@ async function merchantDetails(path) {
                 '/nostrmarket/api/v1/merchant/' + this.merchantId,
                 this.adminkey
               )
-              // todo: refresh parent page
               this.$emit('merchant-deleted', this.merchantId)
               this.$q.notify({
                 type: 'positive',
                 message: 'Merchant Deleted',
+                timeout: 5000
+              })
+            } catch (error) {
+              console.warn(error)
+              LNbits.utils.notifyApiError(error)
+            }
+          })
+      },
+      deleteMerchantFromNostr: function () {
+        LNbits.utils
+          .confirmDialog(
+            `
+             Do you want to remove the merchant from Nostr?
+            `
+          )
+          .onOk(async () => {
+            try {
+              await LNbits.api.request(
+                'DELETE',
+                `/nostrmarket/api/v1/merchant/${this.merchantId}/nostr`,
+                this.adminkey
+              )
+              this.$q.notify({
+                type: 'positive',
+                message: 'Merchant Deleted from Nostr',
                 timeout: 5000
               })
             } catch (error) {

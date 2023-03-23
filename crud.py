@@ -7,6 +7,7 @@ from . import db
 from .models import (
     DirectMessage,
     Merchant,
+    MerchantConfig,
     Order,
     PartialDirectMessage,
     PartialMerchant,
@@ -33,6 +34,19 @@ async def create_merchant(user_id: str, m: PartialMerchant) -> Merchant:
     merchant = await get_merchant(user_id, merchant_id)
     assert merchant, "Created merchant cannot be retrieved"
     return merchant
+
+
+async def update_merchant(
+    user_id: str, merchant_id: str, config: MerchantConfig
+) -> Optional[Merchant]:
+    await db.execute(
+        f"""
+            UPDATE nostrmarket.merchants SET meta = ?
+            WHERE id = ? AND user_id = ?
+        """,
+        (json.dumps(config.dict()), merchant_id, user_id),
+    )
+    return await get_merchant(user_id, merchant_id)
 
 
 async def get_merchant(user_id: str, merchant_id: str) -> Optional[Merchant]:
