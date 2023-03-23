@@ -124,10 +124,10 @@ async function customerStall(path) {
         this.cart.products = prod
         this.updateCart(+item.price)
       },
-      removeFromCart(item) {
+      removeFromCart(item, del = false) {
         let prod = this.cart.products
         let qty = prod.get(item.id).quantity
-        if (qty == 1) {
+        if (qty == 1 || del) {
           prod.delete(item.id)
         } else {
           prod.set(item.id, {

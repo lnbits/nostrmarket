@@ -29,6 +29,13 @@ async function shoppingCart(path) {
           'remove-from-cart',
           this.products.find(p => p.id == id)
         )
+      },
+      removeProduct(id) {
+        this.$emit(
+          'remove-from-cart',
+          this.products.find(p => p.id == id),
+          true
+        )
       }
     },
     created() {}
