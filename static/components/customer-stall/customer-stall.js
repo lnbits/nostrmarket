@@ -354,8 +354,9 @@ async function customerStall(path) {
             this.qrCodeDialog.data.message = json.message
             return cb()
           }
-          let payment_request = json.payment_options.find(o => o.type == 'ln')
-            .link
+          let payment_request = json.payment_options.find(
+            o => o.type == 'ln'
+          ).link
           if (!payment_request) return
           this.loading = false
           this.qrCodeDialog.data.payment_request = payment_request

@@ -81,9 +81,24 @@ class NostrClient:
             ["REQ", f"direct-messages-out:{public_key}", out_messages_filter]
         )
 
+    async def subscribe_to_merchant_events(self, public_key: str, since: int):
+        stall_filter = {"kind": 30017, "authors": [public_key]}
+        product_filter = {"kind": 30018, "authors": [public_key]}
+
+        await self.send_req_queue.put(
+            ["REQ", f"stall-events:{public_key}", stall_filter]
+        )
+        await self.send_req_queue.put(
+            ["REQ", f"product-events:{public_key}", product_filter]
+        )
+
     async def unsubscribe_from_direct_messages(self, public_key: str):
         await self.send_req_queue.put(["CLOSE", f"direct-messages-in:{public_key}"])
         await self.send_req_queue.put(["CLOSE", f"direct-messages-out:{public_key}"])
+
+    async def unsubscribe_from_merchant_events(self, public_key: str):
+        await self.send_req_queue.put(["CLOSE", f"stall-events:{public_key}"])
+        await self.send_req_queue.put(["CLOSE", f"product-events:{public_key}"])
 
     def stop(self):
         try:
