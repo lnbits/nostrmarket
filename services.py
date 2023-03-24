@@ -12,11 +12,14 @@ from .crud import (
     get_merchant_by_pubkey,
     get_order,
     get_order_by_event_id,
+    get_products,
     get_products_by_ids,
+    get_stalls,
     get_wallet_for_product,
     update_order_paid_status,
     update_product,
     update_product_quantity,
+    update_stall,
 )
 from .helpers import order_from_json
 from .models import (
@@ -86,6 +89,24 @@ async def create_new_order(
     return PaymentRequest(
         id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)]
     )
+
+
+async def update_merchant_to_nostr(
+    merchant: Merchant, delete_merchant=False
+) -> Merchant:
+    stalls = await get_stalls(merchant.id)
+    for stall in stalls:
+        products = await get_products(merchant.id, stall.id)
+        for product in products:
+            event = await sign_and_send_to_nostr(merchant, product, delete_merchant)
+            product.config.event_id = event.id
+            await update_product(merchant.id, product)
+        event = await sign_and_send_to_nostr(merchant, stall, delete_merchant)
+        stall.config.event_id = event.id
+        await update_stall(merchant.id, stall)
+    event = await sign_and_send_to_nostr(merchant, merchant, delete_merchant)
+    merchant.config.event_id = event.id
+    return merchant
 
 
 async def sign_and_send_to_nostr(

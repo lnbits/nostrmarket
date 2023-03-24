@@ -65,7 +65,7 @@ from .models import (
     Stall,
     Zone,
 )
-from .services import sign_and_send_to_nostr
+from .services import sign_and_send_to_nostr, update_merchant_to_nostr
 
 ######################################## MERCHANT ########################################
 
@@ -148,6 +148,32 @@ async def api_delete_merchant(
         )
 
 
+@nostrmarket_ext.put("/api/v1/merchant/{merchant_id}/nostr")
+async def api_republish_merchant(
+    merchant_id: str,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+):
+    try:
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+        assert merchant.id == merchant_id, "Wrong merchant ID"
+
+        merchant = await update_merchant_to_nostr(merchant)
+        await update_merchant(wallet.wallet.user, merchant.id, merchant.config)
+
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot get merchant",
+        )
+
+
 @nostrmarket_ext.delete("/api/v1/merchant/{merchant_id}/nostr")
 async def api_delete_merchant(
     merchant_id: str,
@@ -158,18 +184,7 @@ async def api_delete_merchant(
         assert merchant, "Merchant cannot be found"
         assert merchant.id == merchant_id, "Wrong merchant ID"
 
-        stalls = await get_stalls(merchant.id)
-        for stall in stalls:
-            products = await get_products(merchant.id, stall.id)
-            for product in products:
-                event = await sign_and_send_to_nostr(merchant, product, True)
-                product.config.event_id = event.id
-                await update_product(merchant.id, product)
-            event = await sign_and_send_to_nostr(merchant, stall, True)
-            stall.config.event_id = event.id
-            await update_stall(merchant.id, stall)
-        event = await sign_and_send_to_nostr(merchant, merchant, True)
-        merchant.config.event_id = event.id
+        merchant = await update_merchant_to_nostr(merchant, True)
         await update_merchant(wallet.wallet.user, merchant.id, merchant.config)
 
     except AssertionError as ex:
