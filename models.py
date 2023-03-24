@@ -40,6 +40,7 @@ class MerchantProfile(BaseModel):
 
 class MerchantConfig(MerchantProfile):
     event_id: Optional[str]
+    sync_from_nostr = False
 
 
 class PartialMerchant(BaseModel):
