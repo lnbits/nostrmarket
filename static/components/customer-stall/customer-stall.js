@@ -10,6 +10,7 @@ async function customerStall(path) {
       'login-dialog',
       'stall',
       'products',
+      'stallproducts',
       'product-detail',
       'change-page',
       'relays',
@@ -123,8 +124,18 @@ async function customerStall(path) {
         this.cart.products = prod
         this.updateCart(+item.price)
       },
-      removeFromCart(item) {
-        this.cart.products.delete(item.id)
+      removeFromCart(item, del = false) {
+        let prod = this.cart.products
+        let qty = prod.get(item.id).quantity
+        if (qty == 1 || del) {
+          prod.delete(item.id)
+        } else {
+          prod.set(item.id, {
+            ...prod.get(item.id),
+            quantity: qty - 1
+          })
+        }
+        this.cart.products = prod
         this.updateCart(+item.price, true)
       },
       updateCart(price, del = false) {

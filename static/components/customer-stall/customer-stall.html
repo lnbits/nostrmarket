@@ -23,6 +23,8 @@
     <shopping-cart
       :cart="cart"
       :cart-menu="cartMenu"
+      :products="stallproducts"
+      @add-to-cart="addToCart"
       @remove-from-cart="removeFromCart"
       @reset-cart="resetCart"
       @open-checkout="openCheckout"

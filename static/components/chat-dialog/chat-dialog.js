@@ -48,7 +48,7 @@ async function chatDialog(path) {
               label: 'Invoice',
               field: row =>
                 row.payment_options &&
-                row.payment_options.find(p => p.type == 'ln').link
+                row.payment_options.find(p => p.type == 'ln')?.link
             }
           ],
           pagination: {
