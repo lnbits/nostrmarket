@@ -272,22 +272,22 @@ async def _handle_dirrect_message(
 ) -> Optional[str]:
     order, text_msg = order_from_json(msg)
     try:
+        dm = PartialDirectMessage(
+            event_id=event_id,
+            event_created_at=event_created_at,
+            message=text_msg,
+            public_key=from_pubkey,
+            incoming=True,
+        )
+        await create_direct_message(merchant_id, dm)
         if order:
             order["public_key"] = from_pubkey
             order["merchant_public_key"] = merchant_public_key
             order["event_id"] = event_id
             order["event_created_at"] = event_created_at
             return await _handle_new_order(PartialOrder(**order))
-        else:
-            dm = PartialDirectMessage(
-                event_id=event_id,
-                event_created_at=event_created_at,
-                message=text_msg,
-                public_key=from_pubkey,
-                incoming=True,
-            )
-            await create_direct_message(merchant_id, dm)
-            return None
+
+        return None
     except Exception as ex:
         logger.warning(ex)
         return None

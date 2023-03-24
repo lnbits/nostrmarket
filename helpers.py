@@ -78,7 +78,7 @@ def order_from_json(s: str) -> Tuple[Optional[Any], Optional[str]]:
     try:
         order = json.loads(s)
         return (
-            (order, None) if (type(order) is dict) and "items" in order else (None, s)
+            (order, s) if (type(order) is dict) and "items" in order else (None, s)
         )
     except ValueError:
         return None, s
