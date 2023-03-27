@@ -59,6 +59,15 @@
           ></stall-list>
         </q-card-section>
       </q-card>
+      <q-card class="q-mt-lg">
+        <q-card-section>
+          <div class="row">
+            <div class="col-2"></div>
+            <div class="col-8"></div>
+            <div class="col-2"></div>
+          </div>
+        </q-card-section>
+      </q-card>
     </div>
     <q-card v-else>
       <q-card-section>
@@ -133,10 +142,10 @@
     </div>
     <div v-if="merchant && merchant.id" class="col-12">
       <direct-messages
-        :active-public-key="activeChatCustomer"
         :inkey="g.user.wallets[0].inkey"
         :adminkey="g.user.wallets[0].adminkey"
       >
+        <!-- :active-public-key="activeChatCustomer" -->
       </direct-messages>
     </div>
   </div>
