@@ -31,6 +31,7 @@ from .crud import (
     delete_product,
     delete_stall,
     delete_zone,
+    get_customers,
     get_direct_messages,
     get_merchant_by_pubkey,
     get_merchant_for_user,
@@ -39,8 +40,6 @@ from .crud import (
     get_orders_for_stall,
     get_product,
     get_products,
-    get_public_keys_for_direct_messages,
-    get_public_keys_for_orders,
     get_stall,
     get_stalls,
     get_zone,
@@ -52,6 +51,7 @@ from .crud import (
     update_zone,
 )
 from .models import (
+    Customer,
     DirectMessage,
     Merchant,
     Order,
@@ -785,17 +785,13 @@ async def api_create_message(
 
 
 @nostrmarket_ext.get("/api/v1/customers")
-async def api_create_message(
+async def api_get_customers(
     wallet: WalletTypeInfo = Depends(get_key_type),
-) -> DirectMessage:
+) -> List[Customer]:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, f"Merchant cannot be found"
-
-        dm_pubkeys = await get_public_keys_for_direct_messages(merchant.id)
-        orders_pubkeys = await get_public_keys_for_orders(merchant.id)
-
-        return list(dict.fromkeys(dm_pubkeys + orders_pubkeys))
+        return await get_customers(merchant.id)
 
     except AssertionError as ex:
         raise HTTPException(

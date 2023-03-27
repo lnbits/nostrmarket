@@ -12,7 +12,7 @@ async function directMessages(path) {
     },
     data: function () {
       return {
-        customersPublicKeys: [],
+        customers: [],
         messages: [],
         newMessage: ''
       }
@@ -40,14 +40,15 @@ async function directMessages(path) {
           LNbits.utils.notifyApiError(error)
         }
       },
-      getCustomersPublicKeys: async function () {
+      getCustomers: async function () {
         try {
           const {data} = await LNbits.api.request(
             'GET',
             '/nostrmarket/api/v1/customers',
             this.inkey
           )
-          this.customersPublicKeys = data
+          this.customers = data
+          console.log('### customers', this.customers)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -85,7 +86,7 @@ async function directMessages(path) {
       }
     },
     created: async function () {
-      await this.getCustomersPublicKeys()
+      await this.getCustomers()
     }
   })
 }

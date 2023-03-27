@@ -253,6 +253,13 @@ async def _handle_nip04_message(merchant_public_key: str, event: NostrEvent):
 async def _handle_incoming_dms(
     event: NostrEvent, merchant: Merchant, clear_text_msg: str
 ):
+    customer = await get_customer(merchant.id, event.pubkey)
+    if not customer:
+        await create_customer(
+            merchant.id, Customer(merchant_id=merchant.id, public_key=event.pubkey)
+        )
+        await nostr_client.subscribe_to_user_profile(event.pubkey, 0)
+
     dm_reply = await _handle_dirrect_message(
         merchant.id,
         merchant.public_key,
@@ -264,13 +271,6 @@ async def _handle_incoming_dms(
     if dm_reply:
         dm_event = merchant.build_dm_event(dm_reply, event.pubkey)
         await nostr_client.publish_nostr_event(dm_event)
-
-    customer = await get_customer(merchant.id, event.pubkey)
-    if not customer:
-        await create_customer(
-            merchant.id, Customer(merchant_id=merchant.id, public_key=event.pubkey)
-        )
-        await nostr_client.subscribe_to_user_profile(event.pubkey, 0)
 
 
 async def _handle_outgoing_dms(

@@ -9,7 +9,7 @@
     <q-card-section>
       <q-select
         v-model="activePublicKey"
-        :options="customersPublicKeys.map(k => ({label: `${k.slice(0, 16)}...${k.slice(k.length - 16)}`, value: k}))"
+        :options="customers.map(c => ({label: `${c.profile.name || 'unknown'} ${c.profile.about || ''} (${c.public_key.slice(0, 16)}...${c.public_key.slice(c.public_key.length - 16)})`, value: c.public_key}))"
         label="Select Customer"
         emit-value
         @input="selectActiveCustomer()"
