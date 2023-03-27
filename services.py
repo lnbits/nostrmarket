@@ -255,10 +255,7 @@ async def _handle_incoming_dms(
 ):
     customer = await get_customer(merchant.id, event.pubkey)
     if not customer:
-        await create_customer(
-            merchant.id, Customer(merchant_id=merchant.id, public_key=event.pubkey)
-        )
-        await nostr_client.subscribe_to_user_profile(event.pubkey, 0)
+        await _handle_new_customer(event, merchant)
 
     dm_reply = await _handle_dirrect_message(
         merchant.id,
@@ -333,6 +330,17 @@ async def _handle_new_order(order: PartialOrder) -> Optional[str]:
         return json.dumps(new_order.dict(), separators=(",", ":"), ensure_ascii=False)
 
     return None
+
+
+async def _handle_new_customer(event, merchant):
+    await create_customer(
+        merchant.id, Customer(merchant_id=merchant.id, public_key=event.pubkey)
+    )
+    await nostr_client.subscribe_to_user_profile(event.pubkey, 0)
+    await websocketUpdater(
+        merchant.id,
+        json.dumps({"type": "new-customer"}),
+    )
 
 
 async def _handle_customer_profile_update(event: NostrEvent):
