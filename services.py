@@ -4,11 +4,15 @@ from typing import List, Optional, Tuple
 from loguru import logger
 
 from lnbits.core import create_invoice, get_wallet
+from lnbits.core.services import websocketUpdater
 
 from . import nostr_client
 from .crud import (
+    CustomerProfile,
+    create_customer,
     create_direct_message,
     create_order,
+    get_customer,
     get_merchant_by_pubkey,
     get_order,
     get_order_by_event_id,
@@ -16,6 +20,7 @@ from .crud import (
     get_products_by_ids,
     get_stalls,
     get_wallet_for_product,
+    update_customer_profile,
     update_order_paid_status,
     update_product,
     update_product_quantity,
@@ -23,6 +28,7 @@ from .crud import (
 )
 from .helpers import order_from_json
 from .models import (
+    Customer,
     Merchant,
     Nostrable,
     Order,
@@ -85,6 +91,16 @@ async def create_new_order(
         extra=await OrderExtra.from_products(products),
     )
     await create_order(merchant.id, order)
+    await websocketUpdater(
+        merchant.id,
+        json.dumps(
+            {
+                "type": "new-order",
+                "stallId": products[0].stall_id,
+                "customerPubkey": data.public_key,
+            }
+        ),
+    )
 
     return PaymentRequest(
         id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)]
@@ -206,9 +222,11 @@ async def process_nostr_message(msg: str):
         type, *rest = json.loads(msg)
         if type.upper() == "EVENT":
             subscription_id, event = rest
-            _, merchant_public_key = subscription_id.split(":")
             event = NostrEvent(**event)
+            if event.kind == 0:
+                await _handle_customer_profile_update(event)
             if event.kind == 4:
+                _, merchant_public_key = subscription_id.split(":")
                 await _handle_nip04_message(merchant_public_key, event)
             return
     except Exception as ex:
@@ -235,7 +253,7 @@ async def _handle_nip04_message(merchant_public_key: str, event: NostrEvent):
 async def _handle_incoming_dms(
     event: NostrEvent, merchant: Merchant, clear_text_msg: str
 ):
-    dm_content = await _handle_dirrect_message(
+    dm_reply = await _handle_dirrect_message(
         merchant.id,
         merchant.public_key,
         event.pubkey,
@@ -243,9 +261,16 @@ async def _handle_incoming_dms(
         event.created_at,
         clear_text_msg,
     )
-    if dm_content:
-        dm_event = merchant.build_dm_event(dm_content, event.pubkey)
+    if dm_reply:
+        dm_event = merchant.build_dm_event(dm_reply, event.pubkey)
         await nostr_client.publish_nostr_event(dm_event)
+
+    customer = await get_customer(merchant.id, event.pubkey)
+    if not customer:
+        await create_customer(
+            merchant.id, Customer(merchant_id=merchant.id, public_key=event.pubkey)
+        )
+        await nostr_client.subscribe_to_user_profile(event.pubkey, 0)
 
 
 async def _handle_outgoing_dms(
@@ -308,3 +333,18 @@ async def _handle_new_order(order: PartialOrder) -> Optional[str]:
         return json.dumps(new_order.dict(), separators=(",", ":"), ensure_ascii=False)
 
     return None
+
+
+async def _handle_customer_profile_update(event: NostrEvent):
+    try:
+        profile = json.loads(event.content)
+        await update_customer_profile(
+            event.pubkey,
+            event.created_at,
+            CustomerProfile(
+                name=profile["name"] if "name" in profile else "",
+                about=profile["about"] if "about" in profile else "",
+            ),
+        )
+    except Exception as ex:
+        logger.warning(ex)

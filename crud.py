@@ -5,6 +5,8 @@ from lnbits.helpers import urlsafe_short_hash
 
 from . import db
 from .models import (
+    Customer,
+    CustomerProfile,
     DirectMessage,
     Merchant,
     MerchantConfig,
@@ -602,3 +604,56 @@ async def get_public_keys_for_direct_messages(merchant_id: str) -> List[str]:
         (merchant_id),
     )
     return [row[0] for row in rows]
+
+
+######################################## CUSTOMERS ########################################
+
+
+async def create_customer(merchant_id: str, data: Customer) -> Customer:
+    await db.execute(
+        f"""
+        INSERT INTO nostrmarket.customers (merchant_id, public_key, meta)
+        VALUES (?, ?, ?)
+        """,
+        (
+            merchant_id,
+            data.public_key,
+            json.dumps(data.profile) if data.profile else "{}",
+        ),
+    )
+
+    customer = await get_customer(merchant_id, data.public_key)
+    assert customer, "Newly created customer couldn't be retrieved"
+    return customer
+
+
+async def get_customer(merchant_id: str, public_key: str) -> Optional[Customer]:
+    row = await db.fetchone(
+        "SELECT * FROM nostrmarket.customers WHERE merchant_id = ? AND public_key = ?",
+        (
+            merchant_id,
+            public_key,
+        ),
+    )
+    return Customer.from_row(row) if row else None
+
+
+async def get_cusomers(merchant_id: str) -> List[Customer]:
+    rows = await db.fetchall(
+        "SELECT * FROM nostrmarket.customers WHERE merchant_id = ?", (merchant_id,)
+    )
+    return [Customer.from_row(row) for row in rows]
+
+
+async def get_all_customers() -> List[Customer]:
+    rows = await db.fetchall("SELECT * FROM nostrmarket.customers")
+    return [Customer.from_row(row) for row in rows]
+
+
+async def update_customer_profile(
+    public_key: str, event_created_at: int, profile: CustomerProfile
+):
+    await db.execute(
+        f"UPDATE nostrmarket.customers SET event_created_at = ?, meta = ? WHERE public_key = ?",
+        (event_created_at, json.dumps(profile.dict()), public_key),
+    )

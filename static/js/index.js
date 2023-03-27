@@ -102,10 +102,36 @@ const merchant = async () => {
       },
       customerSelectedForOrder: function (customerPubkey) {
         this.activeChatCustomer = customerPubkey
+      },
+      waitForNotifications: function () {
+        try {
+          const scheme = location.protocol === 'http:' ? 'ws' : 'wss'
+          const port = location.port ? `:${location.port}` : ''
+          const wsUrl = `${scheme}://${document.domain}${port}/api/v1/ws/${this.merchant.id}`
+          const wsConnection = new WebSocket(wsUrl)
+          console.log('### waiting for events')
+          wsConnection.onmessage = e => {
+            console.log('### e', e)
+            this.$q.notify({
+              timeout: 5000,
+              type: 'positive',
+              message: 'New Update',
+              caption: `something here`
+            })
+          }
+        } catch (error) {
+          this.$q.notify({
+            timeout: 5000,
+            type: 'warning',
+            message: 'Failed to watch for updated',
+            caption: `${error}`
+          })
+        }
       }
     },
     created: async function () {
       await this.getMerchant()
+      await this.waitForNotifications()
     }
   })
 }

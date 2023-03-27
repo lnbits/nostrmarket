@@ -427,3 +427,24 @@ class DirectMessage(PartialDirectMessage):
     def from_row(cls, row: Row) -> "DirectMessage":
         dm = cls(**dict(row))
         return dm
+
+
+######################################## CUSTOMERS ########################################
+
+
+class CustomerProfile(BaseModel):
+    name: Optional[str]
+    about: Optional[str]
+
+
+class Customer(BaseModel):
+    merchant_id: str
+    public_key: str
+    event_created_at: Optional[int]
+    profile: Optional[CustomerProfile]
+
+    @classmethod
+    def from_row(cls, row: Row) -> "Customer":
+        customer = cls(**dict(row))
+        customer.profile = CustomerProfile(**json.loads(row["meta"]))
+        return customer

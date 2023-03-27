@@ -125,3 +125,17 @@ async def m001_initial(db):
         await db.execute(
             "CREATE INDEX idx_event_id ON nostrmarket.direct_messages (event_id)"
         )
+
+    """
+    Initial customers table.
+    """
+    await db.execute(
+        """
+        CREATE TABLE nostrmarket.customers (
+            merchant_id TEXT NOT NULL,
+            public_key TEXT NOT NULL,
+            event_created_at INTEGER,
+            meta TEXT NOT NULL DEFAULT '{}'
+        );
+        """
+    )
