@@ -92,6 +92,15 @@ async function customerStall(path) {
       getAmountFormated(amount, unit = 'USD') {
         return LNbits.utils.formatCurrency(amount, unit)
       },
+      updateQty(id, qty) {
+        let prod = this.cart.products
+        let product = prod.get(id)
+        prod.set(id, {
+          ...product,
+          quantity: qty
+        })
+        this.updateCart()
+      },
       addToCart(item) {
         let prod = this.cart.products
         if (prod.has(item.id)) {
@@ -122,7 +131,7 @@ async function customerStall(path) {
           icon: 'thumb_up'
         })
         this.cart.products = prod
-        this.updateCart(+item.price)
+        this.updateCart()
       },
       removeFromCart(item, del = false) {
         let prod = this.cart.products
@@ -136,16 +145,15 @@ async function customerStall(path) {
           })
         }
         this.cart.products = prod
-        this.updateCart(+item.price, true)
+        this.updateCart()
       },
-      updateCart(price, del = false) {
-        if (del) {
-          this.cart.total -= price
-          this.cart.size--
-        } else {
-          this.cart.total += price
-          this.cart.size++
-        }
+      updateCart() {
+        this.cart.total = 0
+        this.cart.products.forEach(p => {
+          this.cart.total += p.quantity * p.price
+        })
+
+        this.cart.size = this.cart.products.size
         this.cartMenu = Array.from(this.cart.products, item => {
           return {id: item[0], ...item[1]}
         })
@@ -365,9 +373,8 @@ async function customerStall(path) {
             this.qrCodeDialog.data.message = json.message
             return cb()
           }
-          let payment_request = json.payment_options.find(
-            o => o.type == 'ln'
-          ).link
+          let payment_request = json.payment_options.find(o => o.type == 'ln')
+            .link
           if (!payment_request) return
           this.loading = false
           this.qrCodeDialog.data.payment_request = payment_request

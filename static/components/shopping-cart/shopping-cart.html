@@ -5,11 +5,19 @@
   <q-menu v-if="cart.size">
     <q-list style="min-width: 100px">
       <q-item :id="p.id" :key="p.id" v-for="p in cartMenu">
-        <q-btn color="red" size="xs" icon="remove" @click="remove(p.id)" />
-        <q-item-section>
-          <span class="text-center q-ma-xs">{{p.quantity}} x </span>
+        <q-item-section style="flex-flow: row">
+          <q-btn color="red" size="xs" icon="remove" @click="remove(p.id)" />
+          <q-input
+            v-model.number="p.quantity"
+            @change="addQty(p.id, p.quantity)"
+            type="number"
+            dense
+            standout
+            :max="products.find(pr => pr.id == p.id).quantity"
+          ></q-input>
+          <!-- <span class="text-center q-ma-xs">{{p.quantity}} x </span> -->
+          <q-btn color="green" size="xs" icon="add" @click="add(p.id)" />
         </q-item-section>
-        <q-btn color="green" size="xs" icon="add" @click="add(p.id)" />
         <q-item-section avatar v-if="p.image">
           <q-avatar color="primary">
             <img :src="p.image" />
@@ -29,7 +37,7 @@
               color="red"
               size="xs"
               icon="close"
-              @click="$emit('remove-from-cart', p)"
+              @click="removeProduct(p.id)"
             />
           </span>
         </q-item-section>
