@@ -10,7 +10,7 @@ async function customerStall(path) {
       'login-dialog',
       'stall',
       'products',
-      'stallproducts',
+      'stall-products',
       'product-detail',
       'change-page',
       'relays',

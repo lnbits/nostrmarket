@@ -1,276 +1,89 @@
-## Nostr Diagon Alley protocol (for resilient marketplaces)
+## Nostr Market
 
-#### Original protocol https://github.com/lnbits/Diagon-Alley
+**This extension follows [NIP-45](https://github.com/nostr-protocol/nips/blob/master/45.md)**
+
+**Original protocol for [Diagon Alley](https://github.com/lnbits/Diagon-Alley) (resilient marketplaces)**
 
 > The concepts around resilience in Diagon Alley helped influence the creation of the NOSTR protocol, now we get to build Diagon Alley on NOSTR!
 
-In Diagon Alley, `merchant` and `customer` communicate via NOSTR relays, so loss of money, product information, and reputation become far less likely if attacked.
-
-A `merchant` and `customer` both have a NOSTR key-pair that are used to sign notes and subscribe to events.
-
 #### For further information about NOSTR, see https://github.com/nostr-protocol/nostr
 
-## Terms
+## Create, or import, a merchant account
 
-- `merchant` - seller of products with NOSTR key-pair
-- `customer` - buyer of products with NOSTR key-pair
-- `product` - item for sale by the `merchant`
-- `stall` - list of products controlled by `merchant` (a `merchant` can have multiple stalls)
-- `marketplace` - clientside software for searching `stalls` and purchasing `products`
+As a merchant you need to provide a Nostr key pair, or the extension can generate one for you.
+![create keys](https://i.imgur.com/KhQYKOe.png)
+
+Once you have a merchant "account", you can view the details on the merchant dropdown
+![merchant dropdown](https://i.imgur.com/M5abrK9.png)
+
+## Create a Stall, or shop
+
+To create a stall, you first need to set a _Shipping zone_. Click on the _Zones_ button and fill in the fields:
+![zone dialog](https://i.imgur.com/SMAviHm.png)
+
+- Give your shipping zone a name
+- Select to which countries does this _Shipping zone_ applies to (you can set a "Free" zone for digital goods)
+- Select the unit of account. If your will list products in EUR, the shipping zone must be in the same currency
+- Select the cost to ship
+
+**Let's create the stall**
+Click on _New Stall_ button and fill the necessary fields
+![Create stall](https://i.imgur.com/gb9b4We.png)
+![Stall dialog](https://i.imgur.com/lX3Cd9K.png)
+
+- Give your stall/shop a name
+- An optional description (this can be used by client to search shops)
+- Select which wallet to use for this shop
+- Select the unit
+- select a Shipping Zone (multiple zones can be selected)
+
+Click on the "Plus" button to open the stall details and click "New Product" to create a product
+![create product](https://i.imgur.com/zNG8wZx.png)
+
+Fill the necessary fields on the dialog
+![product dialog](https://i.imgur.com/lAmkuvy.png)
+
+- The product name
+- Give it a description
+- Add some categories (this can be used by clients to search for products)
+- Supply an URL for your product image (you can upload an image but it's recommended that the images are hosted outside of LNbits)
+- A price for the product, in the currency selected for the shop (this will be converted to sats when a customer buys)
+- The quantity you have in stock, for the product. This will update when orders are made/paid
+
+On the _Stall_ section you can also see (update or delete) the stall details in _Stall Info_ tab
+![stall details](https://i.imgur.com/97eJ7R0.png)
+
+Create, update or delete products in _Products_ tab
+![products tab](https://i.imgur.com/ilbxeOG.png)
+
+And check your orders on the _Orders_ tab
+![orders tab](https://i.imgur.com/RiqMKUM.png)
+
+When you get an order, you can see the details by clicking on the "Plus" sign for the order
+![order details](https://i.imgur.com/PtYbaPm.png)
+
+- Ordered products
+- The order ID
+- Customer's shipping address
+- Customer's public key
+- Invoice ID
+
+If applicable, you can set as shipped when shipping is processed.
+
+You also have a _Chat Box_ to chat with customer
+![chat box](https://i.imgur.com/fhPP9IB.png)
 
 ## Diagon Alley Clients
 
-### Merchant admin
+LNbits also provides a Nostr Market client app. You can visit the client from the merchant dashboard by clicking on the "Market client" link
+![market client link](https://i.imgur.com/3tsots2.png)
 
-Where the `merchant` creates, updates and deletes `stalls` and `products`, as well as where they manage sales, payments and communication with `customers`.
+or by visiting `https://<LNbits instance URL>/nostrmarket/market`
 
-The `merchant` admin software can be purely clientside, but for `convenience` and uptime, implementations will likely have a server listening for NOSTR events.
+## Aditional info
 
-### Marketplace
+Stall and product are _Parameterized Replaceable Events_ according to [NIP-33](https://github.com/nostr-protocol/nips/blob/master/33.md) and use kind `30017` and `30018` respectivelly. See [NIP-45](https://github.com/nostr-protocol/nips/blob/master/45.md) for more details.
 
-`Marketplace` software should be entirely clientside, either as a stand-alone app, or as a purely frontend webpage. A `customer` subscribes to different merchant NOSTR public keys, and those `merchants` `stalls` and `products` become listed and searchable. The marketplace client is like any other ecommerce site, with basket and checkout. `Marketplaces` may also wish to include a `customer` support area for direct message communication with `merchants`.
+Order placing, invoicing, payment details and order statuses are handled over Nostr using [NIP-04](https://github.com/nostr-protocol/nips/blob/master/04.md).
 
-## `Merchant` publishing/updating products (event)
-
-NIP-01 https://github.com/nostr-protocol/nips/blob/master/01.md uses the basic NOSTR event type.
-
-The `merchant` event that publishes and updates product lists
-
-The below json goes in `content` of NIP-01.
-
-Data from newer events should replace data from older events.
-
-`action` types (used to indicate changes):
-
-- `update` element has changed
-- `delete` element should be deleted
-- `suspend` element is suspended
-- `unsuspend` element is unsuspended
-
-```
-{
-    "name": <String, name of merchant>,
-    "description": <String, description of merchant>,
-    "currency": <Str, currency used>,
-    "action": <String, optional action>,
-    "shipping": [
-        {
-            "id": <String, UUID derived from stall ID>,
-            "zones": <String, CSV of countries/zones>,
-            "price": <int, cost>,
-        },
-        {
-            "id": <String, UUID derived from stall ID>,
-            "zones": <String, CSV of countries/zones>,
-            "price": <int, cost>,
-        },
-        {
-            "id": <String, UUID derived from stall ID>,
-            "zones": <String, CSV of countries/zones>,
-            "price": <int, cost>,
-        }
-    ],
-    "stalls": [
-        {
-            "id": <UUID derived from merchant public-key>,
-            "name": <String, stall name>,
-            "description": <String, stall description>,
-            "categories": <String, CSV of voluntary categories>,
-            "shipping": <String, CSV of shipping ids>,
-            "action": <String, optional action>,
-            "products": [
-                {
-                    "id": <String, UUID derived from stall ID>,
-                    "name": <String, name of product>,
-                    "description": <String, product description>,
-                    "categories": <String, CSV of voluntary categories>,
-                    "amount": <Int, number of units>,
-                    "price": <Int, cost per unit>,
-                    "images": [
-                        {
-                            "id": <String, UUID derived from product ID>,
-                            "name": <String, image name>,
-                            "link": <String, URL or BASE64>
-                        }
-                    ],
-                    "action": <String, optional action>,
-                },
-                {
-                    "id": <String, UUID derived from stall ID>,
-                    "name": <String, name of product>,
-                    "description": <String, product description>,
-                    "categories": <String, CSV of voluntary categories>,
-                    "amount": <Int, number of units>,
-                    "price": <Int, cost per unit>,
-                    "images": [
-                        {
-                            "id": <String, UUID derived from product ID>,
-                            "name": <String, image name>,
-                            "link": <String, URL or BASE64>
-                        },
-                        {
-                            "id": <String, UUID derived from product ID>,
-                            "name": <String, image name>,
-                            "link": <String, URL or BASE64>
-                        }
-                    ],
-                    "action": <String, optional action>,
-                },
-            ]
-        },
-        {
-            "id": <UUID derived from merchant public_key>,
-            "name": <String, stall name>,
-            "description": <String, stall description>,
-            "categories": <String, CSV of voluntary categories>,
-            "shipping": <String, CSV of shipping ids>,
-            "action": <String, optional action>,
-            "products": [
-                {
-                    "id": <String, UUID derived from stall ID>,
-                    "name": <String, name of product>,
-                    "categories": <String, CSV of voluntary categories>,
-                    "amount": <Int, number of units>,
-                    "price": <Int, cost per unit>,
-                    "images": [
-                        {
-                            "id": <String, UUID derived from product ID>,
-                            "name": <String, image name>,
-                            "link": <String, URL or BASE64>
-                        }
-                    ],
-                    "action": <String, optional action>,
-                }
-            ]
-        }
-    ]
-}
-
-```
-
-As all elements are optional, an `update` `action` to a `product` `image`, may look as simple as:
-
-```
-{
-    "stalls": [
-        {
-            "id": <UUID derived from merchant public-key>,
-            "products": [
-                {
-                    "id": <String, UUID derived from stall ID>,
-                    "images": [
-                        {
-                            "id": <String, UUID derived from product ID>,
-                            "name": <String, image name>,
-                            "link": <String, URL or BASE64>
-                        }
-                    ],
-                    "action": <String, optional action>,
-                },
-            ]
-        }
-    ]
-}
-
-```
-
-## Checkout events
-
-NIP-04 https://github.com/nostr-protocol/nips/blob/master/04.md, all checkout events are encrypted
-
-The below json goes in `content` of NIP-04.
-
-### Step 1: `customer` order (event)
-
-```
-{
-    "id": <String, UUID derived from sum of product ids + timestamp>,
-    "name": <String, name of customer>,
-    "description": <String, description of customer>,
-    "address": <String, postal address>,
-    "message": <String, special request>,
-    "contact": [
-        "nostr": <String, NOSTR public key>,
-        "phone": <String, phone number>,
-        "email": <String, email address>
-    ],
-    "items": [
-        {
-            "id": <String, product ID>,
-            "quantity": <String, stall name>,
-            "message": <String, special request>
-        },
-        {
-            "id": <String, product ID>,
-            "quantity": <String, stall name>,
-            "message": <String, special request>
-        },
-        {
-            "id": <String, product ID>,
-            "quantity": <String, stall name>,
-            "message": <String, special request>
-        }
-
-}
-
-```
-
-Merchant should verify the sum of product ids + timestamp.
-
-### Step 2: `merchant` request payment (event)
-
-Sent back from the merchant for payment. Any payment option is valid that the merchant can check.
-
-The below json goes in `content` of NIP-04.
-
-`payment_options`/`type` include:
-
-- `url` URL to a payment page, stripe, paypal, btcpayserver, etc
-- `btc` onchain bitcoin address
-- `ln` bitcoin lightning invoice
-- `lnurl` bitcoin lnurl-pay
-
-```
-{
-    "id": <String, UUID derived from sum of product ids + timestamp>,
-    "message": <String, message to customer>,
-    "payment_options": [
-        {
-            "type": <String, option type>,
-            "link": <String, url, btc address, ln invoice, etc>
-        },
-        {
-            "type": <String, option type>,
-            "link": <String, url, btc address, ln invoice, etc>
-        },
-                {
-            "type": <String, option type>,
-            "link": <String, url, btc address, ln invoice, etc>
-        }
-}
-
-```
-
-### Step 3: `merchant` verify payment/shipped (event)
-
-Once payment has been received and processed.
-
-The below json goes in `content` of NIP-04.
-
-```
-{
-    "id": <String, UUID derived from sum of product ids + timestamp>,
-    "message": <String, message to customer>,
-    "paid": <Bool, true/false has received payment>,
-    "shipped": <Bool, true/false has been shipped>,
-}
-
-```
-
-## Customer support events
-
-Customer support is handle over whatever communication method was specified. If communicationg via nostr, NIP-04 is used https://github.com/nostr-protocol/nips/blob/master/04.md.
-
-## Additional
-
-Standard data models can be found here <a href="models.json">here</a>
+Customer support is handled over whatever communication method was specified. If communicationg via nostr, [NIP-04](https://github.com/nostr-protocol/nips/blob/master/04.md) is used.
