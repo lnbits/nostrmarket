@@ -10,6 +10,7 @@ async function shoppingCart(path) {
       'cart-menu',
       'add-to-cart',
       'remove-from-cart',
+      'update-qty',
       'reset-cart',
       'products'
     ],
@@ -36,6 +37,23 @@ async function shoppingCart(path) {
           this.products.find(p => p.id == id),
           true
         )
+      },
+      addQty(id, qty) {
+        if (qty == 0) {
+          return this.removeProduct(id)
+        }
+        let product = this.products.find(p => p.id == id)
+        if (product.quantity < qty) {
+          this.$q.notify({
+            type: 'warning',
+            message: `${product.name} only has ${product.quantity} units!`,
+            icon: 'production_quantity_limits'
+          })
+          let objIdx = this.cartMenu.findIndex(pr => pr.id == id)
+          this.cartMenu[objIdx].quantity = this.cart.products.get(id).quantity
+          return
+        }
+        this.$emit('update-qty', id, qty)
       }
     },
     created() {}
