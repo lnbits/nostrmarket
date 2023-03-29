@@ -141,6 +141,18 @@ async function orderList(path) {
           LNbits.utils.notifyApiError(error)
         }
       },
+      getOrder: async function (orderId) {
+        try {
+          const {data} = await LNbits.api.request(
+            'GET',
+            `/nostrmarket/api/v1/order/${orderId}`,
+            this.inkey
+          )
+          return {...data, expanded: false}
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        }
+      },
       updateOrderShipped: async function () {
         this.selectedOrder.shipped = !this.selectedOrder.shipped
         try {
@@ -163,6 +175,16 @@ async function orderList(path) {
         }
         this.showShipDialog = false
       },
+      addOrder: async function (data) {
+        if (
+          !this.search.publicKey ||
+          this.search.publicKey === data.customerPubkey
+        ) {
+          const order = await this.getOrder(data.orderId)
+          this.orders.unshift(order)
+        }
+      },
+
       showShipOrderDialog: function (order) {
         this.selectedOrder = order
         this.shippingMessage = order.shipped

@@ -647,10 +647,10 @@ async def api_delete_product(
 ######################################## ORDERS ########################################
 
 
-nostrmarket_ext.get("/api/v1/order/{order_id}")
-
-
-async def api_get_order(order_id: str, wallet: WalletTypeInfo = Depends(get_key_type)):
+@nostrmarket_ext.get("/api/v1/order/{order_id}")
+async def api_get_order(
+    order_id: str, wallet: WalletTypeInfo = Depends(require_invoice_key)
+):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"

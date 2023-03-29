@@ -107,21 +107,26 @@ const merchant = async () => {
       filterOrdersForCustomer: function (customerPubkey) {
         this.orderPubkey = customerPubkey
       },
-      waitForNotifications: function () {
+      waitForNotifications: async function () {
         try {
           const scheme = location.protocol === 'http:' ? 'ws' : 'wss'
           const port = location.port ? `:${location.port}` : ''
           const wsUrl = `${scheme}://${document.domain}${port}/api/v1/ws/${this.merchant.id}`
           const wsConnection = new WebSocket(wsUrl)
           console.log('### waiting for events')
-          wsConnection.onmessage = e => {
+          wsConnection.onmessage = async e => {
             console.log('### e', e)
-            this.$q.notify({
-              timeout: 5000,
-              type: 'positive',
-              message: 'New Update',
-              caption: `something here`
-            })
+            const data = JSON.parse(e.data)
+            if (data.type === 'new-order') {
+              this.$q.notify({
+                timeout: 5000,
+                type: 'positive',
+                message: 'New Order'
+              })
+              await this.$refs.orderListRef.addOrder(data)
+            } else if (data.type === 'new-customer') {
+            } else if (data.type === 'new-direct-message') {
+            }
           }
         } catch (error) {
           this.$q.notify({
