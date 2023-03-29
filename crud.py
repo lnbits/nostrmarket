@@ -641,3 +641,17 @@ async def update_customer_profile(
         f"UPDATE nostrmarket.customers SET event_created_at = ?, meta = ? WHERE public_key = ?",
         (event_created_at, json.dumps(profile.dict()), public_key),
     )
+
+
+async def increment_customer_unread_messages(public_key: str):
+    await db.execute(
+        f"UPDATE nostrmarket.customers SET unread_messages = unread_messages + 1 WHERE public_key = ?",
+        (public_key,),
+    )
+
+
+async def update_customer_no_unread_messages(public_key: str):
+    await db.execute(
+        f"UPDATE nostrmarket.customers SET unread_messages = 0 WHERE public_key = ?",
+        (public_key,),
+    )

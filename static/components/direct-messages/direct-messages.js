@@ -20,6 +20,16 @@ async function directMessages(path) {
     },
     methods: {
       sendMessage: async function () {},
+      buildCustomerLabel: function (c) {
+        let label = `${c.profile.name || 'unknown'} ${c.profile.about || ''}`
+        if (c.unread_messages) {
+          label += `[new: ${c.unread_messages}]`
+        }
+        label += `  (${c.public_key.slice(0, 16)}...${c.public_key.slice(
+          c.public_key.length - 16
+        )}`
+        return label
+      },
       getDirectMessages: async function (pubkey) {
         if (!pubkey) {
           this.messages = []

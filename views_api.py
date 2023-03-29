@@ -44,6 +44,7 @@ from .crud import (
     get_stalls,
     get_zone,
     get_zones,
+    update_customer_no_unread_messages,
     update_merchant,
     update_order_shipped_status,
     update_product,
@@ -738,6 +739,7 @@ async def api_get_messages(
         assert merchant, f"Merchant cannot be found"
 
         messages = await get_direct_messages(merchant.id, public_key)
+        await update_customer_no_unread_messages(public_key)
         return messages
     except AssertionError as ex:
         raise HTTPException(

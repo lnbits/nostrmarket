@@ -20,6 +20,7 @@ from .crud import (
     get_products_by_ids,
     get_stalls,
     get_wallet_for_product,
+    increment_customer_unread_messages,
     update_customer_profile,
     update_order_paid_status,
     update_product,
@@ -256,6 +257,8 @@ async def _handle_incoming_dms(
     customer = await get_customer(merchant.id, event.pubkey)
     if not customer:
         await _handle_new_customer(event, merchant)
+    else:
+        await increment_customer_unread_messages(event.pubkey)
 
     dm_reply = await _handle_dirrect_message(
         merchant.id,

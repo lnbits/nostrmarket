@@ -135,6 +135,7 @@ async def m001_initial(db):
             merchant_id TEXT NOT NULL,
             public_key TEXT NOT NULL,
             event_created_at INTEGER,
+            unread_messages INTEGER NOT NULL DEFAULT 1,
             meta TEXT NOT NULL DEFAULT '{}'
         );
         """

@@ -442,6 +442,7 @@ class Customer(BaseModel):
     public_key: str
     event_created_at: Optional[int]
     profile: Optional[CustomerProfile]
+    unread_messages: int = 0
 
     @classmethod
     def from_row(cls, row: Row) -> "Customer":
