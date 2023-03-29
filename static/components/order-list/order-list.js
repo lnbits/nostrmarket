@@ -2,8 +2,17 @@ async function orderList(path) {
   const template = await loadTemplateAsync(path)
   Vue.component('order-list', {
     name: 'order-list',
-    props: ['stall-id', 'adminkey', 'inkey'],
+    props: ['stall-id', 'customer-pubkey-filter', 'adminkey', 'inkey'],
     template,
+
+    watch: {
+      customerPubkeyFilter: async function (n) {
+        this.search.publicKey = n
+        this.search.isPaid = {label: 'All', id: null}
+        this.search.isShipped = {label: 'All', id: null}
+        await this.getOrders()
+      }
+    },
 
     data: function () {
       return {

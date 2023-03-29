@@ -81,6 +81,9 @@ async function directMessages(path) {
           LNbits.utils.notifyApiError(error)
         }
       },
+      showClientOrders: function () {
+        this.$emit('customer-selected', this.activePublicKey)
+      },
       selectActiveCustomer: async function () {
         await this.getDirectMessages(this.activePublicKey)
       },

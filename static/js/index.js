@@ -21,6 +21,7 @@ const merchant = async () => {
         merchant: {},
         shippingZones: [],
         activeChatCustomer: '',
+        orderPubkey: null,
         showKeys: false,
         importKeyDialog: {
           show: false,
@@ -102,6 +103,9 @@ const merchant = async () => {
       },
       customerSelectedForOrder: function (customerPubkey) {
         this.activeChatCustomer = customerPubkey
+      },
+      filterOrdersForCustomer: function (customerPubkey) {
+        this.orderPubkey = customerPubkey
       },
       waitForNotifications: function () {
         try {

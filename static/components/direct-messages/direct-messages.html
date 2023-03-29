@@ -1,7 +1,21 @@
 <div>
   <q-card>
     <q-card-section>
-      <h6 class="text-subtitle1 q-my-none">Messages</h6>
+      <div class="row">
+        <div class="col-6">
+          <h6 class="text-subtitle1 q-my-none">Messages</h6>
+        </div>
+        <div class="col-6">
+          <q-btn
+            v-if="activePublicKey"
+            @click="showClientOrders"
+            unelevated
+            outline
+            class="float-right"
+            >Client Orders</q-btn
+          >
+        </div>
+      </div>
     </q-card-section>
     <q-card-section class="q-pa-none">
       <q-separator></q-separator>
