@@ -445,21 +445,34 @@ async def get_order_by_event_id(merchant_id: str, event_id: str) -> Optional[Ord
     return Order.from_row(row) if row else None
 
 
-async def get_orders(merchant_id: str) -> List[Order]:
+async def get_orders(merchant_id: str, **kwargs) -> List[Order]:
+    q = " AND ".join(
+        [f"{field[0]} = ?" for field in kwargs.items() if field[1] != None]
+    )
+    values = ()
+    if q:
+        q = f"AND {q}"
+        values = (v for v in kwargs.values() if v != None)
     rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.orders WHERE merchant_id = ? ORDER BY time DESC",
-        (merchant_id,),
+        f"SELECT * FROM nostrmarket.orders WHERE merchant_id = ? {q} ORDER BY time DESC",
+        (merchant_id, *values),
     )
     return [Order.from_row(row) for row in rows]
 
 
-async def get_orders_for_stall(merchant_id: str, stall_id: str) -> List[Order]:
+async def get_orders_for_stall(
+    merchant_id: str, stall_id: str, **kwargs
+) -> List[Order]:
+    q = " AND ".join(
+        [f"{field[0]} = ?" for field in kwargs.items() if field[1] != None]
+    )
+    values = ()
+    if q:
+        q = f"AND {q}"
+        values = (v for v in kwargs.values() if v != None)
     rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.orders WHERE merchant_id = ? AND stall_id = ? ORDER BY time DESC",
-        (
-            merchant_id,
-            stall_id,
-        ),
+        f"SELECT * FROM nostrmarket.orders WHERE merchant_id = ? AND stall_id = ? {q} ORDER BY time DESC",
+        (merchant_id, stall_id, *values),
     )
     return [Order.from_row(row) for row in rows]
 

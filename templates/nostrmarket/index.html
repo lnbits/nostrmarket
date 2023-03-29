@@ -62,9 +62,13 @@
       <q-card class="q-mt-lg">
         <q-card-section>
           <div class="row">
-            <div class="col-2"></div>
-            <div class="col-8"></div>
-            <div class="col-2"></div>
+            <div class="col-12">
+              <order-list
+                :adminkey="g.user.wallets[0].adminkey"
+                :inkey="g.user.wallets[0].inkey"
+                @customer-selected="customerSelectedForOrder"
+              ></order-list>
+            </div>
           </div>
         </q-card-section>
       </q-card>

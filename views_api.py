@@ -1,6 +1,6 @@
 import json
 from http import HTTPStatus
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from fastapi import Depends
 from fastapi.exceptions import HTTPException
@@ -448,12 +448,17 @@ async def api_get_stall_products(
 @nostrmarket_ext.get("/api/v1/stall/order/{stall_id}")
 async def api_get_stall_orders(
     stall_id: str,
+    paid: Optional[bool] = None,
+    shipped: Optional[bool] = None,
+    pubkey: Optional[str] = None,
     wallet: WalletTypeInfo = Depends(require_invoice_key),
 ):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
-        orders = await get_orders_for_stall(merchant.id, stall_id)
+        orders = await get_orders_for_stall(
+            merchant.id, stall_id, paid=paid, shipped=shipped, public_key=pubkey
+        )
         return orders
     except AssertionError as ex:
         raise HTTPException(
@@ -673,12 +678,19 @@ async def api_get_order(order_id: str, wallet: WalletTypeInfo = Depends(get_key_
 
 
 @nostrmarket_ext.get("/api/v1/order")
-async def api_get_orders(wallet: WalletTypeInfo = Depends(get_key_type)):
+async def api_get_orders(
+    paid: Optional[bool] = None,
+    shipped: Optional[bool] = None,
+    pubkey: Optional[str] = None,
+    wallet: WalletTypeInfo = Depends(get_key_type),
+):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
 
-        orders = await get_orders(merchant.id)
+        orders = await get_orders(
+            merchant_id=merchant.id, paid=paid, shipped=shipped, public_key=pubkey
+        )
         return orders
     except AssertionError as ex:
         raise HTTPException(

@@ -12,6 +12,26 @@ async function orderList(path) {
         shippingMessage: '',
         showShipDialog: false,
         filter: '',
+        search: {
+          publicKey: '',
+          isPaid: null,
+          isShipped: null
+        },
+        customers: [],
+        ternaryOptions: [
+          {
+            label: 'All',
+            value: null
+          },
+          {
+            label: 'Yes',
+            value: 'true'
+          },
+          {
+            label: 'No',
+            value: 'false'
+          }
+        ],
         ordersTable: {
           columns: [
             {
@@ -83,11 +103,22 @@ async function orderList(path) {
       getOrders: async function () {
         try {
           const ordersPath = this.stallId
-            ? `/stall/order/${this.stallId}`
-            : '/order'
+            ? `stall/order/${this.stallId}`
+            : 'order'
+
+          const query = []
+          if (this.search.publicKey) {
+            query.push(`pubkey=${this.search.publicKey}`)
+          }
+          if (this.search.isPaid) {
+            query.push(`paid=${this.search.isPaid}`)
+          }
+          if (this.search.isShipped) {
+            query.push(`shipped=${this.search.isShipped}`)
+          }
           const {data} = await LNbits.api.request(
             'GET',
-            '/nostrmarket/api/v1' + ordersPath,
+            `/nostrmarket/api/v1/${ordersPath}?${query.join('&')}`,
             this.inkey
           )
           this.orders = data.map(s => ({...s, expanded: false}))
@@ -129,10 +160,35 @@ async function orderList(path) {
       },
       customerSelected: function (customerPubkey) {
         this.$emit('customer-selected', customerPubkey)
+      },
+      getCustomers: async function () {
+        try {
+          const {data} = await LNbits.api.request(
+            'GET',
+            '/nostrmarket/api/v1/customers',
+            this.inkey
+          )
+          this.customers = data
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        }
+      },
+      buildCustomerLabel: function (c) {
+        let label = `${c.profile.name || 'unknown'} ${c.profile.about || ''}`
+        if (c.unread_messages) {
+          label += `[new: ${c.unread_messages}]`
+        }
+        label += `  (${c.public_key.slice(0, 16)}...${c.public_key.slice(
+          c.public_key.length - 16
+        )}`
+        return label
       }
     },
     created: async function () {
-      await this.getOrders()
+      if (this.stallId) {
+        await this.getOrders()
+      }
+      await this.getCustomers()
     }
   })
 }

@@ -1,18 +1,45 @@
 <div>
   <div class="row q-mb-md">
-    <div class="col">
+    <div class="col-3 q-pr-lg">
+      <q-select
+        v-model="search.publicKey"
+        :options="customers.map(c => ({label: buildCustomerLabel(c), value: c.public_key}))"
+        label="Customer"
+        emit-value
+        class="text-wrap"
+      >
+      </q-select>
+    </div>
+    <div class="col-3 q-pr-lg">
+      <q-select
+        v-model="search.isPaid"
+        :options="ternaryOptions"
+        label="Paid"
+        emit-value
+      >
+      </q-select>
+    </div>
+    <div class="col-3 q-pr-lg">
+      <q-select
+        v-model="search.isShipped"
+        :options="ternaryOptions"
+        label="Shipped"
+        emit-value
+      >
+      </q-select>
+    </div>
+    <div class="col-3">
       <q-btn
         unelevated
-        color="secondary"
         outline
-        icon="refresh"
+        icon="search"
         @click="getOrders()"
-        class="float-left"
-        >Refresh Orders</q-btn
+        class="float-right"
+        >Search Orders</q-btn
       >
     </div>
   </div>
-  <div class="row">
+  <div class="row q-mt-md">
     <div class="col">
       <q-table
         flat
