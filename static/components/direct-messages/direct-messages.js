@@ -2,10 +2,13 @@ async function directMessages(path) {
   const template = await loadTemplateAsync(path)
   Vue.component('direct-messages', {
     name: 'direct-messages',
-    props: ['adminkey', 'inkey'],
+    props: ['active-chat-customer', 'adminkey', 'inkey'],
     template,
 
     watch: {
+      activeChatCustomer: async function (n) {
+        this.activePublicKey = n
+      },
       activePublicKey: async function (n) {
         await this.getDirectMessages(n)
       }
