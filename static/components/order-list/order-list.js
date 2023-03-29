@@ -14,22 +14,28 @@ async function orderList(path) {
         filter: '',
         search: {
           publicKey: '',
-          isPaid: null,
-          isShipped: null
+          isPaid: {
+            label: 'All',
+            id: null
+          },
+          isShipped: {
+            label: 'All',
+            id: null
+          }
         },
         customers: [],
         ternaryOptions: [
           {
             label: 'All',
-            value: null
+            id: null
           },
           {
             label: 'Yes',
-            value: 'true'
+            id: 'true'
           },
           {
             label: 'No',
-            value: 'false'
+            id: 'false'
           }
         ],
         ordersTable: {
@@ -110,11 +116,11 @@ async function orderList(path) {
           if (this.search.publicKey) {
             query.push(`pubkey=${this.search.publicKey}`)
           }
-          if (this.search.isPaid) {
-            query.push(`paid=${this.search.isPaid}`)
+          if (this.search.isPaid.id) {
+            query.push(`paid=${this.search.isPaid.id}`)
           }
-          if (this.search.isShipped) {
-            query.push(`shipped=${this.search.isShipped}`)
+          if (this.search.isShipped.id) {
+            query.push(`shipped=${this.search.isShipped.id}`)
           }
           const {data} = await LNbits.api.request(
             'GET',
