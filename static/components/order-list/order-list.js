@@ -49,7 +49,7 @@ async function orderList(path) {
             {
               name: 'id',
               align: 'left',
-              label: 'ID',
+              label: 'Order ID',
               field: 'id'
             },
             {
