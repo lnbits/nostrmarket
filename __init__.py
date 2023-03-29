@@ -46,7 +46,7 @@ def nostrmarket_start():
 
     async def _wait_for_nostr_events():
         # wait for this extension to initialize
-        await asyncio.sleep(5)
+        await asyncio.sleep(15)
         await wait_for_nostr_events(nostr_client)
 
     loop = asyncio.get_event_loop()
