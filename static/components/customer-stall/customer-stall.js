@@ -184,7 +184,8 @@ async function customerStall(path) {
           },
           items: Array.from(this.cart.products, p => {
             return {product_id: p[0], quantity: p[1].quantity}
-          })
+          }),
+          shipping: orderData.shippingzone
         }
         orderObj.id = await hash(
           [orderData.pubkey, created_at, JSON.stringify(orderObj)].join(':')
@@ -267,7 +268,8 @@ async function customerStall(path) {
           },
           items: Array.from(this.cart.products, p => {
             return {product_id: p[0], quantity: p[1].quantity}
-          })
+          }),
+          shipping: orderData.shippingzone
         }
         let created_at = Math.floor(Date.now() / 1000)
         orderObj.id = await hash(
