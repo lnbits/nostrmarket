@@ -48,6 +48,16 @@ function isJson(str) {
   }
 }
 
+function satOrBtc(val, showUnit = true, showSats = false) {
+  const value = showSats
+    ? LNbits.utils.formatSat(val)
+    : val == 0
+    ? 0.0
+    : (val / 100000000).toFixed(8)
+  if (!showUnit) return value
+  return showSats ? value + ' sat' : value + ' BTC'
+}
+
 function timeFromNow(time) {
   // Get timestamps
   let unixTime = new Date(time).getTime()

@@ -67,8 +67,14 @@
               {{toShortId(props.row.id)}}
               <q-badge v-if="props.row.isNew" color="orange">new</q-badge></q-td
             >
-            <q-td key="total" :props="props"> {{props.row.total}} </q-td>
-            <!-- todo: currency per order -->
+            <q-td key="total" :props="props">
+              {{satBtc(props.row.total)}}
+            </q-td>
+            <q-td key="fiat" :props="props">
+              <span v-if="props.row.extra.currency !== 'sat'">
+                {{orderTotal(props.row)}} {{props.row.extra.currency}}
+              </span>
+            </q-td>
 
             <q-td key="paid" :props="props">
               <q-checkbox
@@ -108,7 +114,9 @@
                   <div class="row items-center no-wrap q-mb-md">
                     <div class="col-1">Quantity</div>
                     <div class="col-1"></div>
-                    <div class="col-10">Name</div>
+                    <div class="col-4">Name</div>
+                    <div class="col-2">Price</div>
+                    <div class="col-4"></div>
                   </div>
                 </div>
                 <div class="col-1"></div>
@@ -122,12 +130,30 @@
                   >
                     <div class="col-1">{{item.quantity}}</div>
                     <div class="col-1">x</div>
-                    <div class="col-10">
-                      {{productOverview(props.row, item.product_id)}}
+                    <div class="col-4">
+                      {{productName(props.row, item.product_id)}}
                     </div>
+                    <div class="col-2">
+                      {{productPrice(props.row, item.product_id)}}
+                    </div>
+                    <div class="col-4"></div>
                   </div>
                 </div>
                 <div class="col-1"></div>
+              </div>
+              <div v-if="props.row.extra.currency !== 'sat'" class="row items-center no-wrap q-mb-md q-mt-md">
+                <div class="col-3 q-pr-lg">Exchange Rate:</div>
+                <div class="col-6 col-sm-8 q-pr-lg">
+                  <q-input
+                    filled
+                    dense
+                    readonly
+                    disabled
+                    :value="formatFiat(props.row.extra.btc_price, props.row.extra.currency)"
+                    type="text"
+                  ></q-input>
+                </div>
+                <div class="col-3 col-sm-1"></div>
               </div>
               <div class="row items-center no-wrap q-mb-md q-mt-md">
                 <div class="col-3 q-pr-lg">Order ID:</div>

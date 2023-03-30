@@ -68,6 +68,12 @@ async function orderList(path) {
               field: 'total'
             },
             {
+              name: 'fiat',
+              align: 'left',
+              label: 'Fiat',
+              field: 'fiat'
+            },
+            {
               name: 'paid',
               align: 'left',
               label: 'Paid',
@@ -108,12 +114,32 @@ async function orderList(path) {
           'YYYY-MM-DD HH:mm'
         )
       },
-      productOverview: function (order, productId) {
+      satBtc(val, showUnit = true) {
+        return satOrBtc(val, showUnit, true)
+      },
+      formatFiat(value, currency) {
+        return Math.trunc(value) + ' ' + currency
+      },
+      productName: function (order, productId) {
         product = order.extra.products.find(p => p.id === productId)
         if (product) {
-          return `${product.name} (${product.price} ${order.extra.currency})`
+          return product.name
         }
         return ''
+      },
+      productPrice: function (order, productId) {
+        product = order.extra.products.find(p => p.id === productId)
+        if (product) {
+          return `${product.price} ${order.extra.currency}`
+        }
+        return ''
+      },
+      orderTotal: function (order) {
+        return order.items.reduce((t, item) => {
+          console.log('### t, o', t, item)
+          product = order.extra.products.find(p => p.id === item.product_id)
+          return t + item.quantity * product.price
+        }, 0)
       },
       getOrders: async function () {
         try {
