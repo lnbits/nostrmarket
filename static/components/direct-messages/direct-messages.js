@@ -16,6 +16,7 @@ async function directMessages(path) {
     data: function () {
       return {
         customers: [],
+        unreadMessages: 0,
         activePublicKey: null,
         messages: [],
         newMessage: ''
@@ -59,6 +60,7 @@ async function directMessages(path) {
             this.inkey
           )
           this.customers = data
+          this.unreadMessages = data.filter(c => c.unread_messages).length
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -86,6 +88,7 @@ async function directMessages(path) {
       },
       selectActiveCustomer: async function () {
         await this.getDirectMessages(this.activePublicKey)
+        await this.getCustomers()
       },
       focusOnChatBox: function (index) {
         setTimeout(() => {
