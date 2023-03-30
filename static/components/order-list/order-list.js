@@ -148,7 +148,7 @@ async function orderList(path) {
             `/nostrmarket/api/v1/order/${orderId}`,
             this.inkey
           )
-          return {...data, expanded: false}
+          return {...data, expanded: false, isNew: true}
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }

@@ -63,7 +63,10 @@
               />
             </q-td>
 
-            <q-td key="id" :props="props"> {{toShortId(props.row.id)}} </q-td>
+            <q-td key="id" :props="props">
+              {{toShortId(props.row.id)}}
+              <q-badge v-if="props.row.isNew" color="orange">new</q-badge></q-td
+            >
             <q-td key="total" :props="props"> {{props.row.total}} </q-td>
             <!-- todo: currency per order -->
 
