@@ -59,19 +59,41 @@ async function chatDialog(path) {
     },
     computed: {
       sortedMessages() {
-        return this.nostrMessages.sort((a, b) => b.created_at - a.created_at)
+        return this.nostrMessages
+          .map(m => {
+            if (!isJson(m.msg)) return m
+            let msg = JSON.parse(m.msg)
+            if (msg?.message) {
+              m.json = m.msg
+              m.msg = msg.message
+              return m
+            }
+            if (msg?.items) {
+              m.json = m.msg
+              m.msg = 'Order placed!'
+              return m
+            }
+            if (msg?.payment_options) {
+              m.json = m.msg
+              m.msg = '⚡︎ Invoice sent!'
+              return m
+            }
+            return m
+          })
+          .sort((a, b) => b.created_at - a.created_at)
       },
       ordersList() {
-        let orders = this.nostrMessages
-          .sort((a, b) => b.created_at - a.created_at)
-          .filter(o => isJson(o.msg))
-          .reduce((acc, cur) => {
-            const obj = JSON.parse(cur.msg)
-            const key = obj.id
-            const curGroup = acc[key] ?? {created_at: cur.timestamp}
-            return {...acc, [key]: {...curGroup, ...obj}}
-          }, {})
-        return Object.values(orders)
+        return Object.values(
+          this.nostrMessages
+            .sort((a, b) => b.created_at - a.created_at)
+            .filter(o => isJson(o.msg))
+            .reduce((acc, cur) => {
+              const obj = JSON.parse(cur.msg)
+              const key = obj.id
+              const curGroup = acc[key] ?? {created_at: cur.timestamp}
+              return {...acc, [key]: {...curGroup, ...obj}}
+            }, {})
+        )
       }
     },
     methods: {
