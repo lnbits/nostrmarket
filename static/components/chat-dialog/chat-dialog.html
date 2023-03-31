@@ -41,11 +41,12 @@
             :name="message.sender"
             :text="[message.msg]"
             :sent="message.sender == 'Me'"
-            :bg-color="message.json ? 'yellow-11' : message.sender == 'Me' ? 'white' : 'light-green-2'"
+            :bg-color="message.json ? 'purple-2' : message.sender == 'Me' ? 'white' : 'light-green-2'"
             :stamp="message.timestamp"
             size="6"
             ><template v-slot:avatar v-if="message.json">
               <q-icon
+                color="secondary"
                 name="smart_toy"
                 class="q-message-avatar q-message-avatar--received"
               /> </template

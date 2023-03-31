@@ -60,35 +60,14 @@ async function chatDialog(path) {
     },
     computed: {
       sortedMessages() {
-        return this.nostrMessages
-          .map(m => {
-            if (!isJson(m.msg)) return m
-            let msg = JSON.parse(m.msg)
-            if (msg?.message) {
-              m.json = m.msg
-              m.msg = msg.message
-              return m
-            }
-            if (msg?.items) {
-              m.json = m.msg
-              m.msg = 'Order placed!'
-              return m
-            }
-            if (msg?.payment_options) {
-              m.json = m.msg
-              m.msg = '⚡︎ Invoice sent!'
-              return m
-            }
-            return m
-          })
-          .sort((a, b) => b.created_at - a.created_at)
+        return this.nostrMessages.sort((a, b) => b.created_at - a.created_at)
       },
       ordersList() {
         let orders = this.nostrMessages
+          .filter(o => o.json)
           .sort((a, b) => b.created_at - a.created_at)
-          .filter(o => isJson(o.json))
           .reduce((acc, cur) => {
-            const obj = JSON.parse(cur.json)
+            const obj = cur.json
             const key = obj.id
             const curGroup = acc[key] ?? {created_at: cur.timestamp}
             return {...acc, [key]: {...curGroup, ...obj}}
@@ -154,11 +133,13 @@ async function chatDialog(path) {
             plaintext = await window.nostr.nip04.decrypt(sender, event.content)
           }
           if (plaintext) {
+            let {text, json} = this.filterJsonMsg(plaintext)
             this.messagesMap.set(event.id, {
               created_at: event.created_at,
-              msg: plaintext,
+              msg: text,
               timestamp: timeFromNow(event.created_at * 1000),
-              sender: `${mine ? 'Me' : 'Merchant'}`
+              sender: `${mine ? 'Me' : 'Merchant'}`,
+              json
             })
           }
           return null
@@ -166,6 +147,24 @@ async function chatDialog(path) {
           console.debug('Unable to decrypt message! Not for us...')
           return null
         }
+      },
+      filterJsonMsg(text) {
+        let json = null
+
+        if (!isJson(text)) return {text, json}
+
+        json = JSON.parse(text)
+        if (json.message) {
+          text = json.message
+        } else if (json.items) {
+          text = `Order placed!<br />OrderID: ${json.id}`
+        } else if (json.payment_options) {
+          text = `Invoice for order: ${json.id} <br /><a href="lightning:${
+            json.payment_options.find(o => o.type == 'ln')?.link
+          }" target="_blank" class="text-secondary">LN ⚡︎</a>`
+        }
+
+        return {text, json}
       },
       async sendMessage() {
         if (this.newMessage && this.newMessage.length < 1) return
