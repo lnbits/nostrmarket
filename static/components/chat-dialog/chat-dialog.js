@@ -11,6 +11,7 @@ async function chatDialog(path) {
         dialog: false,
         isChat: true,
         loading: false,
+        messagesMap: new Map(),
         nostrMessages: [],
         newMessage: '',
         ordersTable: {
@@ -83,17 +84,17 @@ async function chatDialog(path) {
           .sort((a, b) => b.created_at - a.created_at)
       },
       ordersList() {
-        return Object.values(
-          this.nostrMessages
-            .sort((a, b) => b.created_at - a.created_at)
-            .filter(o => isJson(o.msg))
-            .reduce((acc, cur) => {
-              const obj = JSON.parse(cur.msg)
-              const key = obj.id
-              const curGroup = acc[key] ?? {created_at: cur.timestamp}
-              return {...acc, [key]: {...curGroup, ...obj}}
-            }, {})
-        )
+        let orders = this.nostrMessages
+          .sort((a, b) => b.created_at - a.created_at)
+          .filter(o => isJson(o.json))
+          .reduce((acc, cur) => {
+            const obj = JSON.parse(cur.json)
+            const key = obj.id
+            const curGroup = acc[key] ?? {created_at: cur.timestamp}
+            return {...acc, [key]: {...curGroup, ...obj}}
+          }, {})
+
+        return Object.values(orders)
       }
     },
     methods: {
@@ -107,8 +108,8 @@ async function chatDialog(path) {
       },
       async startPool() {
         this.loading = true
-        let messagesMap = new Map()
-        let sub = this.pool.sub(Array.from(this.relays), [
+        let relays = Array.from(this.relays)
+        let filters = [
           {
             kinds: [4],
             authors: [this.account.pubkey]
@@ -117,44 +118,54 @@ async function chatDialog(path) {
             kinds: [4],
             '#p': [this.account.pubkey]
           }
-        ])
+        ]
+        let events = await this.pool.list(relays, filters)
 
-        sub.on('eose', () => {
-          this.loading = false
-          this.nostrMessages = Array.from(messagesMap.values())
-        })
+        for (const event of events) {
+          await this.processMessage(event)
+        }
+
+        this.nostrMessages = Array.from(this.messagesMap.values())
+        this.loading = false
+
+        let sub = this.pool.sub(
+          relays,
+          filters.map(f => ({...f, since: Date.now() / 1000}))
+        )
         sub.on('event', async event => {
-          let mine = event.pubkey == this.account.pubkey
-          let sender = mine ? this.merchant : event.pubkey
-
-          try {
-            let plaintext
-            if (this.account.privkey) {
-              plaintext = await NostrTools.nip04.decrypt(
-                this.account.privkey,
-                sender,
-                event.content
-              )
-            } else if (this.account.useExtension && this.hasNip07) {
-              plaintext = await window.nostr.nip04.decrypt(
-                sender,
-                event.content
-              )
-            }
-            if (plaintext) {
-              messagesMap.set(event.id, {
-                created_at: event.created_at,
-                msg: plaintext,
-                timestamp: timeFromNow(event.created_at * 1000),
-                sender: `${mine ? 'Me' : 'Merchant'}`
-              })
-              this.nostrMessages = Array.from(messagesMap.values())
-            }
-          } catch {
-            console.debug('Unable to decrypt message! Not for us...')
-          }
+          await this.processMessage(event)
+          this.nostrMessages = Array.from(this.messagesMap.values())
         })
         this.sub = sub
+      },
+      async processMessage(event) {
+        let mine = event.pubkey == this.account.pubkey
+        let sender = mine ? this.merchant : event.pubkey
+
+        try {
+          let plaintext
+          if (this.account.privkey) {
+            plaintext = await NostrTools.nip04.decrypt(
+              this.account.privkey,
+              sender,
+              event.content
+            )
+          } else if (this.account.useExtension && this.hasNip07) {
+            plaintext = await window.nostr.nip04.decrypt(sender, event.content)
+          }
+          if (plaintext) {
+            this.messagesMap.set(event.id, {
+              created_at: event.created_at,
+              msg: plaintext,
+              timestamp: timeFromNow(event.created_at * 1000),
+              sender: `${mine ? 'Me' : 'Merchant'}`
+            })
+          }
+          return null
+        } catch {
+          console.debug('Unable to decrypt message! Not for us...')
+          return null
+        }
       },
       async sendMessage() {
         if (this.newMessage && this.newMessage.length < 1) return
