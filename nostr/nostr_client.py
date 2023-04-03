@@ -68,8 +68,8 @@ class NostrClient:
         await self.send_req_queue.put(["EVENT", e.dict()])
 
     async def subscribe_to_direct_messages(self, public_key: str, since: int):
-        in_messages_filter = {"kind": 4, "#p": [public_key]}
-        out_messages_filter = {"kind": 4, "authors": [public_key]}
+        in_messages_filter = {"kinds": [4], "#p": [public_key]}
+        out_messages_filter = {"kinds": [4], "authors": [public_key]}
         if since and since != 0:
             in_messages_filter["since"] = since
             out_messages_filter["since"] = since
@@ -82,8 +82,8 @@ class NostrClient:
         )
 
     async def subscribe_to_merchant_events(self, public_key: str, since: int):
-        stall_filter = {"kind": 30017, "authors": [public_key]}
-        product_filter = {"kind": 30018, "authors": [public_key]}
+        stall_filter = {"kinds": [30017], "authors": [public_key]}
+        product_filter = {"kinds": [30018], "authors": [public_key]}
 
         await self.send_req_queue.put(
             ["REQ", f"stall-events:{public_key}", stall_filter]
@@ -93,7 +93,7 @@ class NostrClient:
         )
 
     async def subscribe_to_user_profile(self, public_key: str, since: int):
-        profile_filter = {"kind": 0, "authors": [public_key]}
+        profile_filter = {"kinds": [0], "authors": [public_key]}
         if since and since != 0:
             profile_filter["since"] = since + 1
 
