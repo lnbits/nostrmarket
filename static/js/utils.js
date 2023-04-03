@@ -111,3 +111,13 @@ function timeFromNow(time) {
   // Return time from now data
   return `${tfn.time} ${tfn.unitOfTime}`
 }
+
+function isValidImageUrl(string) {
+  let url
+  try {
+    url = new URL(string)
+  } catch (_) {
+    return false
+  }
+  return url.protocol === 'http:' || url.protocol === 'https:'
+}

@@ -518,7 +518,6 @@ async def api_create_product(
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Product:
     try:
-        data.validate_product()
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
 
@@ -557,7 +556,6 @@ async def api_update_product(
         if product_id != product.id:
             raise ValueError("Bad product ID")
 
-        product.validate_product()
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
 

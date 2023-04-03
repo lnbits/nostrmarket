@@ -226,43 +226,28 @@
           label="Categories (Hit Enter to add)"
           placeholder="crafts,robots,etc"
         ></q-select>
-        <q-toggle
-          :label="`${productDialog.url ? 'Insert image URL' : 'Upload image file'}`"
-          v-model="productDialog.url"
-        ></q-toggle>
+
         <q-input
-          v-if="productDialog.url"
           filled
           dense
           v-model.trim="productDialog.data.image"
+          @keydown.enter="addProductImage"
           type="url"
           label="Image URL"
-        ></q-input>
-        <q-file
-          v-else
-          class="q-pr-md"
-          filled
-          dense
-          capture="environment"
-          accept="image/jpeg, image/png"
-          :max-file-size="3*1024**2"
-          label="Small image (optional)"
-          clearable
-          @input="imageAdded"
-          @clear="imageCleared"
         >
-          <template v-if="productDialog.data.image" v-slot:before>
-            <img style="height: 1em" :src="productDialog.data.image" />
-          </template>
-          <template v-if="productDialog.data.image" v-slot:append>
-            <q-icon
-              name="cancel"
-              @click.stop.prevent="imageCleared"
-              class="cursor-pointer"
-            />
-          </template>
-        </q-file>
+          <q-btn @click="addProductImage" dense flat icon="add"></q-btn
+        ></q-input>
 
+        <q-chip
+          v-for="imageUrl in productDialog.data.images"
+          :key="imageUrl"
+          removable
+          @remove="removeProductImage(imageUrl)"
+          color="primary"
+          text-color="white"
+        >
+          <span v-text="imageUrl.split('/').pop()"></span>
+        </q-chip>
         <q-input
           filled
           dense
