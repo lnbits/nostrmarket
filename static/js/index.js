@@ -85,6 +85,7 @@ const merchant = async () => {
             type: 'positive',
             message: 'Merchant Created!'
           })
+          this.waitForNotifications()
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -108,6 +109,7 @@ const merchant = async () => {
         this.orderPubkey = customerPubkey
       },
       waitForNotifications: async function () {
+        if (!this.merchant) return
         try {
           const scheme = location.protocol === 'http:' ? 'ws' : 'wss'
           const port = location.port ? `:${location.port}` : ''
@@ -122,7 +124,6 @@ const merchant = async () => {
                 message: 'New Order'
               })
               await this.$refs.orderListRef.addOrder(data)
-            } else if (data.type === 'new-customer') {
             } else if (data.type === 'new-direct-message') {
               await this.$refs.directMessagesRef.handleNewMessage(data)
             }
@@ -131,7 +132,7 @@ const merchant = async () => {
           this.$q.notify({
             timeout: 5000,
             type: 'warning',
-            message: 'Failed to watch for updated',
+            message: 'Failed to watch for updates',
             caption: `${error}`
           })
         }
