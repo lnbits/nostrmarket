@@ -5,6 +5,8 @@ from lnbits.helpers import urlsafe_short_hash
 
 from . import db
 from .models import (
+    Customer,
+    CustomerProfile,
     DirectMessage,
     Merchant,
     MerchantConfig,
@@ -391,12 +393,13 @@ async def create_order(merchant_id: str, o: Order) -> Order:
             address, 
             contact_data, 
             extra_data, 
-            order_items, 
+            order_items,
+            shipping_id,
             stall_id, 
             invoice_id, 
             total
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(event_id) DO NOTHING
         """,
         (
@@ -410,6 +413,7 @@ async def create_order(merchant_id: str, o: Order) -> Order:
             json.dumps(o.contact.dict() if o.contact else {}),
             json.dumps(o.extra.dict()),
             json.dumps([i.dict() for i in o.items]),
+            o.shipping_id,
             o.stall_id,
             o.invoice_id,
             o.total,
@@ -443,31 +447,36 @@ async def get_order_by_event_id(merchant_id: str, event_id: str) -> Optional[Ord
     return Order.from_row(row) if row else None
 
 
-async def get_orders(merchant_id: str) -> List[Order]:
+async def get_orders(merchant_id: str, **kwargs) -> List[Order]:
+    q = " AND ".join(
+        [f"{field[0]} = ?" for field in kwargs.items() if field[1] != None]
+    )
+    values = ()
+    if q:
+        q = f"AND {q}"
+        values = (v for v in kwargs.values() if v != None)
     rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.orders WHERE merchant_id = ? ORDER BY time DESC",
-        (merchant_id,),
+        f"SELECT * FROM nostrmarket.orders WHERE merchant_id = ? {q} ORDER BY time DESC",
+        (merchant_id, *values),
     )
     return [Order.from_row(row) for row in rows]
 
 
-async def get_orders_for_stall(merchant_id: str, stall_id: str) -> List[Order]:
+async def get_orders_for_stall(
+    merchant_id: str, stall_id: str, **kwargs
+) -> List[Order]:
+    q = " AND ".join(
+        [f"{field[0]} = ?" for field in kwargs.items() if field[1] != None]
+    )
+    values = ()
+    if q:
+        q = f"AND {q}"
+        values = (v for v in kwargs.values() if v != None)
     rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.orders WHERE merchant_id = ? AND stall_id = ? ORDER BY time DESC",
-        (
-            merchant_id,
-            stall_id,
-        ),
+        f"SELECT * FROM nostrmarket.orders WHERE merchant_id = ? AND stall_id = ? {q} ORDER BY time DESC",
+        (merchant_id, stall_id, *values),
     )
     return [Order.from_row(row) for row in rows]
-
-
-async def get_public_keys_for_orders(merchant_id: str) -> List[str]:
-    rows = await db.fetchall(
-        "SELECT DISTINCT public_key FROM nostrmarket.orders WHERE merchant_id = ?",
-        (merchant_id,),
-    )
-    return [row[0] for row in rows]
 
 
 async def get_last_order_time(public_key: str) -> int:
@@ -596,9 +605,68 @@ async def delete_merchant_direct_messages(merchant_id: str) -> None:
     )
 
 
-async def get_public_keys_for_direct_messages(merchant_id: str) -> List[str]:
-    rows = await db.fetchall(
-        "SELECT DISTINCT public_key FROM nostrmarket.direct_messages WHERE merchant_id = ?",
-        (merchant_id),
+######################################## CUSTOMERS ########################################
+
+
+async def create_customer(merchant_id: str, data: Customer) -> Customer:
+    await db.execute(
+        f"""
+        INSERT INTO nostrmarket.customers (merchant_id, public_key, meta)
+        VALUES (?, ?, ?)
+        """,
+        (
+            merchant_id,
+            data.public_key,
+            json.dumps(data.profile) if data.profile else "{}",
+        ),
     )
-    return [row[0] for row in rows]
+
+    customer = await get_customer(merchant_id, data.public_key)
+    assert customer, "Newly created customer couldn't be retrieved"
+    return customer
+
+
+async def get_customer(merchant_id: str, public_key: str) -> Optional[Customer]:
+    row = await db.fetchone(
+        "SELECT * FROM nostrmarket.customers WHERE merchant_id = ? AND public_key = ?",
+        (
+            merchant_id,
+            public_key,
+        ),
+    )
+    return Customer.from_row(row) if row else None
+
+
+async def get_customers(merchant_id: str) -> List[Customer]:
+    rows = await db.fetchall(
+        "SELECT * FROM nostrmarket.customers WHERE merchant_id = ?", (merchant_id,)
+    )
+    return [Customer.from_row(row) for row in rows]
+
+
+async def get_all_customers() -> List[Customer]:
+    rows = await db.fetchall("SELECT * FROM nostrmarket.customers")
+    return [Customer.from_row(row) for row in rows]
+
+
+async def update_customer_profile(
+    public_key: str, event_created_at: int, profile: CustomerProfile
+):
+    await db.execute(
+        f"UPDATE nostrmarket.customers SET event_created_at = ?, meta = ? WHERE public_key = ?",
+        (event_created_at, json.dumps(profile.dict()), public_key),
+    )
+
+
+async def increment_customer_unread_messages(public_key: str):
+    await db.execute(
+        f"UPDATE nostrmarket.customers SET unread_messages = unread_messages + 1 WHERE public_key = ?",
+        (public_key,),
+    )
+
+
+async def update_customer_no_unread_messages(public_key: str):
+    await db.execute(
+        f"UPDATE nostrmarket.customers SET unread_messages = 0 WHERE public_key = ?",
+        (public_key,),
+    )

@@ -1,6 +1,6 @@
 import json
 from http import HTTPStatus
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from fastapi import Depends
 from fastapi.exceptions import HTTPException
@@ -31,6 +31,7 @@ from .crud import (
     delete_product,
     delete_stall,
     delete_zone,
+    get_customers,
     get_direct_messages,
     get_merchant_by_pubkey,
     get_merchant_for_user,
@@ -39,12 +40,11 @@ from .crud import (
     get_orders_for_stall,
     get_product,
     get_products,
-    get_public_keys_for_direct_messages,
-    get_public_keys_for_orders,
     get_stall,
     get_stalls,
     get_zone,
     get_zones,
+    update_customer_no_unread_messages,
     update_merchant,
     update_order_shipped_status,
     update_product,
@@ -52,6 +52,7 @@ from .crud import (
     update_zone,
 )
 from .models import (
+    Customer,
     DirectMessage,
     Merchant,
     Order,
@@ -447,12 +448,17 @@ async def api_get_stall_products(
 @nostrmarket_ext.get("/api/v1/stall/order/{stall_id}")
 async def api_get_stall_orders(
     stall_id: str,
+    paid: Optional[bool] = None,
+    shipped: Optional[bool] = None,
+    pubkey: Optional[str] = None,
     wallet: WalletTypeInfo = Depends(require_invoice_key),
 ):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
-        orders = await get_orders_for_stall(merchant.id, stall_id)
+        orders = await get_orders_for_stall(
+            merchant.id, stall_id, paid=paid, shipped=shipped, public_key=pubkey
+        )
         return orders
     except AssertionError as ex:
         raise HTTPException(
@@ -641,10 +647,10 @@ async def api_delete_product(
 ######################################## ORDERS ########################################
 
 
-nostrmarket_ext.get("/api/v1/order/{order_id}")
-
-
-async def api_get_order(order_id: str, wallet: WalletTypeInfo = Depends(get_key_type)):
+@nostrmarket_ext.get("/api/v1/order/{order_id}")
+async def api_get_order(
+    order_id: str, wallet: WalletTypeInfo = Depends(require_invoice_key)
+):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
@@ -672,12 +678,19 @@ async def api_get_order(order_id: str, wallet: WalletTypeInfo = Depends(get_key_
 
 
 @nostrmarket_ext.get("/api/v1/order")
-async def api_get_orders(wallet: WalletTypeInfo = Depends(get_key_type)):
+async def api_get_orders(
+    paid: Optional[bool] = None,
+    shipped: Optional[bool] = None,
+    pubkey: Optional[str] = None,
+    wallet: WalletTypeInfo = Depends(get_key_type),
+):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
 
-        orders = await get_orders(merchant.id)
+        orders = await get_orders(
+            merchant_id=merchant.id, paid=paid, shipped=shipped, public_key=pubkey
+        )
         return orders
     except AssertionError as ex:
         raise HTTPException(
@@ -738,6 +751,7 @@ async def api_get_messages(
         assert merchant, f"Merchant cannot be found"
 
         messages = await get_direct_messages(merchant.id, public_key)
+        await update_customer_no_unread_messages(public_key)
         return messages
     except AssertionError as ex:
         raise HTTPException(
@@ -785,17 +799,13 @@ async def api_create_message(
 
 
 @nostrmarket_ext.get("/api/v1/customers")
-async def api_create_message(
+async def api_get_customers(
     wallet: WalletTypeInfo = Depends(get_key_type),
-) -> DirectMessage:
+) -> List[Customer]:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, f"Merchant cannot be found"
-
-        dm_pubkeys = await get_public_keys_for_direct_messages(merchant.id)
-        orders_pubkeys = await get_public_keys_for_orders(merchant.id)
-
-        return list(dict.fromkeys(dm_pubkeys + orders_pubkeys))
+        return await get_customers(merchant.id)
 
     except AssertionError as ex:
         raise HTTPException(

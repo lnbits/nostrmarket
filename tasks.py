@@ -4,6 +4,7 @@ from lnbits.core.models import Payment
 from lnbits.tasks import register_invoice_listener
 
 from .crud import (
+    get_all_customers,
     get_last_direct_messages_time,
     get_last_order_time,
     get_public_keys_for_merchants,
@@ -41,6 +42,10 @@ async def wait_for_nostr_events(nostr_client: NostrClient):
         since = max(last_order_time, last_dm_time)
 
         await nostr_client.subscribe_to_direct_messages(p, since)
+
+    customers = await get_all_customers()
+    for c in customers:
+        await nostr_client.subscribe_to_user_profile(c.public_key, c.event_created_at)
 
     while True:
         message = await nostr_client.get_event()

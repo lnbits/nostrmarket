@@ -185,7 +185,7 @@ async function customerStall(path) {
           items: Array.from(this.cart.products, p => {
             return {product_id: p[0], quantity: p[1].quantity}
           }),
-          shipping: orderData.shippingzone
+          shipping_id: orderData.shippingzone
         }
         orderObj.id = await hash(
           [orderData.pubkey, created_at, JSON.stringify(orderObj)].join(':')
@@ -269,7 +269,7 @@ async function customerStall(path) {
           items: Array.from(this.cart.products, p => {
             return {product_id: p[0], quantity: p[1].quantity}
           }),
-          shipping: orderData.shippingzone
+          shipping_id: orderData.shippingzone
         }
         let created_at = Math.floor(Date.now() / 1000)
         orderObj.id = await hash(
@@ -375,8 +375,9 @@ async function customerStall(path) {
             this.qrCodeDialog.data.message = json.message
             return cb()
           }
-          let payment_request = json.payment_options.find(o => o.type == 'ln')
-            .link
+          let payment_request = json.payment_options.find(
+            o => o.type == 'ln'
+          ).link
           if (!payment_request) return
           this.loading = false
           this.qrCodeDialog.data.payment_request = payment_request

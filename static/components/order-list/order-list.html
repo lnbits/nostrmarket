@@ -1,18 +1,45 @@
 <div>
   <div class="row q-mb-md">
-    <div class="col">
+    <div class="col-3 q-pr-lg">
+      <q-select
+        v-model="search.publicKey"
+        :options="customers.map(c => ({label: buildCustomerLabel(c), value: c.public_key}))"
+        label="Customer"
+        emit-value
+        class="text-wrap"
+      >
+      </q-select>
+    </div>
+    <div class="col-3 q-pr-lg">
+      <q-select
+        v-model="search.isPaid"
+        :options="ternaryOptions"
+        label="Paid"
+        emit-value
+      >
+      </q-select>
+    </div>
+    <div class="col-3 q-pr-lg">
+      <q-select
+        v-model="search.isShipped"
+        :options="ternaryOptions"
+        label="Shipped"
+        emit-value
+      >
+      </q-select>
+    </div>
+    <div class="col-3">
       <q-btn
         unelevated
-        color="secondary"
         outline
-        icon="refresh"
+        icon="search"
         @click="getOrders()"
-        class="float-left"
-        >Refresh Orders</q-btn
+        class="float-right"
+        >Search Orders</q-btn
       >
     </div>
   </div>
-  <div class="row">
+  <div class="row q-mt-md">
     <div class="col">
       <q-table
         flat
@@ -36,9 +63,18 @@
               />
             </q-td>
 
-            <q-td key="id" :props="props"> {{toShortId(props.row.id)}} </q-td>
-            <q-td key="total" :props="props"> {{props.row.total}} </q-td>
-            <!-- todo: currency per order -->
+            <q-td key="id" :props="props">
+              {{toShortId(props.row.id)}}
+              <q-badge v-if="props.row.isNew" color="orange">new</q-badge></q-td
+            >
+            <q-td key="total" :props="props">
+              {{satBtc(props.row.total)}}
+            </q-td>
+            <q-td key="fiat" :props="props">
+              <span v-if="props.row.extra.currency !== 'sat'">
+                {{orderTotal(props.row)}} {{props.row.extra.currency}}
+              </span>
+            </q-td>
 
             <q-td key="paid" :props="props">
               <q-checkbox
@@ -78,7 +114,9 @@
                   <div class="row items-center no-wrap q-mb-md">
                     <div class="col-1">Quantity</div>
                     <div class="col-1"></div>
-                    <div class="col-10">Name</div>
+                    <div class="col-4">Name</div>
+                    <div class="col-2">Price</div>
+                    <div class="col-4"></div>
                   </div>
                 </div>
                 <div class="col-1"></div>
@@ -92,12 +130,33 @@
                   >
                     <div class="col-1">{{item.quantity}}</div>
                     <div class="col-1">x</div>
-                    <div class="col-10">
-                      {{productOverview(props.row, item.product_id)}}
+                    <div class="col-4">
+                      {{productName(props.row, item.product_id)}}
                     </div>
+                    <div class="col-2">
+                      {{productPrice(props.row, item.product_id)}}
+                    </div>
+                    <div class="col-4"></div>
                   </div>
                 </div>
                 <div class="col-1"></div>
+              </div>
+              <div
+                v-if="props.row.extra.currency !== 'sat'"
+                class="row items-center no-wrap q-mb-md q-mt-md"
+              >
+                <div class="col-3 q-pr-lg">Exchange Rate (1 BTC):</div>
+                <div class="col-6 col-sm-8 q-pr-lg">
+                  <q-input
+                    filled
+                    dense
+                    readonly
+                    disabled
+                    :value="formatFiat(props.row.extra.btc_price, props.row.extra.currency)"
+                    type="text"
+                  ></q-input>
+                </div>
+                <div class="col-3 col-sm-1"></div>
               </div>
               <div class="row items-center no-wrap q-mb-md q-mt-md">
                 <div class="col-3 q-pr-lg">Order ID:</div>

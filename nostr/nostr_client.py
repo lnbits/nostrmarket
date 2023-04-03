@@ -70,7 +70,7 @@ class NostrClient:
     async def subscribe_to_direct_messages(self, public_key: str, since: int):
         in_messages_filter = {"kind": 4, "#p": [public_key]}
         out_messages_filter = {"kind": 4, "authors": [public_key]}
-        if since != 0:
+        if since and since != 0:
             in_messages_filter["since"] = since
             out_messages_filter["since"] = since
 
@@ -90,6 +90,15 @@ class NostrClient:
         )
         await self.send_req_queue.put(
             ["REQ", f"product-events:{public_key}", product_filter]
+        )
+
+    async def subscribe_to_user_profile(self, public_key: str, since: int):
+        profile_filter = {"kind": 0, "authors": [public_key]}
+        if since and since != 0:
+            profile_filter["since"] = since + 1
+
+        await self.send_req_queue.put(
+            ["REQ", f"user-profile-events:{public_key}", profile_filter]
         )
 
     async def unsubscribe_from_direct_messages(self, public_key: str):

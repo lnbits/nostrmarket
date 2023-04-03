@@ -2,8 +2,17 @@ async function orderList(path) {
   const template = await loadTemplateAsync(path)
   Vue.component('order-list', {
     name: 'order-list',
-    props: ['stall-id', 'adminkey', 'inkey'],
+    props: ['stall-id', 'customer-pubkey-filter', 'adminkey', 'inkey'],
     template,
+
+    watch: {
+      customerPubkeyFilter: async function (n) {
+        this.search.publicKey = n
+        this.search.isPaid = {label: 'All', id: null}
+        this.search.isShipped = {label: 'All', id: null}
+        await this.getOrders()
+      }
+    },
 
     data: function () {
       return {
@@ -12,6 +21,32 @@ async function orderList(path) {
         shippingMessage: '',
         showShipDialog: false,
         filter: '',
+        search: {
+          publicKey: '',
+          isPaid: {
+            label: 'All',
+            id: null
+          },
+          isShipped: {
+            label: 'All',
+            id: null
+          }
+        },
+        customers: [],
+        ternaryOptions: [
+          {
+            label: 'All',
+            id: null
+          },
+          {
+            label: 'Yes',
+            id: 'true'
+          },
+          {
+            label: 'No',
+            id: 'false'
+          }
+        ],
         ordersTable: {
           columns: [
             {
@@ -23,14 +58,20 @@ async function orderList(path) {
             {
               name: 'id',
               align: 'left',
-              label: 'ID',
+              label: 'Order ID',
               field: 'id'
             },
             {
               name: 'total',
               align: 'left',
-              label: 'Total',
+              label: 'Total Sats',
               field: 'total'
+            },
+            {
+              name: 'fiat',
+              align: 'left',
+              label: 'Total Fiat',
+              field: 'fiat'
             },
             {
               name: 'paid',
@@ -73,24 +114,66 @@ async function orderList(path) {
           'YYYY-MM-DD HH:mm'
         )
       },
-      productOverview: function (order, productId) {
+      satBtc(val, showUnit = true) {
+        return satOrBtc(val, showUnit, true)
+      },
+      formatFiat(value, currency) {
+        return Math.trunc(value) + ' ' + currency
+      },
+      productName: function (order, productId) {
         product = order.extra.products.find(p => p.id === productId)
         if (product) {
-          return `${product.name} (${product.price} ${order.extra.currency})`
+          return product.name
         }
         return ''
+      },
+      productPrice: function (order, productId) {
+        product = order.extra.products.find(p => p.id === productId)
+        if (product) {
+          return `${product.price} ${order.extra.currency}`
+        }
+        return ''
+      },
+      orderTotal: function (order) {
+        return order.items.reduce((t, item) => {
+          product = order.extra.products.find(p => p.id === item.product_id)
+          return t + item.quantity * product.price
+        }, 0)
       },
       getOrders: async function () {
         try {
           const ordersPath = this.stallId
-            ? `/stall/order/${this.stallId}`
-            : '/order'
+            ? `stall/order/${this.stallId}`
+            : 'order'
+
+          const query = []
+          if (this.search.publicKey) {
+            query.push(`pubkey=${this.search.publicKey}`)
+          }
+          if (this.search.isPaid.id) {
+            query.push(`paid=${this.search.isPaid.id}`)
+          }
+          if (this.search.isShipped.id) {
+            query.push(`shipped=${this.search.isShipped.id}`)
+          }
           const {data} = await LNbits.api.request(
             'GET',
-            '/nostrmarket/api/v1' + ordersPath,
+            `/nostrmarket/api/v1/${ordersPath}?${query.join('&')}`,
             this.inkey
           )
           this.orders = data.map(s => ({...s, expanded: false}))
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        }
+      },
+      getOrder: async function (orderId) {
+        try {
+          const {data} = await LNbits.api.request(
+            'GET',
+            `/nostrmarket/api/v1/order/${orderId}`,
+            this.inkey
+          )
+          return {...data, expanded: false, isNew: true}
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -117,6 +200,16 @@ async function orderList(path) {
         }
         this.showShipDialog = false
       },
+      addOrder: async function (data) {
+        if (
+          !this.search.publicKey ||
+          this.search.publicKey === data.customerPubkey
+        ) {
+          const order = await this.getOrder(data.orderId)
+          this.orders.unshift(order)
+        }
+      },
+
       showShipOrderDialog: function (order) {
         this.selectedOrder = order
         this.shippingMessage = order.shipped
@@ -129,10 +222,35 @@ async function orderList(path) {
       },
       customerSelected: function (customerPubkey) {
         this.$emit('customer-selected', customerPubkey)
+      },
+      getCustomers: async function () {
+        try {
+          const {data} = await LNbits.api.request(
+            'GET',
+            '/nostrmarket/api/v1/customers',
+            this.inkey
+          )
+          this.customers = data
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        }
+      },
+      buildCustomerLabel: function (c) {
+        let label = `${c.profile.name || 'unknown'} ${c.profile.about || ''}`
+        if (c.unread_messages) {
+          label += `[new: ${c.unread_messages}]`
+        }
+        label += `  (${c.public_key.slice(0, 16)}...${c.public_key.slice(
+          c.public_key.length - 16
+        )}`
+        return label
       }
     },
     created: async function () {
-      await this.getOrders()
+      if (this.stallId) {
+        await this.getOrders()
+      }
+      await this.getCustomers()
     }
   })
 }

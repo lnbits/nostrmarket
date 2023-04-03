@@ -21,6 +21,7 @@ const merchant = async () => {
         merchant: {},
         shippingZones: [],
         activeChatCustomer: '',
+        orderPubkey: null,
         showKeys: false,
         importKeyDialog: {
           show: false,
@@ -102,10 +103,43 @@ const merchant = async () => {
       },
       customerSelectedForOrder: function (customerPubkey) {
         this.activeChatCustomer = customerPubkey
+      },
+      filterOrdersForCustomer: function (customerPubkey) {
+        this.orderPubkey = customerPubkey
+      },
+      waitForNotifications: async function () {
+        try {
+          const scheme = location.protocol === 'http:' ? 'ws' : 'wss'
+          const port = location.port ? `:${location.port}` : ''
+          const wsUrl = `${scheme}://${document.domain}${port}/api/v1/ws/${this.merchant.id}`
+          const wsConnection = new WebSocket(wsUrl)
+          wsConnection.onmessage = async e => {
+            const data = JSON.parse(e.data)
+            if (data.type === 'new-order') {
+              this.$q.notify({
+                timeout: 5000,
+                type: 'positive',
+                message: 'New Order'
+              })
+              await this.$refs.orderListRef.addOrder(data)
+            } else if (data.type === 'new-customer') {
+            } else if (data.type === 'new-direct-message') {
+              await this.$refs.directMessagesRef.handleNewMessage(data)
+            }
+          }
+        } catch (error) {
+          this.$q.notify({
+            timeout: 5000,
+            type: 'warning',
+            message: 'Failed to watch for updated',
+            caption: `${error}`
+          })
+        }
       }
     },
     created: async function () {
       await this.getMerchant()
+      await this.waitForNotifications()
     }
   })
 }

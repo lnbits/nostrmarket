@@ -2,7 +2,7 @@ import json
 import time
 from abc import abstractmethod
 from sqlite3 import Row
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from pydantic import BaseModel
 
@@ -313,6 +313,8 @@ class OrderExtra(BaseModel):
     products: List[ProductOverview]
     currency: str
     btc_price: str
+    shipping_cost: float = 0
+    shipping_cost_sat: float = 0
 
     @classmethod
     async def from_products(cls, products: List[Product]):
@@ -329,6 +331,7 @@ class PartialOrder(BaseModel):
     event_created_at: Optional[int]
     public_key: str
     merchant_public_key: str
+    shipping_id: str
     items: List[OrderItem]
     contact: Optional[OrderContact]
     address: Optional[str]
@@ -356,20 +359,25 @@ class PartialOrder(BaseModel):
                     f"Order ({self.id}) has products from different stalls"
                 )
 
-    async def total_sats(self, products: List[Product]) -> float:
+    async def costs_in_sats(
+        self, products: List[Product], shipping_cost: float
+    ) -> Tuple[float, float]:
         product_prices = {}
         for p in products:
             product_prices[p.id] = p
 
-        amount: float = 0  # todo
+        product_cost: float = 0  # todo
         for item in self.items:
             price = product_prices[item.product_id].price
             currency = product_prices[item.product_id].config.currency or "sat"
             if currency != "sat":
                 price = await fiat_amount_as_satoshis(price, currency)
-            amount += item.quantity * price
+            product_cost += item.quantity * price
 
-        return amount
+        if currency != "sat":
+            shipping_cost = await fiat_amount_as_satoshis(shipping_cost, currency)
+
+        return product_cost, shipping_cost
 
 
 class Order(PartialOrder):
@@ -427,3 +435,25 @@ class DirectMessage(PartialDirectMessage):
     def from_row(cls, row: Row) -> "DirectMessage":
         dm = cls(**dict(row))
         return dm
+
+
+######################################## CUSTOMERS ########################################
+
+
+class CustomerProfile(BaseModel):
+    name: Optional[str]
+    about: Optional[str]
+
+
+class Customer(BaseModel):
+    merchant_id: str
+    public_key: str
+    event_created_at: Optional[int]
+    profile: Optional[CustomerProfile]
+    unread_messages: int = 0
+
+    @classmethod
+    def from_row(cls, row: Row) -> "Customer":
+        customer = cls(**dict(row))
+        customer.profile = CustomerProfile(**json.loads(row["meta"]))
+        return customer

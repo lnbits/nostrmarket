@@ -86,6 +86,7 @@ async def m001_initial(db):
             order_items TEXT NOT NULL,
             address TEXT,
             total REAL NOT NULL,
+            shipping_id TEXT NOT NULL,
             stall_id TEXT NOT NULL,
             invoice_id TEXT NOT NULL,
             paid BOOLEAN NOT NULL DEFAULT false,
@@ -125,3 +126,18 @@ async def m001_initial(db):
         await db.execute(
             "CREATE INDEX idx_event_id ON nostrmarket.direct_messages (event_id)"
         )
+
+    """
+    Initial customers table.
+    """
+    await db.execute(
+        """
+        CREATE TABLE nostrmarket.customers (
+            merchant_id TEXT NOT NULL,
+            public_key TEXT NOT NULL,
+            event_created_at INTEGER,
+            unread_messages INTEGER NOT NULL DEFAULT 1,
+            meta TEXT NOT NULL DEFAULT '{}'
+        );
+        """
+    )

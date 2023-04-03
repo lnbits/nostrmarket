@@ -59,6 +59,21 @@
           ></stall-list>
         </q-card-section>
       </q-card>
+      <q-card class="q-mt-lg">
+        <q-card-section>
+          <div class="row">
+            <div class="col-12">
+              <order-list
+                ref="orderListRef"
+                :adminkey="g.user.wallets[0].adminkey"
+                :inkey="g.user.wallets[0].inkey"
+                :customer-pubkey-filter="orderPubkey"
+                @customer-selected="customerSelectedForOrder"
+              ></order-list>
+            </div>
+          </div>
+        </q-card-section>
+      </q-card>
     </div>
     <q-card v-else>
       <q-card-section>
@@ -133,9 +148,11 @@
     </div>
     <div v-if="merchant && merchant.id" class="col-12">
       <direct-messages
-        :active-public-key="activeChatCustomer"
+        ref="directMessagesRef"
         :inkey="g.user.wallets[0].inkey"
         :adminkey="g.user.wallets[0].adminkey"
+        :active-chat-customer="activeChatCustomer"
+        @customer-selected="filterOrdersForCustomer"
       >
       </direct-messages>
     </div>

@@ -2,23 +2,38 @@ async function directMessages(path) {
   const template = await loadTemplateAsync(path)
   Vue.component('direct-messages', {
     name: 'direct-messages',
-    props: ['active-public-key', 'adminkey', 'inkey'],
+    props: ['active-chat-customer', 'adminkey', 'inkey'],
     template,
 
     watch: {
+      activeChatCustomer: async function (n) {
+        this.activePublicKey = n
+      },
       activePublicKey: async function (n) {
         await this.getDirectMessages(n)
       }
     },
     data: function () {
       return {
-        customersPublicKeys: [],
+        customers: [],
+        unreadMessages: 0,
+        activePublicKey: null,
         messages: [],
         newMessage: ''
       }
     },
     methods: {
       sendMessage: async function () {},
+      buildCustomerLabel: function (c) {
+        let label = `${c.profile.name || 'unknown'} ${c.profile.about || ''}`
+        if (c.unread_messages) {
+          label += `[new: ${c.unread_messages}]`
+        }
+        label += `  (${c.public_key.slice(0, 16)}...${c.public_key.slice(
+          c.public_key.length - 16
+        )}`
+        return label
+      },
       getDirectMessages: async function (pubkey) {
         if (!pubkey) {
           this.messages = []
@@ -31,23 +46,21 @@ async function directMessages(path) {
             this.inkey
           )
           this.messages = data
-          console.log(
-            '### this.messages',
-            this.messages.map(m => m.message)
-          )
+
           this.focusOnChatBox(this.messages.length - 1)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
       },
-      getCustomersPublicKeys: async function () {
+      getCustomers: async function () {
         try {
           const {data} = await LNbits.api.request(
             'GET',
             '/nostrmarket/api/v1/customers',
             this.inkey
           )
-          this.customersPublicKeys = data
+          this.customers = data
+          this.unreadMessages = data.filter(c => c.unread_messages).length
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -70,8 +83,19 @@ async function directMessages(path) {
           LNbits.utils.notifyApiError(error)
         }
       },
+      handleNewMessage: async function (data) {
+        if (data.customerPubkey === this.activePublicKey) {
+          await this.getDirectMessages(this.activePublicKey)
+        } else {
+          await this.getCustomers()
+        }
+      },
+      showClientOrders: function () {
+        this.$emit('customer-selected', this.activePublicKey)
+      },
       selectActiveCustomer: async function () {
         await this.getDirectMessages(this.activePublicKey)
+        await this.getCustomers()
       },
       focusOnChatBox: function (index) {
         setTimeout(() => {
@@ -85,7 +109,7 @@ async function directMessages(path) {
       }
     },
     created: async function () {
-      await this.getCustomersPublicKeys()
+      await this.getCustomers()
     }
   })
 }
