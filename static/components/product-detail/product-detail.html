@@ -1,20 +1,21 @@
 <div class="row q-mt-sm">
   <div class="col-lg-5 col-md-5 col-sm-12 col-xs-12">
-    <div class="q-pa-md">
+    <div class="q-pa-md" v-if="product.images && product.images[0]">
       <q-carousel
-        v-if="product.images"
         swipeable
         animated
         v-model="slide"
         thumbnails
         infinite
-        v-for="(img, i) in product.images"
-        :key="i"
+        arrows
+        transition-prev="slide-right"
+        transition-next="slide-left"
       >
         <q-carousel-slide
+          v-for="(img, i) in product.images"
           :name="i + 1"
+          :key="i"
           :img-src="img"
-          style="/*background-size: contain; background-repeat: no-repeat*/"
         ></q-carousel-slide>
       </q-carousel>
       <q-img
