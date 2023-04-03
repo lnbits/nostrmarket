@@ -1,6 +1,6 @@
 <q-card class="card--product">
   <q-img
-    :src="product.images.length > 0 ? product.images[0] : '/nostrmarket/static/images/placeholder.png'"
+    :src="(product.images && product.images.length > 0 && product.images[0]) ? product.images[0] : '/nostrmarket/static/images/placeholder.png'"
     alt="Product Image"
     loading="lazy"
     spinner-color="white"
