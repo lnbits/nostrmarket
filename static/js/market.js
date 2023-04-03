@@ -327,7 +327,6 @@ const market = async () => {
         return LNbits.utils.formatCurrency(amount, unit)
       },
       async addPubkey(pubkey) {
-        console.log(pubkey, this.inputPubkey)
         if (!pubkey) {
           pubkey = String(this.inputPubkey).trim()
         }
@@ -340,9 +339,6 @@ const market = async () => {
               pubkey = data.pubkey
               givenRelays = data.relays
             }
-            console.log(pubkey)
-            this.pubkeys.add(pubkey)
-            this.inputPubkey = null
           } catch (err) {
             console.error(err)
           }
@@ -350,6 +346,7 @@ const market = async () => {
           pubkey = pubkey
         }
         this.pubkeys.add(pubkey)
+        this.inputPubkey = null
         this.$q.localStorage.set(
           `diagonAlley.merchants`,
           Array.from(this.pubkeys)

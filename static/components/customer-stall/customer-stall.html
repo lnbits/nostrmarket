@@ -160,11 +160,16 @@
         ></q-input>
         <p>Select the shipping zone:</p>
         <div class="row q-mt-lg">
-          <q-option-group
-            :options="stall.shipping.map(s => ({label: s.countries.toString(), value: s.id}))"
-            type="radio"
-            emit-value
+          <q-select
+            style="min-width: 200px"
+            filled
+            dense
+            stack-label
             v-model="checkoutDialog.data.shippingzone"
+            emit-value
+            map-options
+            :options="stall.shipping.map(s => ({label: s.countries.toString(), value: s.id}))"
+            label="Shipping Zone"
           />
         </div>
         <div class="row q-mt-lg">
