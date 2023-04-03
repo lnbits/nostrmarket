@@ -27,6 +27,7 @@ async function stallDetails(path) {
             id: null,
             name: '',
             categories: [],
+            images: [],
             image: null,
             price: 0,
 
@@ -170,22 +171,23 @@ async function stallDetails(path) {
             }
           })
       },
-      imageAdded(file) {
-        const image = new Image()
-        image.src = URL.createObjectURL(file)
-        image.onload = async () => {
-          let fit = imgSizeFit(image)
-          let canvas = document.createElement('canvas')
-          canvas.setAttribute('width', fit.width)
-          canvas.setAttribute('height', fit.height)
-          output = await pica.resize(image, canvas)
-          this.productDialog.data.image = output.toDataURL('image/jpeg', 0.4)
-          this.productDialog = {...this.productDialog}
+      addProductImage: function () {
+        if (!isValidImageUrl(this.productDialog.data.image)) {
+          this.$q.notify({
+            type: 'warning',
+            message: 'Not a valid image URL',
+            timeout: 5000
+          })
+          return
         }
-      },
-      imageCleared() {
+        this.productDialog.data.images.push(this.productDialog.data.image)
         this.productDialog.data.image = null
-        this.productDialog = {...this.productDialog}
+      },
+      removeProductImage: function (imageUrl) {
+        const index = this.productDialog.data.images.indexOf(imageUrl)
+        if (index !== -1) {
+          this.productDialog.data.images.splice(index, 1)
+        }
       },
       getProducts: async function () {
         try {
@@ -205,7 +207,7 @@ async function stallDetails(path) {
           id: this.productDialog.data.id,
           name: this.productDialog.data.name,
 
-          image: this.productDialog.data.image,
+          images: this.productDialog.data.images,
           price: this.productDialog.data.price,
           quantity: this.productDialog.data.quantity,
           categories: this.productDialog.data.categories,
@@ -294,6 +296,7 @@ async function stallDetails(path) {
           description: '',
           categories: [],
           image: null,
+          images: [],
           price: 0,
           quantity: 0,
           config: {
