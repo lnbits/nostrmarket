@@ -315,17 +315,17 @@ async def _handle_dirrect_message(
             incoming=True,
         )
         await create_direct_message(merchant_id, dm)
+        await websocketUpdater(
+            merchant_id,
+            json.dumps({"type": "new-direct-message", "customerPubkey": from_pubkey}),
+        )
+
         if order:
             order["public_key"] = from_pubkey
             order["merchant_public_key"] = merchant_public_key
             order["event_id"] = event_id
             order["event_created_at"] = event_created_at
             return await _handle_new_order(PartialOrder(**order))
-
-        await websocketUpdater(
-            merchant_id,
-            json.dumps({"type": "new-direct-message", "customerPubkey": from_pubkey}),
-        )
 
         return None
     except Exception as ex:
@@ -355,10 +355,6 @@ async def _handle_new_customer(event, merchant):
         merchant.id, Customer(merchant_id=merchant.id, public_key=event.pubkey)
     )
     await nostr_client.subscribe_to_user_profile(event.pubkey, 0)
-    await websocketUpdater(
-        merchant.id,
-        json.dumps({"type": "new-customer"}),
-    )
 
 
 async def _handle_customer_profile_update(event: NostrEvent):

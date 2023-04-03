@@ -217,29 +217,10 @@ class PartialProduct(BaseModel):
     stall_id: str
     name: str
     categories: List[str] = []
-    image: Optional[str]
+    images: List[str] = []
     price: float
     quantity: int
     config: ProductConfig = ProductConfig()
-
-    def validate_product(self):
-        if self.image:
-            image_is_url = self.image.startswith("https://") or self.image.startswith(
-                "http://"
-            )
-
-            if not image_is_url:
-
-                def size(b64string):
-                    return int((len(b64string) * 3) / 4 - b64string.count("=", -2))
-
-                image_size = size(self.image) / 1024
-                if image_size > 100:
-                    raise ValueError(
-                        f"""
-                                Image size is too big, {int(image_size)}Kb. 
-                                Max: 100kb, Compress the image at https://tinypng.com, or use an URL."""
-                    )
 
 
 class Product(PartialProduct, Nostrable):
@@ -251,7 +232,7 @@ class Product(PartialProduct, Nostrable):
             "stall_id": self.stall_id,
             "name": self.name,
             "description": self.config.description,
-            "image": self.image,
+            "images": self.images,
             "currency": self.config.currency,
             "price": self.price,
             "quantity": self.quantity,
@@ -285,6 +266,7 @@ class Product(PartialProduct, Nostrable):
     def from_row(cls, row: Row) -> "Product":
         product = cls(**dict(row))
         product.config = ProductConfig(**json.loads(row["meta"]))
+        product.images = json.loads(row["image_urls"])
         product.categories = json.loads(row["category_list"])
         return product
 
