@@ -64,13 +64,13 @@ async function orderList(path) {
             {
               name: 'total',
               align: 'left',
-              label: 'Total',
+              label: 'Total Sats',
               field: 'total'
             },
             {
               name: 'fiat',
               align: 'left',
-              label: 'Fiat',
+              label: 'Total Fiat',
               field: 'fiat'
             },
             {
@@ -136,7 +136,6 @@ async function orderList(path) {
       },
       orderTotal: function (order) {
         return order.items.reduce((t, item) => {
-          console.log('### t, o', t, item)
           product = order.extra.products.find(p => p.id === item.product_id)
           return t + item.quantity * product.price
         }, 0)

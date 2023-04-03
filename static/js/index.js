@@ -113,9 +113,7 @@ const merchant = async () => {
           const port = location.port ? `:${location.port}` : ''
           const wsUrl = `${scheme}://${document.domain}${port}/api/v1/ws/${this.merchant.id}`
           const wsConnection = new WebSocket(wsUrl)
-          console.log('### waiting for events')
           wsConnection.onmessage = async e => {
-            console.log('### e', e)
             const data = JSON.parse(e.data)
             if (data.type === 'new-order') {
               this.$q.notify({
@@ -126,6 +124,7 @@ const merchant = async () => {
               await this.$refs.orderListRef.addOrder(data)
             } else if (data.type === 'new-customer') {
             } else if (data.type === 'new-direct-message') {
+              await this.$refs.directMessagesRef.handleNewMessage(data)
             }
           }
         } catch (error) {

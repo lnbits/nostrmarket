@@ -86,6 +86,7 @@ async def m001_initial(db):
             order_items TEXT NOT NULL,
             address TEXT,
             total REAL NOT NULL,
+            shipping_id TEXT NOT NULL,
             stall_id TEXT NOT NULL,
             invoice_id TEXT NOT NULL,
             paid BOOLEAN NOT NULL DEFAULT false,

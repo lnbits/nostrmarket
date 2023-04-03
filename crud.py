@@ -393,12 +393,13 @@ async def create_order(merchant_id: str, o: Order) -> Order:
             address, 
             contact_data, 
             extra_data, 
-            order_items, 
+            order_items,
+            shipping_id,
             stall_id, 
             invoice_id, 
             total
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(event_id) DO NOTHING
         """,
         (
@@ -412,6 +413,7 @@ async def create_order(merchant_id: str, o: Order) -> Order:
             json.dumps(o.contact.dict() if o.contact else {}),
             json.dumps(o.extra.dict()),
             json.dumps([i.dict() for i in o.items]),
+            o.shipping_id,
             o.stall_id,
             o.invoice_id,
             o.total,

@@ -83,6 +83,13 @@ async function directMessages(path) {
           LNbits.utils.notifyApiError(error)
         }
       },
+      handleNewMessage: async function (data) {
+        if (data.customerPubkey === this.activePublicKey) {
+          await this.getDirectMessages(this.activePublicKey)
+        } else {
+          await this.getCustomers()
+        }
+      },
       showClientOrders: function () {
         this.$emit('customer-selected', this.activePublicKey)
       },

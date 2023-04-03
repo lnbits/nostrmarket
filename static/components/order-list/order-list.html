@@ -141,8 +141,11 @@
                 </div>
                 <div class="col-1"></div>
               </div>
-              <div v-if="props.row.extra.currency !== 'sat'" class="row items-center no-wrap q-mb-md q-mt-md">
-                <div class="col-3 q-pr-lg">Exchange Rate:</div>
+              <div
+                v-if="props.row.extra.currency !== 'sat'"
+                class="row items-center no-wrap q-mb-md q-mt-md"
+              >
+                <div class="col-3 q-pr-lg">Exchange Rate (1 BTC):</div>
                 <div class="col-6 col-sm-8 q-pr-lg">
                   <q-input
                     filled
