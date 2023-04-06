@@ -266,7 +266,7 @@ class Product(PartialProduct, Nostrable):
     def from_row(cls, row: Row) -> "Product":
         product = cls(**dict(row))
         product.config = ProductConfig(**json.loads(row["meta"]))
-        product.images = json.loads(row["image_urls"])
+        product.images = json.loads(row["image_urls"]) if "image_urls" in row else []
         product.categories = json.loads(row["category_list"])
         return product
 
