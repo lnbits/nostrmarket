@@ -18,6 +18,12 @@ class NostrClient:
         self.send_req_queue: Queue = Queue()
         self.ws: WebSocketApp = None
 
+    async def restart(self):
+        await self.send_req_queue.put(ValueError("Restarting NostrClient..."))
+        await self.recieve_event_queue.put(ValueError("Restarting NostrClient..."))
+        self.ws.close()
+        self.ws = None
+
     async def connect_to_nostrclient_ws(
         self, on_open: Callable, on_message: Callable
     ) -> WebSocketApp:
@@ -39,7 +45,10 @@ class NostrClient:
         return ws
 
     async def get_event(self):
-        return await self.recieve_event_queue.get()
+        value = await self.recieve_event_queue.get()
+        if isinstance(value, ValueError):
+            raise value
+        return value
 
     async def run_forever(self):
         def on_open(_):
@@ -48,7 +57,9 @@ class NostrClient:
         def on_message(_, message):
             self.recieve_event_queue.put_nowait(message)
 
-        while True:
+        running = True
+
+        while running:
             try:
                 req = None
                 if not self.ws:
@@ -56,7 +67,11 @@ class NostrClient:
                     # be sure the connection is open
                     await asyncio.sleep(3)
                 req = await self.send_req_queue.get()
-                self.ws.send(json.dumps(req))
+                if isinstance(req, ValueError):
+                    running = False
+                    logger.warning(str(req))
+                else:
+                    self.ws.send(json.dumps(req))
             except Exception as ex:
                 logger.warning(ex)
                 if req:
