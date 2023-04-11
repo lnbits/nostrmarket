@@ -138,15 +138,21 @@ const merchant = async () => {
         }
       },
       restartNostrConnection: async function () {
-        try {
-          await LNbits.api.request(
-            'PUT',
-            '/nostrmarket/api/v1/restart',
-            this.g.user.wallets[0].adminkey
+        LNbits.utils
+          .confirmDialog(
+            'Are you sure you want to reconnect to the nostrcient extension?'
           )
-        } catch (error) {
-          LNbits.utils.notifyApiError(error)
-        }
+          .onOk(async () => {
+            try {
+              await LNbits.api.request(
+                'PUT',
+                '/nostrmarket/api/v1/restart',
+                this.g.user.wallets[0].adminkey
+              )
+            } catch (error) {
+              LNbits.utils.notifyApiError(error)
+            }
+          })
       }
     },
     created: async function () {

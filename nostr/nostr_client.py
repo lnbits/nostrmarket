@@ -22,6 +22,7 @@ class NostrClient:
         await self.send_req_queue.put(ValueError("Restarting NostrClient..."))
         await self.recieve_event_queue.put(ValueError("Restarting NostrClient..."))
         self.ws.close()
+        self.ws = None
 
     async def connect_to_nostrclient_ws(
         self, on_open: Callable, on_message: Callable
@@ -68,7 +69,7 @@ class NostrClient:
                 req = await self.send_req_queue.get()
                 if isinstance(req, ValueError):
                     running = False
-                    logger.warning("Nostr Client stopping")
+                    logger.warning(str(req))
                 else:
                     self.ws.send(json.dumps(req))
             except Exception as ex:
