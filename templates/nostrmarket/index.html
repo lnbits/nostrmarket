@@ -133,6 +133,21 @@
   </div>
 
   <div class="col-12 col-md-5 q-gutter-y-md">
+    <div v-if="g.user.admin" class="col-12 q-mb-lg">
+      <q-card>
+        <q-card-section class="q-pa-md">
+          <q-btn
+            label="Restart Nostr Connection"
+            color="pink"
+            @click="restartNostrConnection"
+          >
+            <q-tooltip>
+              Restart the connection to the nostrclient extension
+            </q-tooltip>
+          </q-btn>
+        </q-card-section>
+      </q-card>
+    </div>
     <div class="col-12">
       <q-card>
         <q-card-section>

@@ -826,6 +826,14 @@ async def api_list_currencies_available():
     return list(currencies.keys())
 
 
+@nostrmarket_ext.put("/api/v1/restart")
+async def restart_nostr_client(wallet: WalletTypeInfo = Depends(require_admin_key)):
+    try:
+        await nostr_client.restart()
+    except Exception as ex:
+        logger.warning(ex)
+
+
 @nostrmarket_ext.delete("/api/v1", status_code=HTTPStatus.OK)
 async def api_stop(wallet: WalletTypeInfo = Depends(check_admin)):
     for t in scheduled_tasks:

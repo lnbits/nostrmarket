@@ -136,6 +136,17 @@ const merchant = async () => {
             caption: `${error}`
           })
         }
+      },
+      restartNostrConnection: async function () {
+        try {
+          await LNbits.api.request(
+            'PUT',
+            '/nostrmarket/api/v1/restart',
+            this.g.user.wallets[0].adminkey
+          )
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        }
       }
     },
     created: async function () {
