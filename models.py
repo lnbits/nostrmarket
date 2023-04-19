@@ -109,7 +109,7 @@ class Merchant(PartialMerchant, Nostrable):
         delete_event = NostrEvent(
             pubkey=pubkey,
             created_at=round(time.time()),
-            kind=0,
+            kind=5,
             tags=[],
             content=json.dumps(content, separators=(",", ":"), ensure_ascii=False),
         )
