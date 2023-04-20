@@ -1,6 +1,8 @@
 ## Nostr Market
 
-**This extension follows [NIP-45](https://github.com/nostr-protocol/nips/blob/master/45.md)**
+**Demo at Nostrica <a href="https://www.youtube.com/live/2NueacYJovA?feature=share&t=6846">https://www.youtube.com/live/2NueacYJovA?feature=share&t=6846</a>**
+
+**This extension follows [NIP-15](https://github.com/nostr-protocol/nips/blob/master/15.md)**
 
 **Original protocol for [Diagon Alley](https://github.com/lnbits/Diagon-Alley) (resilient marketplaces)**
 
