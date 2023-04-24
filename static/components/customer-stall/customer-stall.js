@@ -270,7 +270,7 @@ async function customerStall(path) {
           items: Array.from(this.cart.products, p => {
             return {product_id: p[0], quantity: p[1].quantity}
           }),
-          shipping_id: orderData.shippingzone
+          shipping_id: orderData.shippingzone,
         }
         let created_at = Math.floor(Date.now() / 1000)
         orderObj.id = await hash(

@@ -61,7 +61,8 @@ const market = async () => {
         activePage: 'market',
         activeStall: null,
         activeProduct: null,
-        pool: null
+        pool: null,
+        config: null
       }
     },
     computed: {
@@ -132,6 +133,23 @@ const market = async () => {
       let merchant_pubkey = params.get('merchant_pubkey')
       let stall_id = params.get('stall_id')
       let product_id = params.get('product_id')
+      let naddr = params.get('naddr')
+
+      if(naddr) {
+        try {
+          let {type, data} = NostrTools.nip19.decode(naddr)
+          if(type == 'naddr') { // just double check
+            d = data.identifier
+            kind = data.kind
+            pubkey = data.pubkey
+            givenRelays = data.relays
+          }
+        }catch (err){
+          console.error(err)
+        }
+        
+
+      }
 
       // What component to render on start
       if (stall_id) {
