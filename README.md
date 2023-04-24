@@ -1,4 +1,5 @@
-## Nostr Market
+# Nostr Market
+## This is an [LNbits](https://github.com/lnbits/lnbits) extension
 
 **Demo at Nostrica <a href="https://www.youtube.com/live/2NueacYJovA?feature=share&t=6846">https://www.youtube.com/live/2NueacYJovA?feature=share&t=6846</a>**
 
