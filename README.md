@@ -46,6 +46,7 @@ Click on the "Plus" button to open the stall details and click "New Product" to 
 ![create product](https://i.imgur.com/zNG8wZx.png)
 
 Fill the necessary fields on the dialog
+
 ![product dialog](https://i.imgur.com/lAmkuvy.png)
 
 - The product name
@@ -62,9 +63,11 @@ Create, update or delete products in _Products_ tab
 ![products tab](https://i.imgur.com/ilbxeOG.png)
 
 And check your orders on the _Orders_ tab
+
 ![orders tab](https://i.imgur.com/RiqMKUM.png)
 
 When you get an order, you can see the details by clicking on the "Plus" sign for the order
+
 ![order details](https://i.imgur.com/PtYbaPm.png)
 
 - Ordered products
@@ -76,6 +79,7 @@ When you get an order, you can see the details by clicking on the "Plus" sign fo
 If applicable, you can set as shipped when shipping is processed.
 
 You also have a _Chat Box_ to chat with customer
+
 ![chat box](https://i.imgur.com/fhPP9IB.png)
 
 ## Diagon Alley Clients
