@@ -271,6 +271,7 @@ async function customerStall(path) {
             return {product_id: p[0], quantity: p[1].quantity}
           }),
           shipping_id: orderData.shippingzone,
+          type: 0
         }
         let created_at = Math.floor(Date.now() / 1000)
         orderObj.id = await hash(
