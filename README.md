@@ -1,6 +1,8 @@
 # Nostr Market - <small>[LNbits](https://github.com/lnbits/lnbits) extension</small>
 <small>For more about LNBits extension check [this tutorial](https://github.com/lnbits/lnbits/wiki/LNbits-Extensions)</small>
 
+Nostrmarket uses the [Nostrclient](https://github.com/lnbits/nostrclient), an extension that makes _nostrfying_ other extensions easy
+
 **Demo at Nostrica <a href="https://www.youtube.com/live/2NueacYJovA?feature=share&t=6846">https://www.youtube.com/live/2NueacYJovA?feature=share&t=6846</a>**
 
 **This extension follows [NIP-15](https://github.com/nostr-protocol/nips/blob/master/15.md)**
