@@ -138,17 +138,16 @@ const market = async () => {
       if(naddr) {
         try {
           let {type, data} = NostrTools.nip19.decode(naddr)
-          if(type == 'naddr') { // just double check
-            d = data.identifier
-            kind = data.kind
-            pubkey = data.pubkey
-            givenRelays = data.relays
+          if(type == 'naddr' && data.kind == '30019') { // just double check
+            this.config = {
+              d: data.identifier,
+              pubkey: data.pubkey,
+              relays: data.relays
+            }
           }
         }catch (err){
           console.error(err)
         }
-        
-
       }
 
       // What component to render on start
@@ -272,6 +271,27 @@ const market = async () => {
       async initNostr() {
         this.$q.loading.show()
         const pool = new NostrTools.SimplePool()
+        
+        // If there is an naddr in the URL, get it and parse content
+        if (this.config) {  
+          // add relays to the set   
+          this.config.relays.forEach(r => this.relays.add(r))
+          await pool.get(this.config.relays, {
+            kinds: [30019],
+            limit: 1,
+            authors: [this.config.pubkey],
+            '#d': [this.config.d]
+          }).then(event => {
+            if(!event) return
+            this.config.opts = JSON.parse(event.content)
+            // add merchants 
+            this.config.opts?.merchants.forEach(m => this.addPubkey(m))
+            // change theme
+            let {theme} = this.config.opts?.ui
+            theme && document.body.setAttribute('data-theme', theme)
+          }).catch(err => console.error(err))          
+        }
+
         let relays = Array.from(this.relays)
 
         // Get metadata and market data from the pubkeys
