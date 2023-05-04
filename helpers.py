@@ -4,6 +4,7 @@ import secrets
 from typing import Any, Optional, Tuple
 
 import secp256k1
+from bech32 import bech32_decode, convertbits
 from cffi import FFI
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -80,3 +81,21 @@ def order_from_json(s: str) -> Tuple[Optional[Any], Optional[str]]:
         return (order, s) if (type(order) is dict) and "items" in order else (None, s)
     except ValueError:
         return None, s
+
+
+def normalize_public_key(pubkey: str) -> str:
+    if pubkey.startswith("npub1"):
+        _, decoded_data = bech32_decode(pubkey)
+        if not decoded_data:
+            raise ValueError("Public Key is not valid npub")
+
+        decoded_data_bits = convertbits(decoded_data, 5, 8, False)
+        if not decoded_data_bits:
+            raise ValueError("Public Key is not valid npub")
+        return bytes(decoded_data_bits).hex()
+
+    # check if valid hex
+    if len(pubkey) != 64:
+        raise ValueError("Public Key is not valid hex")
+    int(pubkey, 16)
+    return pubkey

@@ -352,7 +352,7 @@ async def _handle_new_order(order: PartialOrder) -> Optional[str]:
     return None
 
 
-async def _handle_new_customer(event, merchant):
+async def _handle_new_customer(event, merchant: Merchant):
     await create_customer(
         merchant.id, Customer(merchant_id=merchant.id, public_key=event.pubkey)
     )
