@@ -26,14 +26,31 @@
       <q-separator></q-separator>
     </q-card-section>
     <q-card-section>
-      <q-select
-        v-model="activePublicKey"
-        :options="customers.map(c => ({label: buildCustomerLabel(c), value: c.public_key}))"
-        label="Select Customer"
-        emit-value
-        @input="selectActiveCustomer()"
-      >
-      </q-select>
+      <div class="row">
+        <div class="col-10">
+          <q-select
+          v-model="activePublicKey"
+          :options="customers.map(c => ({label: buildCustomerLabel(c), value: c.public_key}))"
+          label="Select Customer"
+          emit-value
+          @input="selectActiveCustomer()"
+        >
+        </q-select>
+        </div>
+        <div class="col-2">
+          <q-btn
+          label="Add"
+          color="green"
+          class="float-right q-mt-md"
+          @click="showAddPublicKey = true"
+        >
+          <q-tooltip>
+            Add a public key to chat with
+          </q-tooltip>
+        </q-btn>
+        </div>
+      </div>
+
     </q-card-section>
     <q-card-section>
       <div class="chat-container" ref="chatCard">
@@ -76,4 +93,30 @@
       </div>
     </q-card-section>
   </q-card>
+  <div>
+    <q-dialog v-model="showAddPublicKey" position="top">
+      <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+        <q-form @submit="addPublicKey" class="q-gutter-md">
+          <q-input
+            filled
+            dense
+            v-model.trim="newPublicKey"
+            label="Public Key (hex or nsec)"
+          ></q-input>
+          <div class="row q-mt-lg">
+            <q-btn
+              unelevated
+              color="primary"
+              :disable="!newPublicKey"
+              type="submit"
+              >Add</q-btn
+            >
+            <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+              >Cancel</q-btn
+            >
+          </div>
+        </q-form>
+      </q-card>
+    </q-dialog>
+  </div>
 </div>

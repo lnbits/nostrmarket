@@ -13,10 +13,12 @@ from lnbits.decorators import (
     require_admin_key,
     require_invoice_key,
 )
+from lnbits.extensions.nostrmarket.helpers import normalize_public_key
 from lnbits.utils.exchange_rates import currencies
 
 from . import nostr_client, nostrmarket_ext, scheduled_tasks
 from .crud import (
+    create_customer,
     create_direct_message,
     create_merchant,
     create_product,
@@ -31,6 +33,7 @@ from .crud import (
     delete_product,
     delete_stall,
     delete_zone,
+    get_customer,
     get_customers,
     get_direct_messages,
     get_merchant_by_pubkey,
@@ -815,6 +818,41 @@ async def api_get_customers(
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create message",
+        )
+
+
+@nostrmarket_ext.post("/api/v1/customers")
+async def api_createcustomer(
+    data: Customer,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> Customer:
+
+    try:
+        pubkey = normalize_public_key(data.public_key)
+
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "A merchant does not exists for this user"
+        assert merchant.id == data.merchant_id, "Invalid merchant id for user"
+
+        existing_customer = await get_customer(merchant.id, pubkey)
+        assert existing_customer == None, "This public key already exists"
+
+        customer = await create_customer(
+            merchant.id, Customer(merchant_id=merchant.id, public_key=pubkey)
+        )
+        await nostr_client.subscribe_to_user_profile(pubkey, 0)
+
+        return customer
+    except (ValueError, AssertionError) as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot create customer",
         )
 
 

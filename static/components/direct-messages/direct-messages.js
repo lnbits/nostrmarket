@@ -2,7 +2,7 @@ async function directMessages(path) {
   const template = await loadTemplateAsync(path)
   Vue.component('direct-messages', {
     name: 'direct-messages',
-    props: ['active-chat-customer', 'adminkey', 'inkey'],
+    props: ['active-chat-customer', 'merchant-id', 'adminkey', 'inkey'],
     template,
 
     watch: {
@@ -19,7 +19,9 @@ async function directMessages(path) {
         unreadMessages: 0,
         activePublicKey: null,
         messages: [],
-        newMessage: ''
+        newMessage: '',
+        showAddPublicKey: false,
+        newPublicKey: null
       }
     },
     methods: {
@@ -81,6 +83,26 @@ async function directMessages(path) {
           this.focusOnChatBox(this.messages.length - 1)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
+        }
+      },
+      addPublicKey: async function(){
+        try {
+          const {data} = await LNbits.api.request(
+            'POST',
+            '/nostrmarket/api/v1/customers',
+            this.adminkey,
+            {
+              public_key: this.newPublicKey,
+              merchant_id: this.merchantId,
+              unread_messages: 0
+            }
+          )
+          this.activePublicKey = data.public_key
+          await this.selectActiveCustomer()
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        } finally {
+          this.showAddPublicKey = false
         }
       },
       handleNewMessage: async function (data) {
