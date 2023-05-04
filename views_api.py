@@ -799,7 +799,7 @@ async def api_create_message(
 ######################################## CUSTOMERS ########################################
 
 
-@nostrmarket_ext.get("/api/v1/customers")
+@nostrmarket_ext.get("/api/v1/customer")
 async def api_get_customers(
     wallet: WalletTypeInfo = Depends(get_key_type),
 ) -> List[Customer]:
@@ -821,7 +821,7 @@ async def api_get_customers(
         )
 
 
-@nostrmarket_ext.post("/api/v1/customers")
+@nostrmarket_ext.post("/api/v1/customer")
 async def api_createcustomer(
     data: Customer,
     wallet: WalletTypeInfo = Depends(require_admin_key),

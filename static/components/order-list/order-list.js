@@ -227,7 +227,7 @@ async function orderList(path) {
         try {
           const {data} = await LNbits.api.request(
             'GET',
-            '/nostrmarket/api/v1/customers',
+            '/nostrmarket/api/v1/customer',
             this.inkey
           )
           this.customers = data

@@ -58,7 +58,7 @@ async function directMessages(path) {
         try {
           const {data} = await LNbits.api.request(
             'GET',
-            '/nostrmarket/api/v1/customers',
+            '/nostrmarket/api/v1/customer',
             this.inkey
           )
           this.customers = data
@@ -89,7 +89,7 @@ async function directMessages(path) {
         try {
           const {data} = await LNbits.api.request(
             'POST',
-            '/nostrmarket/api/v1/customers',
+            '/nostrmarket/api/v1/customer',
             this.adminkey,
             {
               public_key: this.newPublicKey,
@@ -97,6 +97,7 @@ async function directMessages(path) {
               unread_messages: 0
             }
           )
+          this.newPublicKey = null
           this.activePublicKey = data.public_key
           await this.selectActiveCustomer()
         } catch (error) {
