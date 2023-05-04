@@ -13,7 +13,7 @@ from lnbits.decorators import (
     require_admin_key,
     require_invoice_key,
 )
-from lnbits.extensions.nostrmarket.helpers import normalize_public_key
+
 from lnbits.utils.exchange_rates import currencies
 
 from . import nostr_client, nostrmarket_ext, scheduled_tasks
@@ -70,6 +70,7 @@ from .models import (
     Zone,
 )
 from .services import sign_and_send_to_nostr, update_merchant_to_nostr
+from .helpers import normalize_public_key
 
 ######################################## MERCHANT ########################################
 
