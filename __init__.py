@@ -54,4 +54,4 @@ def nostrmarket_start():
     task1 = loop.create_task(catch_everything_and_restart(wait_for_paid_invoices))
     task2 = loop.create_task(catch_everything_and_restart(_subscribe_to_nostr_client))
     task3 = loop.create_task(catch_everything_and_restart(_wait_for_nostr_events))
-    scheduled_tasks.append([task1, task2, task3])
+    scheduled_tasks.extend([task1, task2, task3])
