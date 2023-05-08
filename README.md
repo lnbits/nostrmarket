@@ -1,17 +1,20 @@
-# Nostr Market - <small>[LNbits](https://github.com/lnbits/lnbits) extension</small>
-<small>For more about LNBits extension check [this tutorial](https://github.com/lnbits/lnbits/wiki/LNbits-Extensions)</small>
+# Nostr Market ([NIP-15](https://github.com/nostr-protocol/nips/blob/master/15.md)) - <small>[LNbits](https://github.com/lnbits/lnbits) extension</small>
+<small>For more about LNBits extension check [this tutorial](https://github.com/lnbits/lnbits/wiki/LNbits-Extensions).</small>
 
-Nostrmarket uses the [Nostrclient](https://github.com/lnbits/nostrclient), an extension that makes _nostrfying_ other extensions easy
 
-**Demo at Nostrica <a href="https://www.youtube.com/live/2NueacYJovA?feature=share&t=6846">https://www.youtube.com/live/2NueacYJovA?feature=share&t=6846</a>**
-
-**This extension follows [NIP-15](https://github.com/nostr-protocol/nips/blob/master/15.md)**
+**Demo at Nostrica <a href="https://www.youtube.com/live/2NueacYJovA?feature=share&t=6846">here</a>**.
 
 **Original protocol for [Diagon Alley](https://github.com/lnbits/Diagon-Alley) (resilient marketplaces)**
 
 > The concepts around resilience in Diagon Alley helped influence the creation of the NOSTR protocol, now we get to build Diagon Alley on NOSTR!
 
-#### For further information about NOSTR, see https://github.com/nostr-protocol/nostr
+
+## Prerequisites
+This extension uses the LNbits [nostrclient](https://github.com/lnbits/nostrclient) extension, an extension that makes _nostrfying_ other extensions easy.
+![image](https://user-images.githubusercontent.com/2951406/236773044-81d3f30b-1ce7-4c5d-bdaf-b4a80ddddc58.png)
+Before you continue, please make sure that [nostrclient](https://github.com/lnbits/nostrclient) extension is installed, activated and correctly configured.
+[Nostrclient](https://github.com/lnbits/nostrclient) is usually installed as admin-only extension, so if you do not have admin access please ask an admin to confirm that [nostrclient](https://github.com/lnbits/nostrclient) is OK.
+
 
 ## Create, or import, a merchant account
 
