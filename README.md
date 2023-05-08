@@ -92,6 +92,20 @@ LNbits also provides a Nostr Market client app. You can visit the client from th
 
 or by visiting `https://<LNbits instance URL>/nostrmarket/market`
 
+## Troubleshoot
+### Check communication with Nostr
+In order to test that the integration with Nostr is working fine, one can add an `npub` to the chat box and check that DMs are working as expected:
+
+https://user-images.githubusercontent.com/2951406/236777983-259f81d8-136f-48b3-bb73-80749819b5f9.mov
+
+### Restart connection to Nostr
+If the communication with Nostr is not working then an admin user can `Restart` the Nostr connection.
+
+Merchants can afterwards re-publish their products.
+
+https://user-images.githubusercontent.com/2951406/236778651-7ada9f6d-07a1-491c-ac9c-55530326c32a.mp4
+
+
 ## Aditional info
 
 Stall and product are _Parameterized Replaceable Events_ according to [NIP-33](https://github.com/nostr-protocol/nips/blob/master/33.md) and use kind `30017` and `30018` respectivelly. See [NIP-45](https://github.com/nostr-protocol/nips/blob/master/45.md) for more details.
