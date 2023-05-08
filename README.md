@@ -93,6 +93,10 @@ LNbits also provides a Nostr Market client app. You can visit the client from th
 
 or by visiting `https://<LNbits instance URL>/nostrmarket/market`
 
+Make sure to add your `merchant` public key to the list:
+![image](https://user-images.githubusercontent.com/2951406/236787686-0e300c0a-eb5d-4490-aa70-568738ac78f4.png)
+
+
 ## Troubleshoot
 ### Check communication with Nostr
 In order to test that the integration with Nostr is working fine, one can add an `npub` to the chat box and check that DMs are working as expected:
