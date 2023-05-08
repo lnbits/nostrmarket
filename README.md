@@ -1,17 +1,21 @@
-# Nostr Market - <small>[LNbits](https://github.com/lnbits/lnbits) extension</small>
-<small>For more about LNBits extension check [this tutorial](https://github.com/lnbits/lnbits/wiki/LNbits-Extensions)</small>
+# Nostr Market ([NIP-15](https://github.com/nostr-protocol/nips/blob/master/15.md)) - <small>[LNbits](https://github.com/lnbits/lnbits) extension</small>
+<small>For more about LNBits extension check [this tutorial](https://github.com/lnbits/lnbits/wiki/LNbits-Extensions).</small>
 
-Nostrmarket uses the [Nostrclient](https://github.com/lnbits/nostrclient), an extension that makes _nostrfying_ other extensions easy
 
-**Demo at Nostrica <a href="https://www.youtube.com/live/2NueacYJovA?feature=share&t=6846">https://www.youtube.com/live/2NueacYJovA?feature=share&t=6846</a>**
-
-**This extension follows [NIP-15](https://github.com/nostr-protocol/nips/blob/master/15.md)**
+**Demo at Nostrica <a href="https://www.youtube.com/live/2NueacYJovA?feature=share&t=6846">here</a>**.
 
 **Original protocol for [Diagon Alley](https://github.com/lnbits/Diagon-Alley) (resilient marketplaces)**
 
 > The concepts around resilience in Diagon Alley helped influence the creation of the NOSTR protocol, now we get to build Diagon Alley on NOSTR!
 
-#### For further information about NOSTR, see https://github.com/nostr-protocol/nostr
+
+## Prerequisites
+This extension uses the LNbits [nostrclient](https://github.com/lnbits/nostrclient) extension, an extension that makes _nostrfying_ other extensions easy.
+![image](https://user-images.githubusercontent.com/2951406/236773044-81d3f30b-1ce7-4c5d-bdaf-b4a80ddddc58.png)
+- before you continue, please make sure that [nostrclient](https://github.com/lnbits/nostrclient) extension is installed, activated and correctly configured.
+- [nostrclient](https://github.com/lnbits/nostrclient) is usually installed as admin-only extension, so if you do not have admin access please ask an admin to confirm that [nostrclient](https://github.com/lnbits/nostrclient) is OK.
+- see the [Troubleshoot](https://github.com/lnbits/nostrclient#troubleshoot) section for more details on how to check the health of `nostrclient` extension
+
 
 ## Create, or import, a merchant account
 
@@ -88,6 +92,23 @@ LNbits also provides a Nostr Market client app. You can visit the client from th
 ![market client link](https://i.imgur.com/3tsots2.png)
 
 or by visiting `https://<LNbits instance URL>/nostrmarket/market`
+
+## Troubleshoot
+### Check communication with Nostr
+In order to test that the integration with Nostr is working fine, one can add an `npub` to the chat box and check that DMs are working as expected:
+
+https://user-images.githubusercontent.com/2951406/236777983-259f81d8-136f-48b3-bb73-80749819b5f9.mov
+
+### Restart connection to Nostr
+If the communication with Nostr is not working then an admin user can `Restart` the Nostr connection.
+
+Merchants can afterwards re-publish their products.
+
+https://user-images.githubusercontent.com/2951406/236778651-7ada9f6d-07a1-491c-ac9c-55530326c32a.mp4
+
+### Check Nostrclient extension
+- see the [Troubleshoot](https://github.com/lnbits/nostrclient#troubleshoot) section for more details on how to check the health of `nostrclient` extension
+
 
 ## Aditional info
 
