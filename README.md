@@ -12,8 +12,9 @@
 ## Prerequisites
 This extension uses the LNbits [nostrclient](https://github.com/lnbits/nostrclient) extension, an extension that makes _nostrfying_ other extensions easy.
 ![image](https://user-images.githubusercontent.com/2951406/236773044-81d3f30b-1ce7-4c5d-bdaf-b4a80ddddc58.png)
-Before you continue, please make sure that [nostrclient](https://github.com/lnbits/nostrclient) extension is installed, activated and correctly configured.
-[Nostrclient](https://github.com/lnbits/nostrclient) is usually installed as admin-only extension, so if you do not have admin access please ask an admin to confirm that [nostrclient](https://github.com/lnbits/nostrclient) is OK.
+- before you continue, please make sure that [nostrclient](https://github.com/lnbits/nostrclient) extension is installed, activated and correctly configured.
+- [nostrclient](https://github.com/lnbits/nostrclient) is usually installed as admin-only extension, so if you do not have admin access please ask an admin to confirm that [nostrclient](https://github.com/lnbits/nostrclient) is OK.
+- see the [Troubleshoot](https://github.com/lnbits/nostrclient#troubleshoot) section for more details on how to check the health of `nostrclient` extension
 
 
 ## Create, or import, a merchant account
@@ -104,6 +105,9 @@ If the communication with Nostr is not working then an admin user can `Restart` 
 Merchants can afterwards re-publish their products.
 
 https://user-images.githubusercontent.com/2951406/236778651-7ada9f6d-07a1-491c-ac9c-55530326c32a.mp4
+
+### Check Nostrclient extension
+- see the [Troubleshoot](https://github.com/lnbits/nostrclient#troubleshoot) section for more details on how to check the health of `nostrclient` extension
 
 
 ## Aditional info
