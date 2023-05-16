@@ -62,7 +62,20 @@ const market = async () => {
         activeStall: null,
         activeProduct: null,
         pool: null,
-        config: null
+        config: null,
+        configDialog: {
+          show: false,
+          data: {
+            name: null,
+            about: null,
+            ui: {
+              picture: null,
+              banner: null,
+              theme: null
+            }
+          }
+        },
+        naddr: null,
       }
     },
     computed: {
@@ -145,6 +158,7 @@ const market = async () => {
               relays: data.relays
             }
           }
+          this.naddr = naddr
         }catch (err){
           console.error(err)
         }
@@ -221,6 +235,76 @@ const market = async () => {
       openAccountDialog() {
         this.accountDialog.show = true
       },
+      openConfigDialog() {
+        if(!this.account){
+          this.$q.notify({
+            message: `You need to be logged in first.`,
+            color: 'negative',
+            icon: 'warning'
+          })
+          return 
+        }
+        this.configDialog.show = true
+        if(this.config?.opts){
+          let {name, about, ui} = this.config.opts
+          this.configDialog.data = {name, about, ui}
+        }
+        
+        console.log(this.configDialog)
+      },
+      async sendConfig() {
+        let {name, about, ui} = this.configDialog.data
+        let merchants = Array.from(this.pubkeys)
+        let identifier = "Marketplace Config"
+        let event = {
+          ...(await NostrTools.getBlankEvent()),
+          kind: 30019,
+          content: JSON.stringify({name, about, ui, merchants}),
+          created_at: Math.floor(Date.now() / 1000),
+          tags: [['d', identifier]],
+          pubkey: this.account.pubkey
+        }
+        event.id = NostrTools.getEventHash(event)
+        try {
+          if(this.account.useExtension){
+            event = await window.nostr.signEvent(event)
+          }else if (this.account.privkey) {
+            event.sig = await NostrTools.signEvent(event, this.account.privkey)
+          }
+          let pub = this.pool.publish(Array.from(this.relays), event)
+          pub.on('ok', () => console.debug(`Config event was sent`))
+          pub.on('failed', error => console.error(error))
+        } catch (err) {
+          console.error(err)
+          this.$q.notify({
+            message: `Error signing event.`,
+            color: 'negative',
+            icon: 'warning'
+          })
+          return
+        }
+        this.naddr = NostrTools.nip19.naddrEncode({
+          pubkey: event.pubkey,
+          kind: 30019,
+          identifier: identifier,
+          relays: Array.from(this.relays)
+        })
+        console.log(this.naddr)
+        this.resetConfig()
+        return 
+      },
+      resetConfig() {
+        this.configDialog = {show: false,
+        data: {
+          name: null,
+          about: null,
+          ui: {
+            picture: null,
+            banner: null,
+            theme: null
+          }
+        }}
+      },
       async updateData(events) {
         if (events.length < 1) {
           this.$q.notify({
@@ -282,16 +366,17 @@ const market = async () => {
             authors: [this.config.pubkey],
             '#d': [this.config.d]
           }).then(event => {
-            if(!event) return
-            this.config.opts = JSON.parse(event.content)
+            if(!event) return 
+            let content = JSON.parse(event.content)   
+            this.config = {... this.config, opts: content}            
             // add merchants 
-            this.config.opts?.merchants.forEach(m => this.addPubkey(m))
+            this.config.opts?.merchants.forEach(m => this.pubkeys.add(m))
             // change theme
             let {theme} = this.config.opts?.ui
             theme && document.body.setAttribute('data-theme', theme)
           }).catch(err => console.error(err))          
         }
-
+        
         let relays = Array.from(this.relays)
 
         // Get metadata and market data from the pubkeys
@@ -360,6 +445,15 @@ const market = async () => {
 
         window.history.pushState({}, '', url)
         this.activePage = page
+      },
+      copyText: function (text) {
+        var notify = this.$q.notify
+        Quasar.utils.copyToClipboard(text).then(function () {
+          notify({
+            message: 'Copied to clipboard!',
+            position: 'bottom'
+          })
+        })
       },
       getAmountFormated(amount, unit = 'USD') {
         return LNbits.utils.formatCurrency(amount, unit)

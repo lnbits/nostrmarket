@@ -8,9 +8,7 @@
     <div>
       <div v-if="account" class="bg-transparent q-ma-md">
         <q-avatar size="56px" class="q-mb-sm">
-          <img
-            :src="accountMetadata?.picture || '/nostrmarket/static/images/blank-avatar.webp'"
-          />
+          <img :src="accountMetadata?.picture || '/nostrmarket/static/images/blank-avatar.webp'" />
         </q-avatar>
         {%raw%}
         <div class="text-weight-bold">
@@ -20,43 +18,22 @@
           {{ accountMetadata.name }}
         </div>
         {%endraw%}
-        <q-btn
-          label="Delete data"
-          class="q-mt-md"
-          color="primary"
-          @click="deleteAccount"
-          ><q-tooltip>Delete account data</q-tooltip></q-btn
-        >
+        <q-btn label="Delete data" class="q-mt-md" color="red" @click="deleteAccount"><q-tooltip>Delete account
+            data</q-tooltip></q-btn>
       </div>
       <div v-else class="q-pa-md">
-        <q-btn
-          label="Login"
-          class="q-mt-md"
-          color="primary"
-          @click="accountDialog.show = true"
-          ><q-tooltip>Login or Create account</q-tooltip></q-btn
-        >
+        <q-btn label="Login" class="q-mt-md" color="primary" @click="accountDialog.show = true"><q-tooltip>Login or
+            Create account</q-tooltip></q-btn>
       </div>
       <q-separator></q-separator>
     </div>
     <div class="q-pa-md">
       <q-list padding>
-        <q-expansion-item
-          expand-separator
-          icon="perm_identity"
-          label="Merchants"
-          caption="Add/Remove pubkeys"
-        >
+        <q-expansion-item expand-separator icon="perm_identity" label="Merchants" caption="Add/Remove pubkeys">
           <q-card>
             <q-card-section>
-              <q-input
-                filled
-                v-model="inputPubkey"
-                @keydown.enter="addPubkey(null)"
-                type="text"
-                label="Pubkey/Npub"
-                hint="Add merchants"
-              >
+              <q-input filled v-model="inputPubkey" @keydown.enter="addPubkey(null)" type="text" label="Pubkey/Npub"
+                hint="Add merchants">
                 <q-btn @click="addPubkey(null)" dense flat icon="add"></q-btn>
               </q-input>
               <q-list class="q-mt-md">
@@ -64,37 +41,19 @@
                   {%raw%}
                   <q-item-section avatar>
                     <q-avatar>
-                      <img
-                        v-if="profiles.get(pub) && profiles.get(pub)?.picture"
-                        :src="profiles.get(pub).picture"
-                      />
-                      <img
-                        v-else
-                        src="/nostrmarket/static/images/blank-avatar.webp"
-                      />
+                      <img v-if="profiles.get(pub) && profiles.get(pub)?.picture" :src="profiles.get(pub).picture" />
+                      <img v-else src="/nostrmarket/static/images/blank-avatar.webp" />
                     </q-avatar>
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label
-                      v-if="profiles.get(pub) && profiles.get(pub)?.name"
-                      >{{ profiles.get(pub).name }}</q-item-label
-                    >
-                    <q-item-label v-else
-                      >{{ `${pub.slice(0, 5)}...${pub.slice(-5)}`
-                      }}</q-item-label
-                    >
+                    <q-item-label v-if="profiles.get(pub) && profiles.get(pub)?.name">{{ profiles.get(pub).name
+                      }}</q-item-label>
+                    <q-item-label v-else>{{ `${pub.slice(0, 5)}...${pub.slice(-5)}`
+                      }}</q-item-label>
                     <q-tooltip>{{ pub }}</q-tooltip>
                   </q-item-section>
                   <q-item-section side>
-                    <q-btn
-                      class="gt-xs"
-                      size="12px"
-                      flat
-                      dense
-                      round
-                      icon="delete"
-                      @click="removePubkey(pub)"
-                    />
+                    <q-btn class="gt-xs" size="12px" flat dense round icon="delete" @click="removePubkey(pub)" />
                   </q-item-section>
                   {%endraw%}
                 </q-item>
@@ -102,22 +61,11 @@
             </q-card-section>
           </q-card>
         </q-expansion-item>
-        <q-expansion-item
-          expand-separator
-          icon="perm_identity"
-          label="Relays"
-          caption="Add/Remove relays"
-        >
+        <q-expansion-item expand-separator icon="perm_identity" label="Relays" caption="Add/Remove relays">
           <q-card>
             <q-card-section>
-              <q-input
-                filled
-                v-model="inputRelay"
-                @keydown.enter="addRelay"
-                type="text"
-                label="Relay URL"
-                hint="Add relays"
-              >
+              <q-input filled v-model="inputRelay" @keydown.enter="addRelay" type="text" label="Relay URL"
+                hint="Add relays">
                 <q-btn @click="addRelay" dense flat icon="add"></q-btn>
               </q-input>
               <q-list dense class="q-mt-md">
@@ -127,20 +75,69 @@
                     <q-item-label>{{ url }}</q-item-label>
                   </q-item-section>
                   <q-item-section side>
-                    <q-btn
-                      class="gt-xs"
-                      size="12px"
-                      flat
-                      dense
-                      round
-                      icon="delete"
-                      @click="removeRelay(url)"
-                    />
+                    <q-btn class="gt-xs" size="12px" flat dense round icon="delete" @click="removeRelay(url)" />
                   </q-item-section>
                   {%endraw%}
                 </q-item>
               </q-list>
             </q-card-section>
+          </q-card>
+        </q-expansion-item>
+        <q-expansion-item expand-separator icon="perm_identity" label="Marketplace" caption="Marketplace info">
+          <q-card>
+            <q-card-section>
+              <q-list class="q-mt-md">
+                <q-item-label header>Information</q-item-label>
+                <q-item>
+                  {%raw%}
+                  <q-item-section>
+                    <q-item-label>Name</q-item-label>
+                    <q-item-label caption>{{ config?.opts?.name || 'Marketplace name' }}</q-item-label>
+                  </q-item-section>
+                  {%endraw%}
+                </q-item>
+                <q-item>
+                  {%raw%}
+                  <q-item-section>
+                    <q-item-label>About</q-item-label>
+                    <q-item-label caption>{{ config?.opts?.about || 'About the marketplace' }}</q-item-label>
+                  </q-item-section>
+                  {%endraw%}
+                </q-item>
+                <q-item-label header>UI Config</q-item-label>
+                <q-item>
+                  {%raw%}
+                  <q-item-section>
+                    <q-item-label>Logo</q-item-label>
+                    <q-item-label caption>{{ config?.opts?.ui?.picture || 'Logo' }}</q-item-label>
+                  </q-item-section>
+                  {%endraw%}
+                </q-item>
+                <q-item>
+                  {%raw%}
+                  <q-item-section>
+                    <q-item-label>Banner</q-item-label>
+                    <q-item-label caption>{{ config?.opts?.ui?.banner || 'Banner' }}</q-item-label>
+                  </q-item-section>
+                  {%endraw%}
+                </q-item>
+                <q-item>
+                  {%raw%}
+                  <q-item-section>
+                    <q-item-label>Theme</q-item-label>
+                    <q-item-label caption>{{ config?.opts?.ui?.theme || 'Theme' }}</q-item-label>
+                  </q-item-section>
+                  {%endraw%}
+                </q-item>
+              </q-list>
+            </q-card-section>
+            <q-card-actions class="q-mx-md" align="right">
+              <q-btn v-if="naddr" label="Copy Naddr" class="q-mt-md" color="primary"
+                @click="copyText(naddr)"><q-tooltip>Copy the
+                  naddr for this configuration</q-tooltip></q-btn>
+              <q-btn label="Edit" class="q-mt-md" color="primary" icon-right="edit"
+                @click="openConfigDialog"><q-tooltip>Edit</q-tooltip></q-btn>
+            </q-card-actions>
           </q-card>
         </q-expansion-item>
       </q-list>
@@ -157,24 +154,10 @@
           </q-toolbar-title>
           {%endraw%}
           <q-space></q-space>
-          <q-btn
-            v-if="!activeStall"
-            color="primary"
-            label="Search"
-            icon="travel_explore"
-            @click="searchNostr = !searchNostr"
-            ><q-tooltip>Search for products on Nostr</q-tooltip></q-btn
-          >
-          <q-input
-            class="q-ml-md"
-            standout
-            square
-            dense
-            outlined
-            clearable
-            v-model.trim="searchText"
-            label="Filter products"
-          >
+          <q-btn v-if="!activeStall" color="primary" label="Search" icon="travel_explore"
+            @click="searchNostr = !searchNostr"><q-tooltip>Search for products on Nostr</q-tooltip></q-btn>
+          <q-input class="q-ml-md" standout square dense outlined clearable v-model.trim="searchText"
+            label="Filter products">
             <template v-slot:append>
               <q-icon v-if="!searchText" name="search" />
             </template>
@@ -182,26 +165,12 @@
         </q-toolbar>
       </div>
     </div>
-    <customer-stall
-      v-if="!isLoading && activeStall"
-      :stall="stalls.find(stall => stall.id == activeStall)"
-      :products="filterProducts"
-      :stall-products="products.filter(p => p.stall_id == activeStall)"
-      :product-detail="activeProduct"
-      :relays="relays"
-      :account="account"
-      :pool="pool"
-      @login-dialog="openAccountDialog"
-      @change-page="navigateTo"
-    ></customer-stall>
-    <customer-market
-      v-else
-      :search-nostr="searchNostr"
-      :relays="relays"
-      :products="filterProducts"
-      @change-page="navigateTo"
-      @update-data="updateData"
-    ></customer-market>
+    <customer-stall v-if="!isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
+      :products="filterProducts" :stall-products="products.filter(p => p.stall_id == activeStall)"
+      :product-detail="activeProduct" :relays="relays" :account="account" :pool="pool" @login-dialog="openAccountDialog"
+      @change-page="navigateTo"></customer-stall>
+    <customer-market v-else :search-nostr="searchNostr" :relays="relays" :products="filterProducts"
+      @change-page="navigateTo" @update-data="updateData"></customer-market>
   </q-page-container>
   <!-- ACCOUNT DIALOG -->
   <q-dialog v-model="accountDialog.show" persistent>
@@ -217,15 +186,9 @@
       </q-card-section>
 
       <q-card-section class="q-pt-none">
-        <q-input
-          dense
-          label="nsec/npub/hex"
-          v-model="accountDialog.data.key"
-          autofocus
-          @keyup.enter="createAccount"
+        <q-input dense label="nsec/npub/hex" v-model="accountDialog.data.key" autofocus @keyup.enter="createAccount"
           :error="accountDialog.data.key && !isValidKey"
-          hint="Enter you private key (recommended) or public key"
-        ></q-input>
+          hint="Enter you private key (recommended) or public key"></q-input>
 
         <q-item tag="label">
           <q-item-section avatar top>
@@ -244,20 +207,43 @@
       </q-card-section>
 
       <q-card-actions align="right" class="text-primary">
-        <q-btn
-          v-if="hasExtension"
-          flat
-          label="Use Public Key from Extension"
-          @click="() => createAccount(true)"
-        ></q-btn>
-        <q-btn
-          v-if="isValidKey"
-          label="Add key"
-          color="primary"
-          @click="() => createAccount()"
-        ></q-btn>
+        <q-btn v-if="hasExtension" flat label="Use Public Key from Extension"
+          @click="() => createAccount(true)"></q-btn>
+        <q-btn v-if="isValidKey" label="Add key" color="primary" @click="() => createAccount()"></q-btn>
         <q-btn v-else flat label="Generate" @click="generateKeyPair"></q-btn>
       </q-card-actions>
+    </q-card>
+  </q-dialog>
+  <!-- Config/Naddr Dialog -->
+  <q-dialog v-model="configDialog.show" position="top">
+    <q-card>
+      <q-card-section class="row items-center q-pb-none">
+        <div class="text-h6">Customize the Marketplace</div>
+      </q-card-section>
+      <q-card-section>
+        <p>Create an Nostr event with Market info</p>
+        <small> It will include all merchants on your merchants list and relays </small>
+      </q-card-section>
+
+      <q-card-section class="q-pt-none">
+        <q-form @submit="sendConfig" class="q-gutter-md">
+          <q-input filled dense v-model.trim="configDialog.data.name" label="Marketplace Name"></q-input>
+          <q-input filled dense v-model.trim="configDialog.data.about" label="Description"></q-input>
+          <p>Customize UI</p>
+          <q-input filled dense v-model.trim="configDialog.data.ui.picture" label="Marketplace Logo"
+            hint="URL to a logo image"></q-input>
+          <q-input filled dense v-model.trim="configDialog.data.ui.banner" label="Marketplace banner"
+            hint="URL to a header/banner image (max. 250px height)"></q-input>
+          <q-select filled dense v-model="configDialog.data.ui.theme" :options="g.allowedThemes" label="Theme">
+            <template v-slot:prepend>
+              <q-icon name="palette" />
+            </template>
+          </q-select>
+          <div class="row q-mt-lg">
+            <q-btn unelevated color="primary" type="submit">Publish</q-btn>
+            <q-btn v-close-popup flat color="grey" class="q-ml-auto">Cancel</q-btn>
+          </div>
+        </q-form>
     </q-card>
   </q-dialog>
 </q-layout>
@@ -300,8 +286,7 @@
     width: auto;
   }
 
-  .chat-other {
-  }
+  .chat-other {}
 
   .chat-input {
     position: relative;
