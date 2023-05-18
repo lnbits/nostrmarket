@@ -249,8 +249,6 @@ const market = async () => {
           let {name, about, ui} = this.config.opts
           this.configDialog.data = {name, about, ui}
         }
-        
-        console.log(this.configDialog)
       },
       async sendConfig() {
         let {name, about, ui} = this.configDialog.data
@@ -289,7 +287,7 @@ const market = async () => {
           identifier: identifier,
           relays: Array.from(this.relays)
         })
-        console.log(this.naddr)
+        this.config = this.configDialog.data
         this.resetConfig()
         return 
       },

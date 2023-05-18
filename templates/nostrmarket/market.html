@@ -91,16 +91,16 @@
                 <q-item>
                   {%raw%}
                   <q-item-section>
-                    <q-item-label>Name</q-item-label>
-                    <q-item-label caption>{{ config?.opts?.name || 'Marketplace name' }}</q-item-label>
+                    <q-item-label>Marketplace name</q-item-label>
+                    <q-item-label caption>{{ config?.opts?.name }}</q-item-label>
                   </q-item-section>
                   {%endraw%}
                 </q-item>
                 <q-item>
                   {%raw%}
                   <q-item-section>
-                    <q-item-label>About</q-item-label>
-                    <q-item-label caption>{{ config?.opts?.about || 'About the marketplace' }}</q-item-label>
+                    <q-item-label>About the marketplace</q-item-label>
+                    <q-item-label caption>{{ config?.opts?.about }}</q-item-label>
                   </q-item-section>
                   {%endraw%}
                 </q-item>
@@ -109,15 +109,15 @@
                   {%raw%}
                   <q-item-section>
                     <q-item-label>Logo</q-item-label>
-                    <q-item-label caption>{{ config?.opts?.ui?.picture || 'Logo' }}</q-item-label>
+                    <q-item-label caption>{{ config?.opts?.ui?.picture }}</q-item-label>
                   </q-item-section>
                   {%endraw%}
                 </q-item>
                 <q-item>
                   {%raw%}
                   <q-item-section>
-                    <q-item-label>Banner</q-item-label>
-                    <q-item-label caption>{{ config?.opts?.ui?.banner || 'Banner' }}</q-item-label>
+                    <q-item-label>Banner URL</q-item-label>
+                    <q-item-label caption>{{ config?.opts?.ui?.banner }}</q-item-label>
                   </q-item-section>
                   {%endraw%}
                 </q-item>
@@ -125,7 +125,7 @@
                   {%raw%}
                   <q-item-section>
                     <q-item-label>Theme</q-item-label>
-                    <q-item-label caption>{{ config?.opts?.ui?.theme || 'Theme' }}</q-item-label>
+                    <q-item-label caption>{{ config?.opts?.ui?.theme }}</q-item-label>
                   </q-item-section>
                   {%endraw%}
                 </q-item>
@@ -170,7 +170,7 @@
       :product-detail="activeProduct" :relays="relays" :account="account" :pool="pool" @login-dialog="openAccountDialog"
       @change-page="navigateTo"></customer-stall>
     <customer-market v-else :search-nostr="searchNostr" :relays="relays" :products="filterProducts"
-      @change-page="navigateTo" @update-data="updateData"></customer-market>
+      :styles="config?.opts ?? {}" @change-page="navigateTo" @update-data="updateData"></customer-market>
   </q-page-container>
   <!-- ACCOUNT DIALOG -->
   <q-dialog v-model="accountDialog.show" persistent>
@@ -293,6 +293,12 @@
     display: flex;
     align-items: end;
     margin-top: 1rem;
+  }
+
+  .q-item__label--caption {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 </style>
 {% endblock %}

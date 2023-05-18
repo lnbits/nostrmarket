@@ -10,7 +10,8 @@ async function customerMarket(path) {
       'search-nostr',
       'relays',
       'update-products',
-      'update-stalls'
+      'update-stalls',
+      'styles'
     ],
     data: function () {
       return {
