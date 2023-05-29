@@ -138,7 +138,7 @@ https://user-images.githubusercontent.com/2951406/236778651-7ada9f6d-07a1-491c-a
 
 ## Aditional info
 
-Stall and product are _Parameterized Replaceable Events_ according to [NIP-33](https://github.com/nostr-protocol/nips/blob/master/33.md) and use kind `30017` and `30018` respectivelly. See [NIP-45](https://github.com/nostr-protocol/nips/blob/master/45.md) for more details.
+Stall and product are _Parameterized Replaceable Events_ according to [NIP-33](https://github.com/nostr-protocol/nips/blob/master/33.md) and use kind `30017` and `30018` respectivelly. See [NIP-15](https://github.com/nostr-protocol/nips/blob/master/15.md) for more details.
 
 Order placing, invoicing, payment details and order statuses are handled over Nostr using [NIP-04](https://github.com/nostr-protocol/nips/blob/master/04.md).
 
