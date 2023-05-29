@@ -96,6 +96,28 @@ or by visiting `https://<LNbits instance URL>/nostrmarket/market`
 Make sure to add your `merchant` public key to the list:
 ![image](https://user-images.githubusercontent.com/2951406/236787686-0e300c0a-eb5d-4490-aa70-568738ac78f4.png)
 
+### Styling
+In order to create a customized Marketplace, we use `naddr` as defined in [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md#shareable-identifiers-with-extra-metadata). You must create an event (kind: `30019`) that has all the custom properties, including merchants and relays, of your marketplace. Start by going to the marketplace page:
+![vanilla market](https://i.imgur.com/nCaMh1N.png)
+
+You'll need to Login, and head over to *Marketplace Info*. Optionally import some merchants and relays, that will be included in the event. Click on *Edit* and fill out your marketplace custom info:
+![edit](https://i.imgur.com/wEuHuN9.png)
+
+Fill in the optional fields:
+- Add a name to the Marketplace
+- Add a small description
+- Add a logo image URL
+- Add a banner image URL (max height: 250px)
+- Choose a theme 
+
+By clicking *Publish*, a `kind: 30019` event will be sent to the defined relays containing all the information about your custom Marketplace. On the left drawer, a button with *Copy Naddr* will show up.
+![copy naddr](https://i.imgur.com/VuNIMVf.png)
+
+You can then share your Marketplace, with the merchants and relays, banner, and style by using that Nostr identifier. The URL for the marketplace will be for example: `https://legend.lnbits.com/nostrmarket/market?naddr=naddr1qqfy6ctjddjhgurvv93k....`, you need to include the URL parameter `naddr=<your naddr>`. When a user visits that URL, the client will get the `30019` event and configure the Marketplace to what you defined. In the example bellow, a couple of merchants, relays, `autumn` theme, name (*Veggies Market*) and a header banner:
+![final](https://i.imgur.com/EYG7vYS.png)
+
+The nostr event is a replaceable event, so you can change it to what you like and publish a new one to replace a previous one. For example adding a new merchant, or remove, change theme, add more relays,e tc...
+
 
 ## Troubleshoot
 ### Check communication with Nostr
