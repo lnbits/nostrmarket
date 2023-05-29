@@ -167,8 +167,8 @@
     </div>
     <customer-stall v-if="!isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
       :products="filterProducts" :stall-products="products.filter(p => p.stall_id == activeStall)"
-      :product-detail="activeProduct" :relays="relays" :account="account" :pool="pool" @login-dialog="openAccountDialog"
-      @change-page="navigateTo"></customer-stall>
+      :product-detail="activeProduct" :relays="relays" :account="account" :pool="pool" :styles="config?.opts ?? {}"
+      @login-dialog="openAccountDialog" @change-page="navigateTo"></customer-stall>
     <customer-market v-else :search-nostr="searchNostr" :relays="relays" :products="filterProducts"
       :styles="config?.opts ?? {}" @change-page="navigateTo" @update-data="updateData"></customer-market>
   </q-page-container>

@@ -1,7 +1,7 @@
 <div>
   <q-toolbar>
     <q-breadcrumbs class="cursor">
-      <q-breadcrumbs-el label="Market" icon="home" @click="$emit('change-page', 'market')"
+      <q-breadcrumbs-el :label="styles.name ?? 'Market'" icon="home" @click="$emit('change-page', 'market')"
         style="cursor: pointer"></q-breadcrumbs-el>
       <q-breadcrumbs-el :label="stall?.name || 'Stall'" icon="widgets"></q-breadcrumbs-el>
     </q-breadcrumbs>
