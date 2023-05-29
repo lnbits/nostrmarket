@@ -132,11 +132,13 @@
               </q-list>
             </q-card-section>
             <q-card-actions class="q-mx-md" align="right">
-              <q-btn v-if="naddr" label="Copy Naddr" class="q-mt-md" color="primary"
-                @click="copyText(naddr)"><q-tooltip>Copy the
+              <q-btn v-if="naddr" label="Naddr" class="q-mt-md" color="primary" @click="copyText(naddr)"><q-tooltip>Copy
+                  the
                   naddr for this configuration</q-tooltip></q-btn>
-              <q-btn label="Edit" class="q-mt-md" color="primary" icon-right="edit"
-                @click="openConfigDialog"><q-tooltip>Edit</q-tooltip></q-btn>
+              <q-btn v-if="naddr && canEditConfig" label="Edit" class="q-mt-md" color="primary"
+                @click="editConfigDialog"><q-tooltip>Edit configuration</q-tooltip></q-btn>
+              <q-btn label="New" class="q-mt-md" color="primary" @click="openConfigDialog"><q-tooltip>Create a new
+                  configuration</q-tooltip></q-btn>
             </q-card-actions>
           </q-card>
         </q-expansion-item>

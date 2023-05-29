@@ -117,11 +117,15 @@ const market = async () => {
           key = data
         }
         return key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)
+      },
+      canEditConfig(){
+        return this.account && this.account.pubkey == this.config?.pubkey
       }
     },
     async created() {
       // Check for user stored
       this.account = this.$q.localStorage.getItem('diagonAlley.account') || null
+      //console.log("UUID", crypto.randomUUID())
 
       // Check for stored merchants and relays on localStorage
       try {
@@ -235,6 +239,14 @@ const market = async () => {
       openAccountDialog() {
         this.accountDialog.show = true
       },
+      editConfigDialog(){
+        if(this.canEditConfig && this.config?.opts){
+          let {name, about, ui} = this.config.opts
+          this.configDialog.data = {name, about, ui}
+          this.configDialog.data.identifier = this.config?.d
+        }
+        this.openConfigDialog()
+      },
       openConfigDialog() {
         if(!this.account){
           this.$q.notify({
@@ -245,15 +257,11 @@ const market = async () => {
           return 
         }
         this.configDialog.show = true
-        if(this.config?.opts){
-          let {name, about, ui} = this.config.opts
-          this.configDialog.data = {name, about, ui}
-        }
       },
       async sendConfig() {
         let {name, about, ui} = this.configDialog.data
         let merchants = Array.from(this.pubkeys)
-        let identifier = "Marketplace Config"
+        let identifier = this.configDialog.data.identifier ?? crypto.randomUUID()
         let event = {
           ...(await NostrTools.getBlankEvent()),
           kind: 30019,
@@ -293,6 +301,7 @@ const market = async () => {
       },
       resetConfig() {
         this.configDialog = {show: false,
+          identifier: null,
         data: {
           name: null,
           about: null,
