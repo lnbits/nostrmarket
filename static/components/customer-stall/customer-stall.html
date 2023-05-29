@@ -1,79 +1,35 @@
 <div>
   <q-toolbar>
     <q-breadcrumbs class="cursor">
-      <q-breadcrumbs-el
-        label="Market"
-        icon="home"
-        @click="$emit('change-page', 'market')"
-        style="cursor: pointer"
-      ></q-breadcrumbs-el>
-      <q-breadcrumbs-el
-        :label="stall?.name || 'Stall'"
-        icon="widgets"
-      ></q-breadcrumbs-el>
+      <q-breadcrumbs-el :label="styles.name ?? 'Market'" icon="home" @click="$emit('change-page', 'market')"
+        style="cursor: pointer"></q-breadcrumbs-el>
+      <q-breadcrumbs-el :label="stall?.name || 'Stall'" icon="widgets"></q-breadcrumbs-el>
     </q-breadcrumbs>
     <q-toolbar-title></q-toolbar-title>
-    <chat-dialog
-      v-if="this.customerPrivkey || this.customerUseExtension"
-      :account="account ? account : dropIn"
-      :merchant="stall.pubkey"
-      :relays="relays"
-      :pool="pool"
-    />
-    <shopping-cart
-      :cart="cart"
-      :cart-menu="cartMenu"
-      :products="stallProducts"
-      @add-to-cart="addToCart"
-      @remove-from-cart="removeFromCart"
-      @update-qty="updateQty"
-      @reset-cart="resetCart"
-      @open-checkout="openCheckout"
-    ></shopping-cart>
+    <chat-dialog v-if="this.customerPrivkey || this.customerUseExtension" :account="account ? account : dropIn"
+      :merchant="stall.pubkey" :relays="relays" :pool="pool" />
+    <shopping-cart :cart="cart" :cart-menu="cartMenu" :products="stallProducts" @add-to-cart="addToCart"
+      @remove-from-cart="removeFromCart" @update-qty="updateQty" @reset-cart="resetCart"
+      @open-checkout="openCheckout"></shopping-cart>
   </q-toolbar>
   <div class="row">
-    <product-detail
-      class="col-12"
-      v-if="productDetail && product"
-      :product="product"
-      @add-to-cart="addToCart"
-    ></product-detail>
+    <product-detail class="col-12" v-if="productDetail && product" :product="product"
+      @add-to-cart="addToCart"></product-detail>
     <div class="col-12 q-my-lg">
       <q-separator></q-separator>
     </div>
   </div>
   <div class="row q-col-gutter-md">
-    <div
-      class="col-xs-12 col-sm-6 col-md-4 col-lg-3"
-      v-for="(item, idx) in products"
-      :key="idx"
-    >
-      <product-card
-        :product="item"
-        @change-page="changePageS"
-        @add-to-cart="addToCart"
-        :is-stall="true"
-      ></product-card>
+    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3" v-for="(item, idx) in products" :key="idx">
+      <product-card :product="item" @change-page="changePageS" @add-to-cart="addToCart" :is-stall="true"></product-card>
     </div>
   </div>
   <!-- BEGIN CHECKOUT DIALOG -->
   <q-dialog v-model="checkoutDialog.show" position="top">
     <q-card class="q-pa-lg q-pt-xl lnbits__dialog-card">
       <q-form @submit="placeOrder" class="q-gutter-md">
-        <q-input
-          filled
-          dense
-          v-model.trim="checkoutDialog.data.username"
-          label="Name (optional)"
-        ></q-input>
-        <q-expansion-item
-          v-if="!account"
-          dense
-          dense-toggle
-          expand-separator
-          icon="person_off"
-          label="Not logged in?"
-        >
+        <q-input filled dense v-model.trim="checkoutDialog.data.username" label="Name (optional)"></q-input>
+        <q-expansion-item v-if="!account" dense dense-toggle expand-separator icon="person_off" label="Not logged in?">
           <q-card>
             <q-card-section>
               It seems you haven't logged in. You can:
@@ -91,131 +47,53 @@
               </ol>
             </q-card-section>
             <q-card-actions align="right">
-              <q-btn
-                v-if="hasNip07"
-                unelevated
-                @click="getFromExtension"
-                color="primary"
-                label="Get from Extension"
-                ><q-tooltip>Use a Nostr browser extension</q-tooltip></q-btn
-              >
-              <q-btn
-                v-if="!this.account && !this.customerPubkey && !this.customerPrivkey"
-                unelevated
-                @click="makeLogin"
-                color="primary"
-                label="Login"
-              ></q-btn>
+              <q-btn v-if="hasNip07" unelevated @click="getFromExtension" color="primary"
+                label="Get from Extension"><q-tooltip>Use a Nostr browser extension</q-tooltip></q-btn>
+              <q-btn v-if="!this.account && !this.customerPubkey && !this.customerPrivkey" unelevated @click="makeLogin"
+                color="primary" label="Login"></q-btn>
             </q-card-actions>
           </q-card>
         </q-expansion-item>
-        <q-input
-          filled
-          dense
-          :readonly="Boolean(customerPubkey)"
-          v-model.trim="checkoutDialog.data.pubkey"
-          label="Public key"
-          hint="Enter your public key"
-        >
+        <q-input filled dense :readonly="Boolean(customerPubkey)" v-model.trim="checkoutDialog.data.pubkey"
+          label="Public key" hint="Enter your public key">
         </q-input>
-        <q-input
-          filled
-          dense
-          :readonly="Boolean(customerPrivkey)"
-          :type="isPwd ? 'password' : 'text'"
-          v-if="!customerUseExtension"
-          v-model.trim="checkoutDialog.data.privkey"
-          label="Private key (optional)"
-          hint="Enter your private key"
-        >
+        <q-input filled dense :readonly="Boolean(customerPrivkey)" :type="isPwd ? 'password' : 'text'"
+          v-if="!customerUseExtension" v-model.trim="checkoutDialog.data.privkey" label="Private key (optional)"
+          hint="Enter your private key">
           <template v-slot:append>
-            <q-icon
-              :name="isPwd ? 'visibility_off' : 'visibility'"
-              class="cursor-pointer"
-              @click="isPwd = !isPwd"
-            />
+            <q-icon :name="isPwd ? 'visibility_off' : 'visibility'" class="cursor-pointer" @click="isPwd = !isPwd" />
           </template>
         </q-input>
-        <q-input
-          filled
-          dense
-          v-model.trim="checkoutDialog.data.address"
-          label="Address (optional)"
-          hint="If ordering a physical product make sure to fill this"
-        ></q-input>
-        <q-input
-          v-model="checkoutDialog.data.email"
-          filled
-          dense
-          type="email"
-          label="Email (optional)"
-          hint="Merchant may not use email"
-        ></q-input>
-        <q-input
-          v-model="checkoutDialog.data.message"
-          filled
-          dense
-          type="text"
-          label="Message (optional)"
-        ></q-input>
+        <q-input filled dense v-model.trim="checkoutDialog.data.address" label="Address (optional)"
+          hint="If ordering a physical product make sure to fill this"></q-input>
+        <q-input v-model="checkoutDialog.data.email" filled dense type="email" label="Email (optional)"
+          hint="Merchant may not use email"></q-input>
+        <q-input v-model="checkoutDialog.data.message" filled dense type="text" label="Message (optional)"></q-input>
         <p>Select the shipping zone:</p>
         <div class="row q-mt-lg">
-          <q-select
-            style="min-width: 200px"
-            filled
-            dense
-            stack-label
-            v-model="checkoutDialog.data.shippingzone"
-            emit-value
-            map-options
-            :options="stall.shipping.map(s => ({label: s.countries.toString(), value: s.id}))"
-            label="Shipping Zone"
-          />
+          <q-select style="min-width: 200px" filled dense stack-label v-model="checkoutDialog.data.shippingzone"
+            emit-value map-options :options="stall.shipping.map(s => ({label: s.countries.toString(), value: s.id}))"
+            label="Shipping Zone" />
         </div>
         <div class="row q-mt-lg">
           Total: {{ stall.currency != 'sat' ? getAmountFormated(finalCost,
           stall.currency) : finalCost + 'sats' }}
         </div>
         <div class="row q-mt-lg">
-          <q-btn
-            v-if="!customerUseExtension && !checkoutDialog.data.privkey"
-            :loading="loading"
-            unelevated
-            color="primary"
-            :disable="checkoutDialog.data.shippingzone == null
-              || checkoutDialog.data.pubkey == null"
-            @click="downloadOrder"
-            >Download Order</q-btn
-          >
-          <q-btn
-            v-else
-            :loading="loading"
-            unelevated
-            color="primary"
-            :disable="checkoutDialog.data.shippingzone == null
-              || checkoutDialog.data.pubkey == null"
-            type="submit"
-            >Checkout</q-btn
-          >
-          <q-btn
-            v-close-popup
-            flat
-            @click="checkoutDialog = {show: false, data: {pubkey: null}}"
-            color="grey"
-            class="q-ml-auto"
-            >Cancel</q-btn
-          >
+          <q-btn v-if="!customerUseExtension && !checkoutDialog.data.privkey" :loading="loading" unelevated
+            color="primary" :disable="checkoutDialog.data.shippingzone == null
+              || checkoutDialog.data.pubkey == null" @click="downloadOrder">Download Order</q-btn>
+          <q-btn v-else :loading="loading" unelevated color="primary" :disable="checkoutDialog.data.shippingzone == null
+              || checkoutDialog.data.pubkey == null" type="submit">Checkout</q-btn>
+          <q-btn v-close-popup flat @click="checkoutDialog = {show: false, data: {pubkey: null}}" color="grey"
+            class="q-ml-auto">Cancel</q-btn>
         </div>
       </q-form>
     </q-card>
   </q-dialog>
   <!-- END CHECKOUT DIALOG -->
   <!-- INVOICE DIALOG -->
-  <q-dialog
-    v-model="qrCodeDialog.show"
-    position="top"
-    @hide="closeQrCodeDialog"
-  >
+  <q-dialog v-model="qrCodeDialog.show" position="top" @hide="closeQrCodeDialog">
     <q-card class="q-pa-lg q-pt-xl lnbits__dialog-card">
       <div class="text-center q-mb-lg">
         <div class="q-my-lg" v-if="qrCodeDialog.data.message">
@@ -223,12 +101,8 @@
         </div>
         <a v-else :href="'lightning:' + qrCodeDialog.data.payment_request">
           <q-responsive :ratio="1" class="q-mx-xl">
-            <qrcode
-              v-if="qrCodeDialog.data.payment_request"
-              :value="qrCodeDialog.data.payment_request"
-              :options="{width: 340}"
-              class="rounded-borders"
-            ></qrcode>
+            <qrcode v-if="qrCodeDialog.data.payment_request" :value="qrCodeDialog.data.payment_request"
+              :options="{width: 340}" class="rounded-borders"></qrcode>
           </q-responsive>
         </a>
         <q-inner-loading :showing="loading">
@@ -236,15 +110,8 @@
         </q-inner-loading>
       </div>
       <div class="row q-mt-lg">
-        <q-btn
-          outline
-          color="grey"
-          @click="copyText(qrCodeDialog.data.payment_request)"
-          >Copy invoice</q-btn
-        >
-        <q-btn @click="closeQrCodeDialog" flat color="grey" class="q-ml-auto"
-          >Close</q-btn
-        >
+        <q-btn outline color="grey" @click="copyText(qrCodeDialog.data.payment_request)">Copy invoice</q-btn>
+        <q-btn @click="closeQrCodeDialog" flat color="grey" class="q-ml-auto">Close</q-btn>
       </div>
     </q-card>
   </q-dialog>
@@ -271,16 +138,10 @@
 
       <q-card-section>
         <pre
-          style="font-size: 0.65rem; overflow-x: auto"
-        ><code>{{JSON.stringify(downloadOrderDialog.data, null, 2)}}</code></pre>
+          style="font-size: 0.65rem; overflow-x: auto"><code>{{JSON.stringify(downloadOrderDialog.data, null, 2)}}</code></pre>
       </q-card-section>
       <div class="row q-mt-lg">
-        <q-btn
-          outline
-          color="primary"
-          @click="copyText(JSON.stringify(downloadOrderDialog.data))"
-          >Copy order</q-btn
-        >
+        <q-btn outline color="primary" @click="copyText(JSON.stringify(downloadOrderDialog.data))">Copy order</q-btn>
         <q-btn v-close-popup flat color="grey" class="q-ml-auto">Close</q-btn>
       </div>
     </q-card>

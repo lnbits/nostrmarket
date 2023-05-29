@@ -14,7 +14,8 @@ async function customerStall(path) {
       'product-detail',
       'change-page',
       'relays',
-      'pool'
+      'pool',
+      'styles'
     ],
     data: function () {
       return {
@@ -31,6 +32,7 @@ async function customerStall(path) {
         customerPrivkey: null,
         customerUseExtension: null,
         activeOrder: null,
+        banner: null,
         checkoutDialog: {
           show: false,
           data: {
@@ -269,7 +271,8 @@ async function customerStall(path) {
           items: Array.from(this.cart.products, p => {
             return {product_id: p[0], quantity: p[1].quantity}
           }),
-          shipping_id: orderData.shippingzone
+          shipping_id: orderData.shippingzone,
+          type: 0
         }
         let created_at = Math.floor(Date.now() / 1000)
         orderObj.id = await hash(
@@ -375,9 +378,8 @@ async function customerStall(path) {
             this.qrCodeDialog.data.message = json.message
             return cb()
           }
-          let payment_request = json.payment_options.find(
-            o => o.type == 'ln'
-          ).link
+          let payment_request = json.payment_options.find(o => o.type == 'ln')
+            .link
           if (!payment_request) return
           this.loading = false
           this.qrCodeDialog.data.payment_request = payment_request

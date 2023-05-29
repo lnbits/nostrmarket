@@ -61,7 +61,21 @@ const market = async () => {
         activePage: 'market',
         activeStall: null,
         activeProduct: null,
-        pool: null
+        pool: null,
+        config: null,
+        configDialog: {
+          show: false,
+          data: {
+            name: null,
+            about: null,
+            ui: {
+              picture: null,
+              banner: null,
+              theme: null
+            }
+          }
+        },
+        naddr: null,
       }
     },
     computed: {
@@ -103,11 +117,15 @@ const market = async () => {
           key = data
         }
         return key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)
+      },
+      canEditConfig(){
+        return this.account && this.account.pubkey == this.config?.pubkey
       }
     },
     async created() {
       // Check for user stored
       this.account = this.$q.localStorage.getItem('diagonAlley.account') || null
+      //console.log("UUID", crypto.randomUUID())
 
       // Check for stored merchants and relays on localStorage
       try {
@@ -132,6 +150,23 @@ const market = async () => {
       let merchant_pubkey = params.get('merchant_pubkey')
       let stall_id = params.get('stall_id')
       let product_id = params.get('product_id')
+      let naddr = params.get('naddr')
+
+      if(naddr) {
+        try {
+          let {type, data} = NostrTools.nip19.decode(naddr)
+          if(type == 'naddr' && data.kind == '30019') { // just double check
+            this.config = {
+              d: data.identifier,
+              pubkey: data.pubkey,
+              relays: data.relays
+            }
+          }
+          this.naddr = naddr
+        }catch (err){
+          console.error(err)
+        }
+      }
 
       // What component to render on start
       if (stall_id) {
@@ -204,6 +239,79 @@ const market = async () => {
       openAccountDialog() {
         this.accountDialog.show = true
       },
+      editConfigDialog(){
+        if(this.canEditConfig && this.config?.opts){
+          let {name, about, ui} = this.config.opts
+          this.configDialog.data = {name, about, ui}
+          this.configDialog.data.identifier = this.config?.d
+        }
+        this.openConfigDialog()
+      },
+      openConfigDialog() {
+        if(!this.account){
+          this.$q.notify({
+            message: `You need to be logged in first.`,
+            color: 'negative',
+            icon: 'warning'
+          })
+          return 
+        }
+        this.configDialog.show = true
+      },
+      async sendConfig() {
+        let {name, about, ui} = this.configDialog.data
+        let merchants = Array.from(this.pubkeys)
+        let identifier = this.configDialog.data.identifier ?? crypto.randomUUID()
+        let event = {
+          ...(await NostrTools.getBlankEvent()),
+          kind: 30019,
+          content: JSON.stringify({name, about, ui, merchants}),
+          created_at: Math.floor(Date.now() / 1000),
+          tags: [['d', identifier]],
+          pubkey: this.account.pubkey
+        }
+        event.id = NostrTools.getEventHash(event)
+        try {
+          if(this.account.useExtension){
+            event = await window.nostr.signEvent(event)
+          }else if (this.account.privkey) {
+            event.sig = await NostrTools.signEvent(event, this.account.privkey)
+          }
+          let pub = this.pool.publish(Array.from(this.relays), event)
+          pub.on('ok', () => console.debug(`Config event was sent`))
+          pub.on('failed', error => console.error(error))
+        } catch (err) {
+          console.error(err)
+          this.$q.notify({
+            message: `Error signing event.`,
+            color: 'negative',
+            icon: 'warning'
+          })
+          return
+        }
+        this.naddr = NostrTools.nip19.naddrEncode({
+          pubkey: event.pubkey,
+          kind: 30019,
+          identifier: identifier,
+          relays: Array.from(this.relays)
+        })
+        this.config = this.configDialog.data
+        this.resetConfig()
+        return 
+      },
+      resetConfig() {
+        this.configDialog = {show: false,
+          identifier: null,
+        data: {
+          name: null,
+          about: null,
+          ui: {
+            picture: null,
+            banner: null,
+            theme: null
+          }
+        }}
+      },
       async updateData(events) {
         if (events.length < 1) {
           this.$q.notify({
@@ -254,6 +362,28 @@ const market = async () => {
       async initNostr() {
         this.$q.loading.show()
         const pool = new NostrTools.SimplePool()
+        
+        // If there is an naddr in the URL, get it and parse content
+        if (this.config) {  
+          // add relays to the set   
+          this.config.relays.forEach(r => this.relays.add(r))
+          await pool.get(this.config.relays, {
+            kinds: [30019],
+            limit: 1,
+            authors: [this.config.pubkey],
+            '#d': [this.config.d]
+          }).then(event => {
+            if(!event) return 
+            let content = JSON.parse(event.content)   
+            this.config = {... this.config, opts: content}            
+            // add merchants 
+            this.config.opts?.merchants.forEach(m => this.pubkeys.add(m))
+            // change theme
+            let {theme} = this.config.opts?.ui
+            theme && document.body.setAttribute('data-theme', theme)
+          }).catch(err => console.error(err))          
+        }
+        
         let relays = Array.from(this.relays)
 
         // Get metadata and market data from the pubkeys
@@ -322,6 +452,15 @@ const market = async () => {
 
         window.history.pushState({}, '', url)
         this.activePage = page
+      },
+      copyText: function (text) {
+        var notify = this.$q.notify
+        Quasar.utils.copyToClipboard(text).then(function () {
+          notify({
+            message: 'Copied to clipboard!',
+            position: 'bottom'
+          })
+        })
       },
       getAmountFormated(amount, unit = 'USD') {
         return LNbits.utils.formatCurrency(amount, unit)
