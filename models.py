@@ -148,11 +148,13 @@ class StallConfig(BaseModel):
 
 
 class PartialStall(BaseModel):
+    id: Optional[str]
     wallet: str
     name: str
     currency: str = "sat"
     shipping_zones: List[Zone] = []
     config: StallConfig = StallConfig()
+    pending: bool = False
 
     def validate_stall(self):
         for z in self.shipping_zones:

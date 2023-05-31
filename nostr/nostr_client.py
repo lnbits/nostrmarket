@@ -2,7 +2,7 @@ import asyncio
 import json
 from asyncio import Queue
 from threading import Thread
-from typing import Callable
+from typing import Callable, List
 
 from loguru import logger
 from websocket import WebSocketApp
@@ -18,11 +18,6 @@ class NostrClient:
         self.send_req_queue: Queue = Queue()
         self.ws: WebSocketApp = None
 
-    async def restart(self):
-        await self.send_req_queue.put(ValueError("Restarting NostrClient..."))
-        await self.recieve_event_queue.put(ValueError("Restarting NostrClient..."))
-        self.ws.close()
-        self.ws = None
 
     async def connect_to_nostrclient_ws(
         self, on_open: Callable, on_message: Callable
@@ -106,6 +101,7 @@ class NostrClient:
         await self.send_req_queue.put(
             ["REQ", f"product-events:{public_key}", product_filter]
         )
+        print("### subscribed to stalls and products", public_key)
 
     async def subscribe_to_user_profile(self, public_key: str, since: int):
         profile_filter = {"kinds": [0], "authors": [public_key]}
@@ -124,8 +120,33 @@ class NostrClient:
         await self.send_req_queue.put(["CLOSE", f"stall-events:{public_key}"])
         await self.send_req_queue.put(["CLOSE", f"product-events:{public_key}"])
 
-    def stop(self):
-        try:
-            self.ws.close()
-        except Exception as ex:
-            logger.warning(ex)
+    async def restart(self, public_keys: List[str]):
+        print("### unsubscribe....")
+        await self.unsubscribe_merchants(public_keys)
+        # Give some time for the CLOSE events to propagate before restarting
+        await asyncio.sleep(10)
+
+        print("### restarting....")
+        await self.send_req_queue.put(ValueError("Restarting NostrClient..."))
+        await self.recieve_event_queue.put(ValueError("Restarting NostrClient..."))
+
+        self.ws.close()
+        self.ws = None
+
+
+    async def stop(self, public_keys: List[str]):
+        await self.unsubscribe_merchants(public_keys)       
+
+        # Give some time for the CLOSE events to propagate before closing the connection  
+        await asyncio.sleep(10)   
+        self.ws.close()
+        self.ws = None
+
+    async def unsubscribe_merchants(self,  public_keys: List[str]):
+        for pk in public_keys:
+            try:
+                await self.unsubscribe_from_direct_messages(pk)
+                await self.unsubscribe_from_merchant_events(pk)
+            except Exception as ex:
+                logger.warning(ex)
+        

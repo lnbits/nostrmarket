@@ -141,3 +141,11 @@ async def m001_initial(db):
         );
         """
     )
+
+async def m002_add_pending_to_stall_and_product(db):
+    await db.execute(
+        "ALTER TABLE nostrmarket.stalls   ADD COLUMN pending BOOLEAN NOT NULL DEFAULT false;"
+    )
+    await db.execute(
+        "ALTER TABLE nostrmarket.products ADD COLUMN pending BOOLEAN NOT NULL DEFAULT false;"
+    )

@@ -168,12 +168,13 @@ async def delete_merchant_zones(merchant_id: str) -> None:
 
 
 async def create_stall(merchant_id: str, data: PartialStall) -> Stall:
-    stall_id = urlsafe_short_hash()
+    stall_id = data.id or urlsafe_short_hash()
 
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.stalls (merchant_id, id, wallet, name, currency, zones, meta)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO nostrmarket.stalls (merchant_id, id, wallet, name, currency, pending, zones, meta)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO NOTHING
         """,
         (
             merchant_id,
@@ -181,6 +182,7 @@ async def create_stall(merchant_id: str, data: PartialStall) -> Stall:
             data.wallet,
             data.name,
             data.currency,
+            data.pending,
             json.dumps(
                 [z.dict() for z in data.shipping_zones]
             ),  # todo: cost is float. should be int for sats
@@ -204,10 +206,10 @@ async def get_stall(merchant_id: str, stall_id: str) -> Optional[Stall]:
     return Stall.from_row(row) if row else None
 
 
-async def get_stalls(merchant_id: str) -> List[Stall]:
+async def get_stalls(merchant_id: str, pending: Optional[bool] = False) -> List[Stall]:
     rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.stalls WHERE merchant_id = ?",
-        (merchant_id,),
+        "SELECT * FROM nostrmarket.stalls WHERE merchant_id = ? AND pending = ?",
+        (merchant_id, pending,),
     )
     return [Stall.from_row(row) for row in rows]
 
@@ -215,13 +217,14 @@ async def get_stalls(merchant_id: str) -> List[Stall]:
 async def update_stall(merchant_id: str, stall: Stall) -> Optional[Stall]:
     await db.execute(
         f"""
-            UPDATE nostrmarket.stalls SET wallet = ?, name = ?, currency = ?, zones = ?, meta = ?
+            UPDATE nostrmarket.stalls SET wallet = ?, name = ?, currency = ?, pending = ?, zones = ?, meta = ?
             WHERE merchant_id = ? AND id = ?
         """,
         (
             stall.wallet,
             stall.name,
             stall.currency,
+            stall.pending,
             json.dumps(
                 [z.dict() for z in stall.shipping_zones]
             ),  # todo: cost is float. should be int for sats

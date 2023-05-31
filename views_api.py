@@ -42,6 +42,7 @@ from .crud import (
     get_orders_for_stall,
     get_product,
     get_products,
+    get_public_keys_for_merchants,
     get_stall,
     get_stalls,
     get_zone,
@@ -138,6 +139,7 @@ async def api_delete_merchant(
         await delete_merchant_zones(merchant.id)
 
         await nostr_client.unsubscribe_from_direct_messages(merchant.public_key)
+        await nostr_client.unsubscribe_from_merchant_events(merchant.public_key)
         await delete_merchant(merchant.id)
     except AssertionError as ex:
         raise HTTPException(
@@ -317,6 +319,7 @@ async def api_create_stall(
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Stall:
     try:
+        # shipping_zones = await
         data.validate_stall()
 
         merchant = await get_merchant_for_user(wallet.wallet.user)
@@ -406,11 +409,11 @@ async def api_get_stall(stall_id: str, wallet: WalletTypeInfo = Depends(get_key_
 
 
 @nostrmarket_ext.get("/api/v1/stall")
-async def api_get_stalls(wallet: WalletTypeInfo = Depends(get_key_type)):
+async def api_get_stalls(pending: Optional[bool]= False, wallet: WalletTypeInfo = Depends(get_key_type)):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
-        stalls = await get_stalls(merchant.id)
+        stalls = await get_stalls(merchant.id, pending)
         return stalls
     except AssertionError as ex:
         raise HTTPException(
@@ -867,7 +870,8 @@ async def api_list_currencies_available():
 @nostrmarket_ext.put("/api/v1/restart")
 async def restart_nostr_client(wallet: WalletTypeInfo = Depends(require_admin_key)):
     try:
-        await nostr_client.restart()
+        merchant_public_keys = await get_public_keys_for_merchants()
+        await nostr_client.restart(merchant_public_keys)
     except Exception as ex:
         logger.warning(ex)
 
@@ -880,5 +884,10 @@ async def api_stop(wallet: WalletTypeInfo = Depends(check_admin)):
         except Exception as ex:
             logger.warning(ex)
 
-    nostr_client.stop()
+    try:
+        merchant_public_keys = await get_public_keys_for_merchants()
+        await nostr_client.stop(merchant_public_keys)
+    except Exception as ex:
+        logger.warning(ex)
+
     return {"success": True}

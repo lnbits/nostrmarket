@@ -12,6 +12,7 @@ from .crud import (
     create_customer,
     create_direct_message,
     create_order,
+    create_stall,
     get_customer,
     get_merchant_by_pubkey,
     get_order,
@@ -39,6 +40,7 @@ from .models import (
     OrderStatusUpdate,
     PartialDirectMessage,
     PartialOrder,
+    PartialStall,
     PaymentOption,
     PaymentRequest,
     Product,
@@ -236,11 +238,17 @@ async def process_nostr_message(msg: str):
         if type.upper() == "EVENT":
             subscription_id, event = rest
             event = NostrEvent(**event)
+            print("### new event", event.kind, subscription_id)
+            print("### new event json: ", json.dumps(event.dict()))
             if event.kind == 0:
                 await _handle_customer_profile_update(event)
-            if event.kind == 4:
+            elif event.kind == 4:
                 _, merchant_public_key = subscription_id.split(":")
                 await _handle_nip04_message(merchant_public_key, event)
+            elif event.kind == 30017:
+                await _handle_stall(event)
+            elif event.kind == 30018:
+                print("### handle product")
             return
     except Exception as ex:
         logger.warning(ex)
@@ -372,3 +380,28 @@ async def _handle_customer_profile_update(event: NostrEvent):
         )
     except Exception as ex:
         logger.warning(ex)
+
+
+async def _handle_stall(event: NostrEvent):
+    try:
+        merchant = await get_merchant_by_pubkey(event.pubkey)
+        assert merchant, f"Merchant not found for public key '{event.pubkey}'"
+        stall_json = json.loads(event.content)
+
+        if "id" not in stall_json:
+            return
+
+        stall = PartialStall(
+            id=stall_json["id"],
+            name=stall_json.get("name", "Recoverd Stall (no name)"),
+            wallet="",
+            currency=stall_json.get("currency", "sat"),
+            shipping_zones=stall_json.get("shipping", []),
+            pending=True,
+        )
+        stall.config.event_id = event.id
+        stall.config.description = getattr(stall_json, "description", None)
+        await create_stall(merchant.id, stall)
+        
+    except Exception as ex:
+        logger.error(ex)

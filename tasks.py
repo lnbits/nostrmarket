@@ -43,6 +43,9 @@ async def wait_for_nostr_events(nostr_client: NostrClient):
 
         await nostr_client.subscribe_to_direct_messages(p, since)
 
+    for p in public_keys:
+        await nostr_client.subscribe_to_merchant_events(p, 0)
+
     customers = await get_all_customers()
     for c in customers:
         await nostr_client.subscribe_to_user_profile(c.public_key, c.event_created_at)
