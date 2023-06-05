@@ -80,6 +80,14 @@ async def get_public_keys_for_merchants() -> List[str]:
     return [row[0] for row in rows]
 
 
+async def get_ids_for_merchants() -> List[str]:
+    rows = await db.fetchall(
+        """SELECT id FROM nostrmarket.merchants""",
+    )
+
+    return [row[0] for row in rows]
+
+
 async def get_merchant_for_user(user_id: str) -> Optional[Merchant]:
     row = await db.fetchone(
         """SELECT * FROM nostrmarket.merchants WHERE user_id = ? """,
@@ -213,6 +221,15 @@ async def get_stalls(merchant_id: str, pending: Optional[bool] = False) -> List[
     )
     return [Stall.from_row(row) for row in rows]
 
+async def get_last_stall_update_time(merchant_id: str) -> int:
+    row = await db.fetchone(
+        """
+            SELECT event_created_at FROM nostrmarket.stalls 
+            WHERE merchant_id = ? ORDER BY event_created_at DESC LIMIT 1
+        """,
+        (merchant_id,),
+    )
+    return row[0] or 0 if row else 0
 
 async def update_stall(merchant_id: str, stall: Stall) -> Optional[Stall]:
     await db.execute(
@@ -362,6 +379,15 @@ async def get_wallet_for_product(product_id: str) -> Optional[str]:
     )
     return row[0] if row else None
 
+async def get_last_product_update_time(merchant_id: str) -> int:
+    row = await db.fetchone(
+        """
+            SELECT event_created_at FROM nostrmarket.products 
+            WHERE merchant_id = ? ORDER BY event_created_at DESC LIMIT 1
+        """,
+        (merchant_id,),
+    )
+    return row[0] or 0 if row else 0
 
 async def delete_product(merchant_id: str, product_id: str) -> None:
     await db.execute(

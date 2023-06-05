@@ -7,6 +7,8 @@ from .crud import (
     get_all_customers,
     get_last_direct_messages_time,
     get_last_order_time,
+    get_last_product_update_time,
+    get_last_stall_update_time,
     get_public_keys_for_merchants,
 )
 from .nostr.nostr_client import NostrClient
@@ -44,7 +46,12 @@ async def wait_for_nostr_events(nostr_client: NostrClient):
         await nostr_client.subscribe_to_direct_messages(p, since)
 
     for p in public_keys:
-        await nostr_client.subscribe_to_merchant_events(p, 0)
+        last_stall_update = await get_last_stall_update_time(p)
+        await nostr_client.subscribe_to_stall_events(p, last_stall_update)
+
+    for p in public_keys:
+        last_product_update = await get_last_product_update_time(p)
+        await nostr_client.subscribe_to_product_events(p, last_product_update)
 
     customers = await get_all_customers()
     for c in customers:

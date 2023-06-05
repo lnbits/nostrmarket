@@ -91,17 +91,26 @@ class NostrClient:
             ["REQ", f"direct-messages-out:{public_key}", out_messages_filter]
         )
 
-    async def subscribe_to_merchant_events(self, public_key: str, since: int):
+    async def subscribe_to_stall_events(self, public_key: str, since: int):
         stall_filter = {"kinds": [30017], "authors": [public_key]}
-        product_filter = {"kinds": [30018], "authors": [public_key]}
+        if since and since != 0:
+            stall_filter["since"] = since
 
         await self.send_req_queue.put(
             ["REQ", f"stall-events:{public_key}", stall_filter]
         )
+        print("### subscribed to stalls", public_key)
+
+    async def subscribe_to_product_events(self, public_key: str, since: int):
+        product_filter = {"kinds": [30018], "authors": [public_key]}
+        if since and since != 0:
+            product_filter["since"] = since
+
         await self.send_req_queue.put(
             ["REQ", f"product-events:{public_key}", product_filter]
         )
-        print("### subscribed to stalls and products", public_key)
+        print("### subscribed to products", public_key)
+
 
     async def subscribe_to_user_profile(self, public_key: str, since: int):
         profile_filter = {"kinds": [0], "authors": [public_key]}

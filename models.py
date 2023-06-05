@@ -140,9 +140,6 @@ class Zone(PartialZone):
 
 
 class StallConfig(BaseModel):
-    """Last published nostr event id for this Stall"""
-
-    event_id: Optional[str]
     image_url: Optional[str]
     description: Optional[str]
 
@@ -166,6 +163,11 @@ class PartialStall(BaseModel):
 
 class Stall(PartialStall, Nostrable):
     id: str
+
+    """Last published nostr event for this Stall"""
+    event_id: Optional[str]
+    event_created_at: Optional[int]
+
 
     def to_nostr_event(self, pubkey: str) -> NostrEvent:
         content = {
@@ -210,7 +212,6 @@ class Stall(PartialStall, Nostrable):
 
 
 class ProductConfig(BaseModel):
-    event_id: Optional[str]
     description: Optional[str]
     currency: Optional[str]
 
@@ -227,6 +228,10 @@ class PartialProduct(BaseModel):
 
 class Product(PartialProduct, Nostrable):
     id: str
+
+    """Last published nostr event for this Stall"""
+    event_id: Optional[str]
+    event_created_at: Optional[int]
 
     def to_nostr_event(self, pubkey: str) -> NostrEvent:
         content = {
