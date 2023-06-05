@@ -9,7 +9,7 @@ from .crud import (
     get_last_order_time,
     get_last_product_update_time,
     get_last_stall_update_time,
-    get_public_keys_for_merchants,
+    get_merchants_ids_with_pubkeys,
 )
 from .nostr.nostr_client import NostrClient
 from .services import handle_order_paid, process_nostr_message
@@ -37,21 +37,21 @@ async def on_invoice_paid(payment: Payment) -> None:
 
 
 async def wait_for_nostr_events(nostr_client: NostrClient):
-    public_keys = await get_public_keys_for_merchants()
-    for p in public_keys:
+    merchant_ids = await get_merchants_ids_with_pubkeys()
+    for _, p in merchant_ids:
         last_order_time = await get_last_order_time(p)
         last_dm_time = await get_last_direct_messages_time(p)
         since = max(last_order_time, last_dm_time)
 
         await nostr_client.subscribe_to_direct_messages(p, since)
 
-    for p in public_keys:
-        last_stall_update = await get_last_stall_update_time(p)
-        await nostr_client.subscribe_to_stall_events(p, last_stall_update)
+    for id, pk in merchant_ids:
+        last_stall_update = await get_last_stall_update_time(id)
+        await nostr_client.subscribe_to_stall_events(pk, last_stall_update)
 
-    for p in public_keys:
-        last_product_update = await get_last_product_update_time(p)
-        await nostr_client.subscribe_to_product_events(p, last_product_update)
+    for id, pk in merchant_ids:
+        last_product_update = await get_last_product_update_time(id)
+        await nostr_client.subscribe_to_product_events(pk, last_product_update)
 
     customers = await get_all_customers()
     for c in customers:

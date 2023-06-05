@@ -72,20 +72,12 @@ async def get_merchant_by_pubkey(public_key: str) -> Optional[Merchant]:
     return Merchant.from_row(row) if row else None
 
 
-async def get_public_keys_for_merchants() -> List[str]:
+async def get_merchants_ids_with_pubkeys() -> List[str]:
     rows = await db.fetchall(
-        """SELECT public_key FROM nostrmarket.merchants""",
+        """SELECT id, public_key FROM nostrmarket.merchants""",
     )
 
-    return [row[0] for row in rows]
-
-
-async def get_ids_for_merchants() -> List[str]:
-    rows = await db.fetchall(
-        """SELECT id FROM nostrmarket.merchants""",
-    )
-
-    return [row[0] for row in rows]
+    return [(row[0], row[1]) for row in rows]
 
 
 async def get_merchant_for_user(user_id: str) -> Optional[Merchant]:
@@ -180,8 +172,9 @@ async def create_stall(merchant_id: str, data: PartialStall) -> Stall:
 
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.stalls (merchant_id, id, wallet, name, currency, pending, zones, meta)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO nostrmarket.stalls
+        (merchant_id, id,  wallet, name, currency, pending, event_id, event_created_at, zones, meta)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO NOTHING
         """,
         (
@@ -191,6 +184,8 @@ async def create_stall(merchant_id: str, data: PartialStall) -> Stall:
             data.name,
             data.currency,
             data.pending,
+            data.event_id,
+            data.event_created_at,
             json.dumps(
                 [z.dict() for z in data.shipping_zones]
             ),  # todo: cost is float. should be int for sats
@@ -234,7 +229,7 @@ async def get_last_stall_update_time(merchant_id: str) -> int:
 async def update_stall(merchant_id: str, stall: Stall) -> Optional[Stall]:
     await db.execute(
         f"""
-            UPDATE nostrmarket.stalls SET wallet = ?, name = ?, currency = ?, pending = ?, zones = ?, meta = ?
+            UPDATE nostrmarket.stalls SET wallet = ?, name = ?, currency = ?, pending = ?, event_id = ?, event_created_at = ?, zones = ?, meta = ?
             WHERE merchant_id = ? AND id = ?
         """,
         (
@@ -242,12 +237,14 @@ async def update_stall(merchant_id: str, stall: Stall) -> Optional[Stall]:
             stall.name,
             stall.currency,
             stall.pending,
+            stall.event_id,
+            stall.event_created_at,
             json.dumps(
                 [z.dict() for z in stall.shipping_zones]
             ),  # todo: cost is float. should be int for sats
             json.dumps(stall.config.dict()),
             merchant_id,
-            stall.id,
+            stall.id
         ),
     )
     return await get_stall(merchant_id, stall.id)
@@ -278,8 +275,9 @@ async def create_product(merchant_id: str, data: PartialProduct) -> Product:
 
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.products (merchant_id, id, stall_id, name, price, quantity, image_urls, category_list, meta)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO nostrmarket.products 
+        (merchant_id, id, stall_id, name, price, quantity, pending, event_id, event_created_at, image_urls, category_list, meta)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             merchant_id,
@@ -288,6 +286,9 @@ async def create_product(merchant_id: str, data: PartialProduct) -> Product:
             data.name,
             data.price,
             data.quantity,
+            data.pending,
+            data.event_id,
+            data.event_created_at,
             json.dumps(data.images),
             json.dumps(data.categories),
             json.dumps(data.config.dict()),
@@ -303,13 +304,15 @@ async def update_product(merchant_id: str, product: Product) -> Product:
 
     await db.execute(
         f"""
-        UPDATE nostrmarket.products set name = ?, price = ?, quantity = ?, image_urls = ?, category_list = ?, meta = ?
+        UPDATE nostrmarket.products set name = ?, price = ?, quantity = ?, event_id =?, event_created_at = ?, image_urls = ?, category_list = ?, meta = ?
         WHERE merchant_id = ? AND id = ?
         """,
         (
             product.name,
             product.price,
             product.quantity,
+            product.event_id,
+            product.event_created_at,
             json.dumps(product.images),
             json.dumps(product.categories),
             json.dumps(product.config.dict()),

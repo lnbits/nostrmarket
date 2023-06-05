@@ -12,6 +12,7 @@ from .crud import (
     create_customer,
     create_direct_message,
     create_order,
+    create_product,
     create_stall,
     get_customer,
     get_merchant_by_pubkey,
@@ -44,6 +45,7 @@ from .models import (
     PaymentOption,
     PaymentRequest,
     Product,
+    Stall,
 )
 from .nostr.event import NostrEvent
 
@@ -128,10 +130,12 @@ async def update_merchant_to_nostr(
         products = await get_products(merchant.id, stall.id)
         for product in products:
             event = await sign_and_send_to_nostr(merchant, product, delete_merchant)
-            product.config.event_id = event.id
+            product.event_id = event.id
+            product.event_created_at = event.created_at
             await update_product(merchant.id, product)
         event = await sign_and_send_to_nostr(merchant, stall, delete_merchant)
-        stall.config.event_id = event.id
+        stall.event_id = event.id
+        stall.event_created_at = event.created_at
         await update_stall(merchant.id, stall)
     if delete_merchant:
         # merchant profile updates not supported yet
@@ -203,7 +207,7 @@ async def update_products_for_order(
     for p in products:
         product = await update_product_quantity(p.id, p.quantity)
         event = await sign_and_send_to_nostr(merchant, product)
-        product.config.event_id = event.id
+        product.event_id = event.id
         await update_product(merchant.id, product)
 
     return True, "ok"
@@ -248,7 +252,7 @@ async def process_nostr_message(msg: str):
             elif event.kind == 30017:
                 await _handle_stall(event)
             elif event.kind == 30018:
-                print("### handle product")
+                await _handle_product(event)
             return
     except Exception as ex:
         logger.warning(ex)
@@ -391,17 +395,45 @@ async def _handle_stall(event: NostrEvent):
         if "id" not in stall_json:
             return
 
-        stall = PartialStall(
+        stall = Stall(
             id=stall_json["id"],
             name=stall_json.get("name", "Recoverd Stall (no name)"),
             wallet="",
             currency=stall_json.get("currency", "sat"),
             shipping_zones=stall_json.get("shipping", []),
             pending=True,
+            event_id = event.id,
+            event_created_at = event.created_at
         )
-        stall.config.event_id = event.id
-        stall.config.description = getattr(stall_json, "description", None)
+        stall.config.description = stall_json.get("description", "")
         await create_stall(merchant.id, stall)
+        
+    except Exception as ex:
+        logger.error(ex)
+
+async def _handle_product(event: NostrEvent):
+    try:
+        merchant = await get_merchant_by_pubkey(event.pubkey)
+        assert merchant, f"Merchant not found for public key '{event.pubkey}'"
+        product_json = json.loads(event.content)
+
+        assert "id" in product_json, "Product is missing ID"
+        assert "stall_id" in product_json, "Product is missing Stall ID"
+
+        product = Product(
+            id=product_json["id"],
+            stall_id=product_json["stall_id"],
+            name=product_json.get("name", "Recoverd Product (no name)"),
+            images=product_json.get("images", []),
+            price=product_json.get("price", 0),
+            quantity=product_json.get("quantity", 0),
+            pending=True,
+            event_id = event.id,
+            event_created_at = event.created_at
+        )
+        product.config.description = product_json.get("description", "")
+        product.config.currency = product_json.get("currency", "sat")
+        await create_product(merchant.id, product)
         
     except Exception as ex:
         logger.error(ex)

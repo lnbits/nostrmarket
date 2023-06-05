@@ -37,12 +37,12 @@ from .crud import (
     get_direct_messages,
     get_merchant_by_pubkey,
     get_merchant_for_user,
+    get_merchants_ids_with_pubkeys,
     get_order,
     get_orders,
     get_orders_for_stall,
     get_product,
     get_products,
-    get_public_keys_for_merchants,
     get_stall,
     get_stalls,
     get_zone,
@@ -328,7 +328,7 @@ async def api_create_stall(
 
         event = await sign_and_send_to_nostr(merchant, stall)
 
-        stall.config.event_id = event.id
+        stall.event_id = event.id
         await update_stall(merchant.id, stall)
 
         return stall
@@ -362,7 +362,7 @@ async def api_update_stall(
 
         event = await sign_and_send_to_nostr(merchant, stall)
 
-        stall.config.event_id = event.id
+        stall.event_id = event.id
         await update_stall(merchant.id, stall)
 
         return stall
@@ -497,7 +497,7 @@ async def api_delete_stall(
 
         event = await sign_and_send_to_nostr(merchant, stall, True)
 
-        stall.config.event_id = event.id
+        stall.event_id = event.id
         await update_stall(merchant.id, stall)
 
     except AssertionError as ex:
@@ -535,7 +535,7 @@ async def api_create_product(
 
         event = await sign_and_send_to_nostr(merchant, product)
 
-        product.config.event_id = event.id
+        product.event_id = event.id
         await update_product(merchant.id, product)
 
         return product
@@ -571,7 +571,7 @@ async def api_update_product(
 
         product = await update_product(merchant.id, product)
         event = await sign_and_send_to_nostr(merchant, product)
-        product.config.event_id = event.id
+        product.event_id = event.id
         await update_product(merchant.id, product)
 
         return product
@@ -630,7 +630,7 @@ async def api_delete_product(
 
         await delete_product(merchant.id, product_id)
         event = await sign_and_send_to_nostr(merchant, product, True)
-        product.config.event_id = event.id
+        product.event_id = event.id
         await update_product(merchant.id, product)
 
     except AssertionError as ex:
@@ -870,7 +870,8 @@ async def api_list_currencies_available():
 @nostrmarket_ext.put("/api/v1/restart")
 async def restart_nostr_client(wallet: WalletTypeInfo = Depends(require_admin_key)):
     try:
-        merchant_public_keys = await get_public_keys_for_merchants()
+        ids = await get_merchants_ids_with_pubkeys()
+        merchant_public_keys = [id[0] for id in ids]
         await nostr_client.restart(merchant_public_keys)
     except Exception as ex:
         logger.warning(ex)
@@ -885,7 +886,8 @@ async def api_stop(wallet: WalletTypeInfo = Depends(check_admin)):
             logger.warning(ex)
 
     try:
-        merchant_public_keys = await get_public_keys_for_merchants()
+        ids = await get_merchants_ids_with_pubkeys()
+        merchant_public_keys = [id[0] for id in ids]
         await nostr_client.stop(merchant_public_keys)
     except Exception as ex:
         logger.warning(ex)

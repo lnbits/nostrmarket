@@ -153,6 +153,10 @@ class PartialStall(BaseModel):
     config: StallConfig = StallConfig()
     pending: bool = False
 
+    """Last published nostr event for this Stall"""
+    event_id: Optional[str]
+    event_created_at: Optional[int]
+
     def validate_stall(self):
         for z in self.shipping_zones:
             if z.currency != self.currency:
@@ -163,11 +167,6 @@ class PartialStall(BaseModel):
 
 class Stall(PartialStall, Nostrable):
     id: str
-
-    """Last published nostr event for this Stall"""
-    event_id: Optional[str]
-    event_created_at: Optional[int]
-
 
     def to_nostr_event(self, pubkey: str) -> NostrEvent:
         content = {
@@ -193,7 +192,7 @@ class Stall(PartialStall, Nostrable):
             pubkey=pubkey,
             created_at=round(time.time()),
             kind=5,
-            tags=[["e", self.config.event_id]],
+            tags=[["e", self.event_id]],
             content=f"Stall '{self.name}' deleted",
         )
         delete_event.id = delete_event.event_id
@@ -223,15 +222,16 @@ class PartialProduct(BaseModel):
     images: List[str] = []
     price: float
     quantity: int
+    pending: bool = False
     config: ProductConfig = ProductConfig()
+
+    """Last published nostr event for this Product"""
+    event_id: Optional[str]
+    event_created_at: Optional[int]
 
 
 class Product(PartialProduct, Nostrable):
     id: str
-
-    """Last published nostr event for this Stall"""
-    event_id: Optional[str]
-    event_created_at: Optional[int]
 
     def to_nostr_event(self, pubkey: str) -> NostrEvent:
         content = {
@@ -262,7 +262,7 @@ class Product(PartialProduct, Nostrable):
             pubkey=pubkey,
             created_at=round(time.time()),
             kind=5,
-            tags=[["e", self.config.event_id]],
+            tags=[["e", self.event_id]],
             content=f"Product '{self.name}' deleted",
         )
         delete_event.id = delete_event.event_id
