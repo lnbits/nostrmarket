@@ -9,9 +9,11 @@ async function stallList(path) {
       return {
         filter: '',
         stalls: [],
+        pendingStalls: [],
         currencies: [],
         stallDialog: {
           show: false,
+          showRestore: false,
           data: {
             name: '',
             description: '',
@@ -106,22 +108,24 @@ async function stallList(path) {
             this.inkey
           )
 
-          this.currencies = ['sat', ...data]
+          return ['sat', ...data]
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
+        return []
       },
-      getStalls: async function () {
+      getStalls: async function (pending=false) {
         try {
           const {data} = await LNbits.api.request(
             'GET',
-            '/nostrmarket/api/v1/stall',
+            `/nostrmarket/api/v1/stall?pending=${pending}`,
             this.inkey
           )
-          this.stalls = data.map(s => ({...s, expanded: false}))
+          return data.map(s => ({...s, expanded: false}))
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
+        return []
       },
       getZones: async function () {
         try {
@@ -130,7 +134,7 @@ async function stallList(path) {
             '/nostrmarket/api/v1/zone',
             this.inkey
           )
-          this.zoneOptions = data.map(z => ({
+          return data.map(z => ({
             ...z,
             label: z.name
               ? `${z.name} (${z.countries.join(', ')})`
@@ -139,6 +143,7 @@ async function stallList(path) {
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
+        return []
       },
       handleStallDeleted: function (stallId) {
         this.stalls = _.reject(this.stalls, function (obj) {
@@ -153,8 +158,8 @@ async function stallList(path) {
         }
       },
       openCreateStallDialog: async function () {
-        await this.getCurrencies()
-        await this.getZones()
+        this.currencies = await this.getCurrencies()
+        this.zoneOptions = await this.getZones()
         if (!this.zoneOptions || !this.zoneOptions.length) {
           this.$q.notify({
             type: 'warning',
@@ -171,14 +176,19 @@ async function stallList(path) {
         }
         this.stallDialog.show = true
       },
+      openRestoreStallDialog: async function () {
+        this.stallDialog.showRestore = true
+        this.pendingStalls = await this.getStalls(true)
+        console.log('### this.pendingStalls', this.pendingStalls)
+      },
       customerSelectedForOrder: function (customerPubkey) {
         this.$emit('customer-selected-for-order', customerPubkey)
       }
     },
     created: async function () {
-      await this.getStalls()
-      await this.getCurrencies()
-      await this.getZones()
+      this.stalls = await this.getStalls()
+      this.currencies = await this.getCurrencies()
+      this.zoneOptions = await this.getZones()
     }
   })
 }
