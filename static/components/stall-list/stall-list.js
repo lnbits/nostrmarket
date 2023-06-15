@@ -82,6 +82,7 @@ async function stallList(path) {
         })
       },
       createStall: async function (stall) {
+        console.log('### createStall', stall)
         try {
           const {data} = await LNbits.api.request(
             'POST',
@@ -157,7 +158,7 @@ async function stallList(path) {
           this.stalls.splice(index, 1, stall)
         }
       },
-      openCreateStallDialog: async function () {
+      openCreateStallDialog: async function (stallData) {
         this.currencies = await this.getCurrencies()
         this.zoneOptions = await this.getZones()
         if (!this.zoneOptions || !this.zoneOptions.length) {
@@ -167,7 +168,7 @@ async function stallList(path) {
           })
           return
         }
-        this.stallDialog.data = {
+        this.stallDialog.data = stallData || {
           name: '',
           description: '',
           wallet: null,
@@ -179,7 +180,23 @@ async function stallList(path) {
       openRestoreStallDialog: async function () {
         this.stallDialog.showRestore = true
         this.pendingStalls = await this.getStalls(true)
-        console.log('### this.pendingStalls', this.pendingStalls)
+      },
+      restoreStall: async function(pendingStall) {
+        const shippingZonesIds = this.zoneOptions.map(z => z.id)
+        await this.openCreateStallDialog({
+          id: pendingStall.id,
+          name: pendingStall.name,
+          description: pendingStall.config?.description,
+          currency: pendingStall.currency,
+          shippingZones: pendingStall.shipping_zones
+            .filter(z => shippingZonesIds.indexOf(z.id) !== -1)
+            .map(z => ({
+              ...z,
+              label: z.name
+                ? `${z.name} (${z.countries.join(', ')})`
+                : z.countries.join(', ')
+            }))
+        })
       },
       customerSelectedForOrder: function (customerPubkey) {
         this.$emit('customer-selected-for-order', customerPubkey)

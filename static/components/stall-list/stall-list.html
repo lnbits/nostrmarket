@@ -1,16 +1,10 @@
 <div>
   <div class="row items-center no-wrap q-mb-md">
     <div class="col q-pr-lg">
-      <!-- <q-btn
-        @click="openCreateStallDialog"
-        unelevated
-        color="green"
-        class="float-left"
-        >xxx</q-btn
-      > -->
-      <q-btn-dropdown @click="openCreateStallDialog" unelevated split color="green" class="float-left"
+
+      <q-btn-dropdown @click="openCreateStallDialog()" unelevated split color="green" class="float-left"
         label="New Stall (Store)">
-        <q-item @click="openCreateStallDialog" clickable v-close-popup>
+        <q-item @click="openCreateStallDialog()" clickable v-close-popup>
           <q-item-section>
             <q-item-label>New Stall</q-item-label>
             <q-item-label caption>Create a new stall</q-item-label>
@@ -86,7 +80,8 @@
               || !stallDialog.data.currency 
               || !stallDialog.data.wallet 
               || !stallDialog.data.shippingZones 
-              || !stallDialog.data.shippingZones.length" type="submit">Create Stall</q-btn>
+              || !stallDialog.data.shippingZones.length" type="submit"
+              :label="stallDialog.data.id ? 'Restore Stall' : 'Create Stall'"></q-btn>
             <q-btn v-close-popup flat color="grey" class="q-ml-auto">Cancel</q-btn>
           </div>
         </q-form>
@@ -100,9 +95,10 @@
               <q-item-label><span v-text="pendingStall.name"></span></q-item-label>
               <q-item-label caption><span v-text="pendingStall.config?.description"></span></q-item-label>
             </q-item-section>
-           
+
             <q-item-section class="float-right">
-              <q-btn v-close-popup flat color="green" class="q-ml-auto float-right">Restore</q-btn>
+              <q-btn @click="restoreStall(pendingStall)" v-close-popup flat color="green"
+                class="q-ml-auto float-right">Restore</q-btn>
             </q-item-section>
             <q-item-section class="float-right">
               <q-btn v-close-popup color="red" class="q-ml-auto float-right" icon="cancel"></q-btn>
