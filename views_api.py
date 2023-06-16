@@ -431,12 +431,13 @@ async def api_get_stalls(pending: Optional[bool]= False, wallet: WalletTypeInfo 
 @nostrmarket_ext.get("/api/v1/stall/product/{stall_id}")
 async def api_get_stall_products(
     stall_id: str,
+    pending: Optional[bool]= False,
     wallet: WalletTypeInfo = Depends(require_invoice_key),
 ):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
-        products = await get_products(merchant.id, stall_id)
+        products = await get_products(merchant.id, stall_id, pending)
         return products
     except AssertionError as ex:
         raise HTTPException(
