@@ -71,7 +71,7 @@ async function stallList(path) {
     },
     methods: {
       sendStallFormData: async function () {
-        await this.createStall({
+        const stallData = {
           name: this.stallDialog.data.name,
           wallet: this.stallDialog.data.wallet,
           currency: this.stallDialog.data.currency,
@@ -79,12 +79,18 @@ async function stallList(path) {
           config: {
             description: this.stallDialog.data.description
           }
-        })
+        }
+        if (this.stallDialog.data.id) {
+          stallData.id = this.stallDialog.data.id
+          await this.restoreStall(stallData)
+        } else {
+          await this.createStall(stallData)
+        }
+
       },
       createStall: async function (stall) {
-        console.log('### createStall', stall)
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'POST',
             '/nostrmarket/api/v1/stall',
             this.adminkey,
@@ -101,9 +107,54 @@ async function stallList(path) {
           LNbits.utils.notifyApiError(error)
         }
       },
+      restoreStall: async function (stallData) {
+        try {
+          stallData.pending = false
+          const { data } = await LNbits.api.request(
+            'PUT',
+            `/nostrmarket/api/v1/stall/${stallData.id}`,
+            this.adminkey,
+            stallData
+          )
+          this.stallDialog.show = false
+          data.expanded = false
+          this.stalls.unshift(data)
+          this.$q.notify({
+            type: 'positive',
+            message: 'Stall restored!'
+          })
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        }
+      },
+      deleteStall: async function (pendingStall) {
+        LNbits.utils
+          .confirmDialog(
+            `
+           Are you sure you want to delete this pending stall '${pendingStall.name}'?
+          `
+          )
+          .onOk(async () => {
+            try {
+              await LNbits.api.request(
+                'DELETE',
+                '/nostrmarket/api/v1/stall/' + pendingStall.id,
+                this.adminkey
+              )
+              this.$q.notify({
+                type: 'positive',
+                message: 'Pending Stall Deleted',
+                timeout: 5000
+              })
+            } catch (error) {
+              console.warn(error)
+              LNbits.utils.notifyApiError(error)
+            }
+          })
+      },
       getCurrencies: async function () {
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'GET',
             '/nostrmarket/api/v1/currencies',
             this.inkey
@@ -115,14 +166,14 @@ async function stallList(path) {
         }
         return []
       },
-      getStalls: async function (pending=false) {
+      getStalls: async function (pending = false) {
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'GET',
             `/nostrmarket/api/v1/stall?pending=${pending}`,
             this.inkey
           )
-          return data.map(s => ({...s, expanded: false}))
+          return data.map(s => ({ ...s, expanded: false }))
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -130,7 +181,7 @@ async function stallList(path) {
       },
       getZones: async function () {
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'GET',
             '/nostrmarket/api/v1/zone',
             this.inkey
@@ -177,18 +228,18 @@ async function stallList(path) {
         }
         this.stallDialog.show = true
       },
-      openRestoreStallDialog: async function () {
+      openSelectPendingStallDialog: async function () {
         this.stallDialog.showRestore = true
         this.pendingStalls = await this.getStalls(true)
       },
-      restoreStall: async function(pendingStall) {
+      openRestoreStallDialog: async function (pendingStall) {
         const shippingZonesIds = this.zoneOptions.map(z => z.id)
         await this.openCreateStallDialog({
           id: pendingStall.id,
           name: pendingStall.name,
           description: pendingStall.config?.description,
           currency: pendingStall.currency,
-          shippingZones: pendingStall.shipping_zones
+          shippingZones: (pendingStall.shipping_zones || [])
             .filter(z => shippingZonesIds.indexOf(z.id) !== -1)
             .map(z => ({
               ...z,

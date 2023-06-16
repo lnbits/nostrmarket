@@ -10,7 +10,7 @@
             <q-item-label caption>Create a new stall</q-item-label>
           </q-item-section>
         </q-item>
-        <q-item @click="openRestoreStallDialog" clickable v-close-popup>
+        <q-item @click="openSelectPendingStallDialog" clickable v-close-popup>
           <q-item-section>
             <q-item-label>Restore Stall</q-item-label>
             <q-item-label caption>Restore existing stall from Nostr</q-item-label>
@@ -90,18 +90,18 @@
     <q-dialog v-model="stallDialog.showRestore" position="top">
       <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
         <div class="row q-mt-lg">
-          <q-item v-for="pendingStall of pendingStalls" :key="pendingStall.id" tag="label" v-ripple>
+          <q-item v-for="pendingStall of pendingStalls" :key="pendingStall.id" tag="label" class="full-width" v-ripple>
             <q-item-section>
               <q-item-label><span v-text="pendingStall.name"></span></q-item-label>
               <q-item-label caption><span v-text="pendingStall.config?.description"></span></q-item-label>
             </q-item-section>
 
-            <q-item-section class="float-right">
-              <q-btn @click="restoreStall(pendingStall)" v-close-popup flat color="green"
+            <q-item-section class="q-pl-xl float-right">
+              <q-btn @click="openRestoreStallDialog(pendingStall)" v-close-popup flat color="green"
                 class="q-ml-auto float-right">Restore</q-btn>
             </q-item-section>
             <q-item-section class="float-right">
-              <q-btn v-close-popup color="red" class="q-ml-auto float-right" icon="cancel"></q-btn>
+              <q-btn  @click="deleteStall(pendingStall)" v-close-popup color="red" class="q-ml-auto float-right" icon="cancel"></q-btn>
             </q-item-section>
           </q-item>
         </div>
