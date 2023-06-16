@@ -271,13 +271,14 @@ async def delete_merchant_stalls(merchant_id: str) -> None:
 
 
 async def create_product(merchant_id: str, data: PartialProduct) -> Product:
-    product_id = urlsafe_short_hash()
+    product_id = data.id or urlsafe_short_hash()
 
     await db.execute(
         f"""
         INSERT INTO nostrmarket.products 
         (merchant_id, id, stall_id, name, price, quantity, pending, event_id, event_created_at, image_urls, category_list, meta)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO NOTHING
         """,
         (
             merchant_id,

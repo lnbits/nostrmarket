@@ -75,9 +75,9 @@
                   <q-item-label caption>Create a new product</q-item-label>
                 </q-item-section>
               </q-item>
-              <q-item @click="openSelectPendingStallDialog" clickable v-close-popup>
+              <q-item @click="openSelectPendingProductDialog" clickable v-close-popup>
                 <q-item-section>
-                  <q-item-label>Restore Prduct</q-item-label>
+                  <q-item-label>Restore Product</q-item-label>
                   <q-item-label caption>Restore existing product from Nostr</q-item-label>
                 </q-item-section>
               </q-item>
@@ -163,6 +163,33 @@
           <q-btn v-close-popup flat color="grey" class="q-ml-auto">Cancel</q-btn>
         </div>
       </q-form>
+    </q-card>
+  </q-dialog>
+  <q-dialog v-model="productDialog.showRestore" position="top">
+    <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+      <div v-if="pendingProducts && pendingProducts.length" class="row q-mt-lg">
+        <q-item v-for="pendingProduct of pendingProducts" :key="pendingProduct.id" tag="label" class="full-width" v-ripple>
+          <q-item-section>
+            <q-item-label><span v-text="pendingProduct.name"></span></q-item-label>
+            <q-item-label caption><span v-text="pendingProduct.config?.description"></span></q-item-label>
+          </q-item-section>
+
+          <q-item-section class="q-pl-xl float-right">
+            <q-btn @click="openRestoreProductDialog(pendingProduct)" v-close-popup flat color="green"
+              class="q-ml-auto float-right">Restore</q-btn>
+          </q-item-section>
+          <q-item-section class="float-right">
+            <q-btn @click="deleteProduct(pendingProduct)" v-close-popup color="red" class="q-ml-auto float-right"
+              icon="cancel"></q-btn>
+          </q-item-section>
+        </q-item>
+      </div>
+      <div v-else>
+        There are no stalls to be restored.
+      </div>
+      <div class="row q-mt-lg">
+        <q-btn v-close-popup flat color="grey" class="q-ml-auto">Close</q-btn>
+      </div>
     </q-card>
   </q-dialog>
 </div>

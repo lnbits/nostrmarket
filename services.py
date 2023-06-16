@@ -420,11 +420,13 @@ async def _handle_product(event: NostrEvent):
         assert "id" in product_json, "Product is missing ID"
         assert "stall_id" in product_json, "Product is missing Stall ID"
 
+        
         product = Product(
             id=product_json["id"],
             stall_id=product_json["stall_id"],
             name=product_json.get("name", "Recoverd Product (no name)"),
             images=product_json.get("images", []),
+            categories=event.tag_values("t"),
             price=product_json.get("price", 0),
             quantity=product_json.get("quantity", 0),
             pending=True,

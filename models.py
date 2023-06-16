@@ -207,7 +207,7 @@ class Stall(PartialStall, Nostrable):
         return stall
 
 
-######################################## STALLS ########################################
+######################################## PRODUCTS ########################################
 
 
 class ProductConfig(BaseModel):
@@ -216,6 +216,7 @@ class ProductConfig(BaseModel):
 
 
 class PartialProduct(BaseModel):
+    id: Optional[str]
     stall_id: str
     name: str
     categories: List[str] = []
