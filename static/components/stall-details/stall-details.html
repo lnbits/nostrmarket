@@ -10,54 +10,29 @@
         <div class="row items-center no-wrap q-mb-md">
           <div class="col-3 q-pr-lg">ID:</div>
           <div class="col-6 col-sm-8 q-pr-lg">
-            <q-input
-              filled
-              dense
-              readonly
-              disabled
-              v-model.trim="stall.id"
-              type="text"
-            ></q-input>
+            <q-input filled dense readonly disabled v-model.trim="stall.id" type="text"></q-input>
           </div>
           <div class="col-3 col-sm-1"></div>
         </div>
         <div class="row items-center no-wrap q-mb-md">
           <div class="col-3 q-pr-lg">Name:</div>
           <div class="col-6 col-sm-8 q-pr-lg">
-            <q-input
-              filled
-              dense
-              v-model.trim="stall.name"
-              type="text"
-            ></q-input>
+            <q-input filled dense v-model.trim="stall.name" type="text"></q-input>
           </div>
           <div class="col-3 col-sm-1"></div>
         </div>
         <div class="row items-center no-wrap q-mb-md">
           <div class="col-3 q-pr-lg">Description:</div>
           <div class="col-6 col-sm-8 q-pr-lg">
-            <q-input
-              filled
-              dense
-              v-model.trim="stall.config.description"
-              type="textarea"
-              rows="3"
-              label="Description"
-            ></q-input>
+            <q-input filled dense v-model.trim="stall.config.description" type="textarea" rows="3"
+              label="Description"></q-input>
           </div>
           <div class="col-3 col-sm-1"></div>
         </div>
         <div class="row items-center no-wrap q-mb-md">
           <div class="col-3 q-pr-lg">Wallet:</div>
           <div class="col-6 col-sm-8 q-pr-lg">
-            <q-select
-              filled
-              dense
-              emit-value
-              v-model="stall.wallet"
-              :options="walletOptions"
-              label="Wallet *"
-            >
+            <q-select filled dense emit-value v-model="stall.wallet" :options="walletOptions" label="Wallet *">
             </q-select>
           </div>
           <div class="col-3 col-sm-1"></div>
@@ -65,51 +40,25 @@
         <div class="row items-center no-wrap q-mb-md">
           <div class="col-3 q-pr-lg">Currency:</div>
           <div class="col-6 col-sm-8 q-pr-lg">
-            <q-select
-              filled
-              dense
-              v-model="stall.currency"
-              type="text"
-              label="Unit"
-              :options="currencies"
-            ></q-select>
+            <q-select filled dense v-model="stall.currency" type="text" label="Unit" :options="currencies"></q-select>
           </div>
           <div class="col-3 col-sm-1"></div>
         </div>
         <div class="row items-center no-wrap q-mb-md">
           <div class="col-3 q-pr-lg">Shipping Zones:</div>
           <div class="col-6 col-sm-8 q-pr-lg">
-            <q-select
-              :options="filteredZoneOptions"
-              filled
-              dense
-              multiple
-              v-model.trim="stall.shipping_zones"
-              label="Shipping Zones"
-            ></q-select>
+            <q-select :options="filteredZoneOptions" filled dense multiple v-model.trim="stall.shipping_zones"
+              label="Shipping Zones"></q-select>
           </div>
           <div class="col-3 col-sm-1"></div>
         </div>
       </div>
       <div class="row items-center q-mt-xl">
         <div class="col-6 q-pr-lg">
-          <q-btn
-            unelevated
-            color="secondary"
-            class="float-left"
-            @click="updateStall()"
-            >Update Stall</q-btn
-          >
+          <q-btn unelevated color="secondary" class="float-left" @click="updateStall()">Update Stall</q-btn>
         </div>
         <div class="col-6">
-          <q-btn
-            unelevated
-            color="pink"
-            icon="cancel"
-            class="float-right"
-            @click="deleteStall()"
-            >Delete Stall</q-btn
-          >
+          <q-btn unelevated color="pink" icon="cancel" class="float-right" @click="deleteStall()">Delete Stall</q-btn>
         </div>
       </div>
     </q-tab-panel>
@@ -117,14 +66,23 @@
       <div v-if="stall">
         <div class="row items-center no-wrap q-mb-md">
           <div class="col-3 q-pr-lg">
-            <q-btn
-              unelevated
-              color="green"
-              icon="plus"
-              class="float-left"
-              @click="showNewProductDialog()"
-              >New Product</q-btn
-            >
+
+            <q-btn-dropdown @click="showNewProductDialog()" unelevated split color="green" class="float-left"
+              label="New Product">
+              <q-item @click="showNewProductDialog()" clickable v-close-popup>
+                <q-item-section>
+                  <q-item-label>New Product</q-item-label>
+                  <q-item-label caption>Create a new product</q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item @click="openSelectPendingStallDialog" clickable v-close-popup>
+                <q-item-section>
+                  <q-item-label>Restore Prduct</q-item-label>
+                  <q-item-label caption>Restore existing product from Nostr</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-btn-dropdown>
+
           </div>
           <div class="col-6 col-sm-8 q-pr-lg"></div>
           <div class="col-3 col-sm-1"></div>
@@ -132,34 +90,15 @@
 
         <div class="row items-center no-wrap q-mb-md">
           <div class="col-12">
-            <q-table
-              flat
-              dense
-              :data="products"
-              row-key="id"
-              :columns="productsTable.columns"
-              :pagination.sync="productsTable.pagination"
-              :filter="productsFilter"
-            >
+            <q-table flat dense :data="products" row-key="id" :columns="productsTable.columns"
+              :pagination.sync="productsTable.pagination" :filter="productsFilter">
               <template v-slot:body="props">
                 <q-tr :props="props">
                   <q-td auto-width>
-                    <q-btn
-                      size="sm"
-                      color="pink"
-                      dense
-                      @click="deleteProduct(props.row.id)"
-                      icon="delete"
-                    />
+                    <q-btn size="sm" color="pink" dense @click="deleteProduct(props.row.id)" icon="delete" />
                   </q-td>
                   <q-td auto-width>
-                    <q-btn
-                      size="sm"
-                      color="accent"
-                      dense
-                      @click="editProduct(props.row)"
-                      icon="edit"
-                    />
+                    <q-btn size="sm" color="accent" dense @click="editProduct(props.row)" icon="edit" />
                   </q-td>
 
                   <q-td key="id" :props="props"> {{props.row.id}} </q-td>
@@ -186,110 +125,42 @@
     </q-tab-panel>
     <q-tab-panel name="orders">
       <div v-if="stall">
-        <order-list
-          :adminkey="adminkey"
-          :inkey="inkey"
-          :stall-id="stallId"
-          @customer-selected="customerSelectedForOrder"
-        ></order-list>
+        <order-list :adminkey="adminkey" :inkey="inkey" :stall-id="stallId"
+          @customer-selected="customerSelectedForOrder"></order-list>
       </div>
     </q-tab-panel>
   </q-tab-panels>
   <q-dialog v-model="productDialog.showDialog" position="top">
     <q-card v-if="stall" class="q-pa-lg q-pt-xl" style="width: 500px">
       <q-form @submit="sendProductFormData" class="q-gutter-md">
-        <q-input
-          filled
-          dense
-          v-model.trim="productDialog.data.name"
-          label="Name"
-        ></q-input>
+        <q-input filled dense v-model.trim="productDialog.data.name" label="Name"></q-input>
 
-        <q-input
-          filled
-          dense
-          v-model.trim="productDialog.data.config.description"
-          label="Description"
-        ></q-input>
-        <q-select
-          filled
-          multiple
-          dense
-          emit-value
-          v-model.trim="productDialog.data.categories"
-          use-input
-          use-chips
-          multiple
-          hide-dropdown-icon
-          input-debounce="0"
-          new-value-mode="add-unique"
-          label="Categories (Hit Enter to add)"
-          placeholder="crafts,robots,etc"
-        ></q-select>
+        <q-input filled dense v-model.trim="productDialog.data.config.description" label="Description"></q-input>
+        <q-select filled multiple dense emit-value v-model.trim="productDialog.data.categories" use-input use-chips
+          multiple hide-dropdown-icon input-debounce="0" new-value-mode="add-unique"
+          label="Categories (Hit Enter to add)" placeholder="crafts,robots,etc"></q-select>
 
-        <q-input
-          filled
-          dense
-          v-model.trim="productDialog.data.image"
-          @keydown.enter="addProductImage"
-          type="url"
-          label="Image URL"
-        >
-          <q-btn @click="addProductImage" dense flat icon="add"></q-btn
-        ></q-input>
+        <q-input filled dense v-model.trim="productDialog.data.image" @keydown.enter="addProductImage" type="url"
+          label="Image URL">
+          <q-btn @click="addProductImage" dense flat icon="add"></q-btn></q-input>
 
-        <q-chip
-          v-for="imageUrl in productDialog.data.images"
-          :key="imageUrl"
-          removable
-          @remove="removeProductImage(imageUrl)"
-          color="primary"
-          text-color="white"
-        >
+        <q-chip v-for="imageUrl in productDialog.data.images" :key="imageUrl" removable
+          @remove="removeProductImage(imageUrl)" color="primary" text-color="white">
           <span v-text="imageUrl.split('/').pop()"></span>
         </q-chip>
-        <q-input
-          filled
-          dense
-          v-model.number="productDialog.data.price"
-          type="number"
-          :label="'Price (' + stall.currency + ') *'"
-          :step="stall.currency != 'sat' ? '0.01' : '1'"
-          :mask="stall.currency != 'sat' ? '#.##' : '#'"
-          fill-mask="0"
-          reverse-fill-mask
-        ></q-input>
-        <q-input
-          filled
-          dense
-          v-model.number="productDialog.data.quantity"
-          type="number"
-          label="Quantity"
-        ></q-input>
+        <q-input filled dense v-model.number="productDialog.data.price" type="number"
+          :label="'Price (' + stall.currency + ') *'" :step="stall.currency != 'sat' ? '0.01' : '1'"
+          :mask="stall.currency != 'sat' ? '#.##' : '#'" fill-mask="0" reverse-fill-mask></q-input>
+        <q-input filled dense v-model.number="productDialog.data.quantity" type="number" label="Quantity"></q-input>
 
         <div class="row q-mt-lg">
-          <q-btn
-            v-if="productDialog.data.id"
-            unelevated
-            color="primary"
-            type="submit"
-            >Update Product</q-btn
-          >
+          <q-btn v-if="productDialog.data.id" unelevated color="primary" type="submit">Update Product</q-btn>
 
-          <q-btn
-            v-else
-            unelevated
-            color="primary"
-            :disable="!productDialog.data.price
+          <q-btn v-else unelevated color="primary" :disable="!productDialog.data.price
                 || !productDialog.data.name
-                || !productDialog.data.quantity"
-            type="submit"
-            >Create Product</q-btn
-          >
+                || !productDialog.data.quantity" type="submit">Create Product</q-btn>
 
-          <q-btn v-close-popup flat color="grey" class="q-ml-auto"
-            >Cancel</q-btn
-          >
+          <q-btn v-close-popup flat color="grey" class="q-ml-auto">Cancel</q-btn>
         </div>
       </q-form>
     </q-card>
