@@ -89,7 +89,7 @@
     </q-dialog>
     <q-dialog v-model="stallDialog.showRestore" position="top">
       <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
-        <div class="row q-mt-lg">
+        <div v-if="pendingStalls && pendingStalls.length" class="row q-mt-lg">
           <q-item v-for="pendingStall of pendingStalls" :key="pendingStall.id" tag="label" class="full-width" v-ripple>
             <q-item-section>
               <q-item-label><span v-text="pendingStall.name"></span></q-item-label>
@@ -101,9 +101,13 @@
                 class="q-ml-auto float-right">Restore</q-btn>
             </q-item-section>
             <q-item-section class="float-right">
-              <q-btn  @click="deleteStall(pendingStall)" v-close-popup color="red" class="q-ml-auto float-right" icon="cancel"></q-btn>
+              <q-btn @click="deleteStall(pendingStall)" v-close-popup color="red" class="q-ml-auto float-right"
+                icon="cancel"></q-btn>
             </q-item-section>
           </q-item>
+        </div>
+        <div v-else>
+          There are no stalls to be restored.
         </div>
         <div class="row q-mt-lg">
           <q-btn v-close-popup flat color="grey" class="q-ml-auto">Close</q-btn>

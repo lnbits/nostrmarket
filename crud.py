@@ -351,10 +351,10 @@ async def get_product(merchant_id: str, product_id: str) -> Optional[Product]:
     return Product.from_row(row) if row else None
 
 
-async def get_products(merchant_id: str, stall_id: str) -> List[Product]:
+async def get_products(merchant_id: str, stall_id: str, pending: Optional[bool] = False) -> List[Product]:
     rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.products WHERE merchant_id = ? AND stall_id = ?",
-        (merchant_id, stall_id),
+        "SELECT * FROM nostrmarket.products WHERE merchant_id = ? AND stall_id = ? AND pending = ?",
+        (merchant_id, stall_id, pending),
     )
     return [Product.from_row(row) for row in rows]
 
