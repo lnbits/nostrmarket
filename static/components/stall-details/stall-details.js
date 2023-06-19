@@ -217,6 +217,7 @@ async function stallDetails(path) {
         }
         this.productDialog.showDialog = false
         if (this.productDialog.data.id) {
+          data.pending = false
           this.updateProduct(data)
         } else {
           this.createProduct(data)
@@ -233,6 +234,8 @@ async function stallDetails(path) {
           const index = this.products.findIndex(r => r.id === product.id)
           if (index !== -1) {
             this.products.splice(index, 1, data)
+          } else {
+            this.products.unshift(data)
           }
           this.$q.notify({
             type: 'positive',
@@ -310,10 +313,9 @@ async function stallDetails(path) {
       openSelectPendingProductDialog: async function () {
         this.productDialog.showRestore = true
         this.pendingProducts = await this.getProducts(true)
-        console.log('### pendingProducts', this.pendingProducts)
       },
       openRestoreProductDialog: async function (pendingProduct) {
-        console.log('### pendingProduct', pendingProduct)
+        pendingProduct.pending = true
         await this.showNewProductDialog(pendingProduct)
       },
       customerSelectedForOrder: function (customerPubkey) {

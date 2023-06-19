@@ -305,13 +305,14 @@ async def update_product(merchant_id: str, product: Product) -> Product:
 
     await db.execute(
         f"""
-        UPDATE nostrmarket.products set name = ?, price = ?, quantity = ?, event_id =?, event_created_at = ?, image_urls = ?, category_list = ?, meta = ?
+        UPDATE nostrmarket.products set name = ?, price = ?, quantity = ?,  pending = ?, event_id =?, event_created_at = ?, image_urls = ?, category_list = ?, meta = ?
         WHERE merchant_id = ? AND id = ?
         """,
         (
             product.name,
             product.price,
             product.quantity,
+            product.pending,
             product.event_id,
             product.event_created_at,
             json.dumps(product.images),

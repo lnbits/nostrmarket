@@ -630,9 +630,8 @@ async def api_delete_product(
             )
 
         await delete_product(merchant.id, product_id)
-        event = await sign_and_send_to_nostr(merchant, product, True)
-        product.event_id = event.id
-        await update_product(merchant.id, product)
+        await sign_and_send_to_nostr(merchant, product, True)
+
 
     except AssertionError as ex:
         raise HTTPException(

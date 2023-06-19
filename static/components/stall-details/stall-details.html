@@ -154,7 +154,9 @@
         <q-input filled dense v-model.number="productDialog.data.quantity" type="number" label="Quantity"></q-input>
 
         <div class="row q-mt-lg">
-          <q-btn v-if="productDialog.data.id" unelevated color="primary" type="submit">Update Product</q-btn>
+          <q-btn v-if="productDialog.data.id" type="submit"
+            :label="productDialog.data.pending ? 'Restore Product' : 'Update Product'" unelevated
+            color="primary"></q-btn>
 
           <q-btn v-else unelevated color="primary" :disable="!productDialog.data.price
                 || !productDialog.data.name
@@ -168,7 +170,8 @@
   <q-dialog v-model="productDialog.showRestore" position="top">
     <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
       <div v-if="pendingProducts && pendingProducts.length" class="row q-mt-lg">
-        <q-item v-for="pendingProduct of pendingProducts" :key="pendingProduct.id" tag="label" class="full-width" v-ripple>
+        <q-item v-for="pendingProduct of pendingProducts" :key="pendingProduct.id" tag="label" class="full-width"
+          v-ripple>
           <q-item-section>
             <q-item-label><span v-text="pendingProduct.name"></span></q-item-label>
             <q-item-label caption><span v-text="pendingProduct.config?.description"></span></q-item-label>
@@ -179,7 +182,7 @@
               class="q-ml-auto float-right">Restore</q-btn>
           </q-item-section>
           <q-item-section class="float-right">
-            <q-btn @click="deleteProduct(pendingProduct)" v-close-popup color="red" class="q-ml-auto float-right"
+            <q-btn @click="deleteProduct(pendingProduct.id)" v-close-popup color="red" class="q-ml-auto float-right"
               icon="cancel"></q-btn>
           </q-item-section>
         </q-item>
