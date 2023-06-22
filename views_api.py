@@ -1,6 +1,6 @@
 import json
 from http import HTTPStatus
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from fastapi import Depends
 from fastapi.exceptions import HTTPException
