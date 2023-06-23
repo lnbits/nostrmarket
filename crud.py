@@ -513,13 +513,13 @@ async def get_orders_for_stall(
     return [Order.from_row(row) for row in rows]
 
 
-async def get_last_order_time(public_key: str) -> int:
+async def get_last_order_time(merchant_id: str) -> int:
     row = await db.fetchone(
         """
             SELECT event_created_at FROM nostrmarket.orders 
-            WHERE merchant_public_key = ? ORDER BY event_created_at DESC LIMIT 1
+            WHERE merchant_id = ? ORDER BY event_created_at DESC LIMIT 1
         """,
-        (public_key,),
+        (merchant_id,),
     )
     return row[0] if row else 0
 
@@ -621,13 +621,13 @@ async def get_direct_messages(merchant_id: str, public_key: str) -> List[DirectM
     return [DirectMessage.from_row(row) for row in rows]
 
 
-async def get_last_direct_messages_time(public_key: str) -> int:
+async def get_last_direct_messages_time(merchant_id: str) -> int:
     row = await db.fetchone(
         """
             SELECT event_created_at FROM nostrmarket.direct_messages 
-            WHERE public_key = ? ORDER BY event_created_at DESC LIMIT 1
+            WHERE merchant_id = ? ORDER BY event_created_at DESC LIMIT 1
         """,
-        (public_key,),
+        (merchant_id,),
     )
     return row[0] if row else 0
 

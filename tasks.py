@@ -38,12 +38,12 @@ async def on_invoice_paid(payment: Payment) -> None:
 
 async def wait_for_nostr_events(nostr_client: NostrClient):
     merchant_ids = await get_merchants_ids_with_pubkeys()
-    for _, p in merchant_ids:
-        last_order_time = await get_last_order_time(p)
-        last_dm_time = await get_last_direct_messages_time(p)
+    for id, pk in merchant_ids:
+        last_order_time = await get_last_order_time(id)
+        last_dm_time = await get_last_direct_messages_time(id)
         since = max(last_order_time, last_dm_time)
 
-        await nostr_client.subscribe_to_direct_messages(p, since)
+        await nostr_client.subscribe_to_direct_messages(pk, since)
 
     for id, pk in merchant_ids:
         last_stall_update = await get_last_stall_update_time(id)
