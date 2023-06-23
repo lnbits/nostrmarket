@@ -41,7 +41,6 @@ from .models import (
     OrderStatusUpdate,
     PartialDirectMessage,
     PartialOrder,
-    PartialStall,
     PaymentOption,
     PaymentRequest,
     Product,
