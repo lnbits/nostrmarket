@@ -89,6 +89,9 @@ async def api_create_merchant(
         assert merchant == None, "A merchant already exists for this user"
 
         merchant = await create_merchant(wallet.wallet.user, data)
+        
+        await nostr_client.subscribe_to_stall_events(data.public_key, 0)
+        await nostr_client.subscribe_to_product_events(data.public_key, 0)
         await nostr_client.subscribe_to_direct_messages(data.public_key, 0)
 
         return merchant
