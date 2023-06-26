@@ -184,7 +184,7 @@ async def notify_client_of_order_status(
             shipped=order.shipped,
         )
         dm_content = json.dumps(
-            order_status.dict(), separators=(",", ":"), ensure_ascii=False
+            {"type": 2, **order_status.dict()}, separators=(",", ":"), ensure_ascii=False
         )
     else:
         dm_content = f"Order cannot be fulfilled. Reason: {message}"
@@ -238,11 +238,11 @@ async def compute_products_new_quantity(
 async def process_nostr_message(msg: str):
     try:
         type, *rest = json.loads(msg)
+        
         if type.upper() == "EVENT":
             subscription_id, event = rest
             event = NostrEvent(**event)
-            print("### new event", event.kind, subscription_id)
-            print("### new event json: ", json.dumps(event.dict()))
+            print("kind: ", event.kind, ":     " , msg)
             if event.kind == 0:
                 await _handle_customer_profile_update(event)
             elif event.kind == 4:
@@ -253,6 +253,8 @@ async def process_nostr_message(msg: str):
             elif event.kind == 30018:
                 await _handle_product(event)
             return
+        
+        print("### process_nostr_message", msg)
     except Exception as ex:
         logger.warning(ex)
 
@@ -328,6 +330,7 @@ async def _handle_dirrect_message(
             incoming=True,
         )
         await create_direct_message(merchant_id, dm)
+        # todo: do the same for new order
         await websocketUpdater(
             merchant_id,
             json.dumps({"type": "new-direct-message", "customerPubkey": from_pubkey}),
@@ -358,7 +361,8 @@ async def _handle_new_order(order: PartialOrder) -> Optional[str]:
 
     new_order = await create_new_order(order.merchant_public_key, order)
     if new_order:
-        return json.dumps(new_order.dict(), separators=(",", ":"), ensure_ascii=False)
+        response = {"type": 1, **new_order.dict()}
+        return json.dumps(response, separators=(",", ":"), ensure_ascii=False)
 
     return None
 

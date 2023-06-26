@@ -89,7 +89,7 @@ async def api_create_merchant(
         assert merchant == None, "A merchant already exists for this user"
 
         merchant = await create_merchant(wallet.wallet.user, data)
-        
+
         await nostr_client.subscribe_to_stall_events(data.public_key, 0)
         await nostr_client.subscribe_to_product_events(data.public_key, 0)
         await nostr_client.subscribe_to_direct_messages(data.public_key, 0)
@@ -412,7 +412,9 @@ async def api_get_stall(stall_id: str, wallet: WalletTypeInfo = Depends(get_key_
 
 
 @nostrmarket_ext.get("/api/v1/stall")
-async def api_get_stalls(pending: Optional[bool]= False, wallet: WalletTypeInfo = Depends(get_key_type)):
+async def api_get_stalls(
+    pending: Optional[bool] = False, wallet: WalletTypeInfo = Depends(get_key_type)
+):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
@@ -434,7 +436,7 @@ async def api_get_stalls(pending: Optional[bool]= False, wallet: WalletTypeInfo 
 @nostrmarket_ext.get("/api/v1/stall/product/{stall_id}")
 async def api_get_stall_products(
     stall_id: str,
-    pending: Optional[bool]= False,
+    pending: Optional[bool] = False,
     wallet: WalletTypeInfo = Depends(require_invoice_key),
 ):
     try:
@@ -635,7 +637,6 @@ async def api_delete_product(
         await delete_product(merchant.id, product_id)
         await sign_and_send_to_nostr(merchant, product, True)
 
-
     except AssertionError as ex:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
@@ -726,7 +727,9 @@ async def api_update_order_status(
         assert order, "Cannot find updated order"
 
         data.paid = order.paid
-        dm_content = json.dumps(data.dict(), separators=(",", ":"), ensure_ascii=False)
+        dm_content = json.dumps(
+            {"type": 2, **data.dict()}, separators=(",", ":"), ensure_ascii=False
+        )
 
         dm_event = merchant.build_dm_event(dm_content, order.public_key)
         await nostr_client.publish_nostr_event(dm_event)
