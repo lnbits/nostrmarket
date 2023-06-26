@@ -8,8 +8,8 @@ async function orderList(path) {
     watch: {
       customerPubkeyFilter: async function (n) {
         this.search.publicKey = n
-        this.search.isPaid = {label: 'All', id: null}
-        this.search.isShipped = {label: 'All', id: null}
+        this.search.isPaid = { label: 'All', id: null }
+        this.search.isShipped = { label: 'All', id: null }
         await this.getOrders()
       }
     },
@@ -156,24 +156,24 @@ async function orderList(path) {
           if (this.search.isShipped.id) {
             query.push(`shipped=${this.search.isShipped.id}`)
           }
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'GET',
             `/nostrmarket/api/v1/${ordersPath}?${query.join('&')}`,
             this.inkey
           )
-          this.orders = data.map(s => ({...s, expanded: false}))
+          this.orders = data.map(s => ({ ...s, expanded: false }))
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
       },
       getOrder: async function (orderId) {
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'GET',
             `/nostrmarket/api/v1/order/${orderId}`,
             this.inkey
           )
-          return {...data, expanded: false, isNew: true}
+          return { ...data, expanded: false, isNew: true }
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -213,8 +213,8 @@ async function orderList(path) {
       showShipOrderDialog: function (order) {
         this.selectedOrder = order
         this.shippingMessage = order.shipped
-          ? `The order has been shipped! Order ID: '${order.id}' `
-          : `The order has NOT yet been shipped! Order ID: '${order.id}'`
+          ? 'The order has been shipped!'
+          : 'The order has NOT yet been shipped!'
 
         // do not change the status yet
         this.selectedOrder.shipped = !order.shipped
@@ -225,7 +225,7 @@ async function orderList(path) {
       },
       getCustomers: async function () {
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'GET',
             '/nostrmarket/api/v1/customer',
             this.inkey
