@@ -377,18 +377,23 @@ async def _handle_dirrect_message(
 async def _handle_new_order(order: PartialOrder) -> Optional[str]:
     order.validate_order()
 
-    first_product_id = order.items[0].product_id
-    wallet_id = await get_wallet_for_product(first_product_id)
-    assert wallet_id, f"Cannot find wallet id for product id: {first_product_id}"
+    try:
+        first_product_id = order.items[0].product_id
+        wallet_id = await get_wallet_for_product(first_product_id)
+        assert wallet_id, f"Cannot find wallet id for product id: {first_product_id}"
 
-    wallet = await get_wallet(wallet_id)
-    assert wallet, f"Cannot find wallet for product id: {first_product_id}"
+        wallet = await get_wallet(wallet_id)
+        assert wallet, f"Cannot find wallet for product id: {first_product_id}"
 
-    new_order = await create_new_order(order.merchant_public_key, order)
-    if new_order:
-        response = {"type": DirectMessageType.PAYMENT_REQUEST.value, **new_order.dict()}
+        
+        payment_req = await create_new_order(order.merchant_public_key, order)
+    except Exception as e:
+        payment_req = PaymentRequest(id=order.id, message=str(e), payment_options=[])
+
+    if payment_req:
+        response = {"type": DirectMessageType.PAYMENT_REQUEST.value, **payment_req.dict()}
         return json.dumps(response, separators=(",", ":"), ensure_ascii=False)
-
+    
     return None
 
 

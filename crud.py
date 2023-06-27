@@ -366,7 +366,11 @@ async def get_products_by_ids(
 ) -> List[Product]:
     q = ",".join(["?"] * len(product_ids))
     rows = await db.fetchall(
-        f"SELECT id, stall_id, name, price, quantity, category_list, meta  FROM nostrmarket.products WHERE merchant_id = ? AND id IN ({q})",
+        f"""
+            SELECT id, stall_id, name, price, quantity, category_list, meta  
+            FROM nostrmarket.products 
+            WHERE merchant_id = ? AND pending = false AND id IN ({q})
+        """,
         (merchant_id, *product_ids),
     )
     return [Product.from_row(row) for row in rows]
@@ -378,7 +382,7 @@ async def get_wallet_for_product(product_id: str) -> Optional[str]:
         SELECT s.wallet FROM nostrmarket.products p
         INNER JOIN nostrmarket.stalls s
         ON p.stall_id = s.id
-        WHERE p.id=?
+        WHERE p.id = ? AND p.pending = false AND s.pending = false
        """,
         (product_id,),
     )
@@ -620,6 +624,16 @@ async def get_direct_messages(merchant_id: str, public_key: str) -> List[DirectM
         (merchant_id, public_key),
     )
     return [DirectMessage.from_row(row) for row in rows]
+
+async def get_orders_from_direct_messages(merchant_id: str) -> List[DirectMessage]:
+    rows = await db.fetchall(
+        "SELECT * FROM nostrmarket.direct_messages WHERE merchant_id = ? AND type >= 0 ORDER BY event_created_at, type",
+        (merchant_id),
+    )
+    return [DirectMessage.from_row(row) for row in rows]
+
+
+
 
 
 async def get_last_direct_messages_time(merchant_id: str) -> int:
