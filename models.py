@@ -437,7 +437,7 @@ class PartialDirectMessage(BaseModel):
                 return DirectMessageType.CUSTOMER_ORDER, msg_json
            
             return DirectMessageType.PLAIN_TEXT, None
-        except ValueError:
+        except Exception:
             return DirectMessageType.PLAIN_TEXT, None
 
 
