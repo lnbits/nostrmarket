@@ -75,14 +75,6 @@ def copy_x(output, x32, y32, data):
     return 1
 
 
-def order_from_json(s: str) -> Tuple[Optional[Any], Optional[str]]:
-    try:
-        order = json.loads(s)
-        return (order, s) if (type(order) is dict) and "items" in order else (None, s)
-    except ValueError:
-        return None, s
-
-
 def normalize_public_key(pubkey: str) -> str:
     if pubkey.startswith("npub1"):
         _, decoded_data = bech32_decode(pubkey)

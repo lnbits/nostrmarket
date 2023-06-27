@@ -1,8 +1,9 @@
 import json
 import time
 from abc import abstractmethod
+from enum import Enum
 from sqlite3 import Row
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from pydantic import BaseModel
 
@@ -409,13 +410,35 @@ class PaymentRequest(BaseModel):
 ######################################## MESSAGE ########################################
 
 
+
+class DirectMessageType(Enum):
+    """Various types os direct messages."""
+    PLAIN_TEXT = -1
+    CUSTOMER_ORDER = 0
+    PAYMENT_REQUEST = 1
+    ORDER_PAID_OR_SHIPPED = 2
+
 class PartialDirectMessage(BaseModel):
     event_id: Optional[str]
     event_created_at: Optional[int]
     message: str
     public_key: str
+    type: int = DirectMessageType.PLAIN_TEXT.value
     incoming: bool = False
     time: Optional[int]
+
+    @classmethod
+    def parse_message(cls, msg) -> Tuple[DirectMessageType, Optional[Any]]:
+        try:
+            msg_json = json.loads(msg)
+            if "type" in msg_json:
+                return DirectMessageType(msg_json["type"]), msg_json
+            if (type(msg_json) is dict) and "items" in msg_json:
+                return DirectMessageType.CUSTOMER_ORDER, msg_json
+           
+            return DirectMessageType.PLAIN_TEXT, None
+        except ValueError:
+            return DirectMessageType.PLAIN_TEXT, None
 
 
 class DirectMessage(PartialDirectMessage):
@@ -425,6 +448,7 @@ class DirectMessage(PartialDirectMessage):
     def from_row(cls, row: Row) -> "DirectMessage":
         dm = cls(**dict(row))
         return dm
+
 
 
 ######################################## CUSTOMERS ########################################

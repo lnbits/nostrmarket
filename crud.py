@@ -567,8 +567,8 @@ async def create_direct_message(
     dm_id = urlsafe_short_hash()
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.direct_messages (merchant_id, id, event_id, event_created_at, message, public_key, incoming)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO nostrmarket.direct_messages (merchant_id, id, event_id, event_created_at, message, public_key, type, incoming)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(event_id) DO NOTHING
         """,
         (
@@ -578,6 +578,7 @@ async def create_direct_message(
             dm.event_created_at,
             dm.message,
             dm.public_key,
+            dm.type,
             dm.incoming,
         ),
     )

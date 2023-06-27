@@ -58,6 +58,7 @@ from .helpers import normalize_public_key
 from .models import (
     Customer,
     DirectMessage,
+    DirectMessageType,
     Merchant,
     Order,
     OrderStatusUpdate,
@@ -728,10 +729,22 @@ async def api_update_order_status(
 
         data.paid = order.paid
         dm_content = json.dumps(
-            {"type": 2, **data.dict()}, separators=(",", ":"), ensure_ascii=False
+            {"type": DirectMessageType.ORDER_PAID_OR_SHIPPED.value, **data.dict()},
+            separators=(",", ":"),
+            ensure_ascii=False,
         )
 
         dm_event = merchant.build_dm_event(dm_content, order.public_key)
+
+        dm = PartialDirectMessage(
+            event_id=dm_event.id,
+            event_created_at=dm_event.created_at,
+            message=dm_content,
+            public_key=order.public_key,
+            type=DirectMessageType.ORDER_PAID_OR_SHIPPED.value,
+        )
+        await create_direct_message(merchant.id, dm)
+
         await nostr_client.publish_nostr_event(dm_event)
 
         return order

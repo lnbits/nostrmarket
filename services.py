@@ -30,9 +30,9 @@ from .crud import (
     update_product_quantity,
     update_stall,
 )
-from .helpers import order_from_json
 from .models import (
     Customer,
+    DirectMessageType,
     Merchant,
     Nostrable,
     Order,
@@ -184,12 +184,26 @@ async def notify_client_of_order_status(
             shipped=order.shipped,
         )
         dm_content = json.dumps(
-            {"type": 2, **order_status.dict()}, separators=(",", ":"), ensure_ascii=False
+            {"type": DirectMessageType.ORDER_PAID_OR_SHIPPED.value, **order_status.dict()},
+            separators=(",", ":"),
+            ensure_ascii=False,
         )
     else:
         dm_content = f"Order cannot be fulfilled. Reason: {message}"
 
     dm_event = merchant.build_dm_event(dm_content, order.public_key)
+
+    dm = PartialDirectMessage(
+        event_id=dm_event.id,
+        event_created_at=dm_event.created_at,
+        message=dm_content,
+        public_key=order.public_key,
+        type=DirectMessageType.ORDER_PAID_OR_SHIPPED.value
+        if success
+        else DirectMessageType.PLAIN_TEXT.value,
+    )
+    await create_direct_message(merchant.id, dm)
+
     await nostr_client.publish_nostr_event(dm_event)
 
 
@@ -238,11 +252,11 @@ async def compute_products_new_quantity(
 async def process_nostr_message(msg: str):
     try:
         type, *rest = json.loads(msg)
-        
+
         if type.upper() == "EVENT":
             subscription_id, event = rest
             event = NostrEvent(**event)
-            print("kind: ", event.kind, ":     " , msg)
+            print("kind: ", event.kind, ":     ", msg)
             if event.kind == 0:
                 await _handle_customer_profile_update(event)
             elif event.kind == 4:
@@ -253,7 +267,7 @@ async def process_nostr_message(msg: str):
             elif event.kind == 30018:
                 await _handle_product(event)
             return
-        
+
         print("### process_nostr_message", msg)
     except Exception as ex:
         logger.warning(ex)
@@ -295,6 +309,14 @@ async def _handle_incoming_dms(
     )
     if dm_reply:
         dm_event = merchant.build_dm_event(dm_reply, event.pubkey)
+        dm = PartialDirectMessage(
+            event_id=dm_event.id,
+            event_created_at=dm_event.created_at,
+            message=dm_reply,
+            public_key=event.pubkey,
+            type=DirectMessageType.PAYMENT_REQUEST.value,
+        )
+        await create_direct_message(merchant.id, dm)
         await nostr_client.publish_nostr_event(dm_event)
 
 
@@ -302,12 +324,14 @@ async def _handle_outgoing_dms(
     event: NostrEvent, merchant: Merchant, clear_text_msg: str
 ):
     sent_to = event.tag_values("p")
+    type, _ = PartialDirectMessage.parse_message(clear_text_msg)
     if len(sent_to) != 0:
         dm = PartialDirectMessage(
             event_id=event.id,
             event_created_at=event.created_at,
-            message=clear_text_msg,  # exclude if json
+            message=clear_text_msg,
             public_key=sent_to[0],
+            type=type.value
         )
         await create_direct_message(merchant.id, dm)
 
@@ -320,14 +344,15 @@ async def _handle_dirrect_message(
     event_created_at: int,
     msg: str,
 ) -> Optional[str]:
-    order, text_msg = order_from_json(msg)
+    type, order = PartialDirectMessage.parse_message(msg)
     try:
         dm = PartialDirectMessage(
             event_id=event_id,
             event_created_at=event_created_at,
-            message=text_msg,
+            message=msg,
             public_key=from_pubkey,
             incoming=True,
+            type=type.value,
         )
         await create_direct_message(merchant_id, dm)
         # todo: do the same for new order
@@ -336,7 +361,7 @@ async def _handle_dirrect_message(
             json.dumps({"type": "new-direct-message", "customerPubkey": from_pubkey}),
         )
 
-        if order:
+        if type == DirectMessageType.CUSTOMER_ORDER:
             order["public_key"] = from_pubkey
             order["merchant_public_key"] = merchant_public_key
             order["event_id"] = event_id
@@ -361,7 +386,7 @@ async def _handle_new_order(order: PartialOrder) -> Optional[str]:
 
     new_order = await create_new_order(order.merchant_public_key, order)
     if new_order:
-        response = {"type": 1, **new_order.dict()}
+        response = {"type": DirectMessageType.PAYMENT_REQUEST.value, **new_order.dict()}
         return json.dumps(response, separators=(",", ":"), ensure_ascii=False)
 
     return None
@@ -405,14 +430,15 @@ async def _handle_stall(event: NostrEvent):
             currency=stall_json.get("currency", "sat"),
             shipping_zones=stall_json.get("shipping", []),
             pending=True,
-            event_id = event.id,
-            event_created_at = event.created_at
+            event_id=event.id,
+            event_created_at=event.created_at,
         )
         stall.config.description = stall_json.get("description", "")
         await create_stall(merchant.id, stall)
-        
+
     except Exception as ex:
         logger.error(ex)
+
 
 async def _handle_product(event: NostrEvent):
     try:
@@ -423,7 +449,6 @@ async def _handle_product(event: NostrEvent):
         assert "id" in product_json, "Product is missing ID"
         assert "stall_id" in product_json, "Product is missing Stall ID"
 
-        
         product = Product(
             id=product_json["id"],
             stall_id=product_json["stall_id"],
@@ -433,12 +458,12 @@ async def _handle_product(event: NostrEvent):
             price=product_json.get("price", 0),
             quantity=product_json.get("quantity", 0),
             pending=True,
-            event_id = event.id,
-            event_created_at = event.created_at
+            event_id=event.id,
+            event_created_at=event.created_at,
         )
         product.config.description = product_json.get("description", "")
         product.config.currency = product_json.get("currency", "sat")
         await create_product(merchant.id, product)
-        
+
     except Exception as ex:
         logger.error(ex)

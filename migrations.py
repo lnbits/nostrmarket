@@ -162,3 +162,9 @@ async def m002_update_stall_and_product(db):
     await db.execute(
         "ALTER TABLE nostrmarket.products ADD COLUMN event_created_at INTEGER;"
     )
+
+
+async def m003_update_direct_message_type(db):
+    await db.execute(
+        "ALTER TABLE nostrmarket.direct_messages ADD COLUMN type INTEGER NOT NULL DEFAULT -1;"
+    )
