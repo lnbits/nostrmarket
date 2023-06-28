@@ -15,10 +15,10 @@
       </q-select>
     </div>
     <div class="col-md-4 col-sm-6">
-
-      <q-btn-dropdown @click="getOrders()" outline unelevated split class="q-pt-md float-right"
-        label="Search Orders">
-
+     
+      <q-btn-dropdown  @click="getOrders()" :disable="search.restoring" outline unelevated split class="q-pt-md float-right"
+        :label="search.restoring ? 'Restoring Orders...' : 'Search Orders'">
+        <q-spinner v-if="search.restoring" color="primary" size="2.55em"  class="q-pt-md float-right"></q-spinner>
         <q-item @click="restoreOrders" clickable v-close-popup>
           <q-item-section>
             <q-item-label>Restore Orders</q-item-label>
@@ -65,8 +65,8 @@
                 {{toShortId(props.row.public_key)}}
               </span>
             </q-td>
-            <q-td key="time" :props="props">
-              {{formatDate(props.row.time)}}
+            <q-td key="event_created_at" :props="props">
+              {{formatDate(props.row.event_created_at)}}
             </q-td>
           </q-tr>
           <q-tr v-if="props.row.expanded" :props="props">

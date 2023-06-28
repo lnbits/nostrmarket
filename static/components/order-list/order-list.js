@@ -30,7 +30,8 @@ async function orderList(path) {
           isShipped: {
             label: 'All',
             id: null
-          }
+          },
+          restoring: false
         },
         customers: [],
         ternaryOptions: [
@@ -92,10 +93,10 @@ async function orderList(path) {
               field: 'pubkey'
             },
             {
-              name: 'time',
+              name: 'event_created_at',
               align: 'left',
-              label: 'Date',
-              field: 'time'
+              label: 'Created At',
+              field: 'event_created_at'
             }
           ],
           pagination: {
@@ -162,6 +163,7 @@ async function orderList(path) {
             this.inkey
           )
           this.orders = data.map(s => ({ ...s, expanded: false }))
+          console.log("### this.orders", this.orders)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -180,14 +182,21 @@ async function orderList(path) {
       },
       restoreOrders: async function () {
         try {
-          const { data } = await LNbits.api.request(
+          this.search.restoring = true
+          await LNbits.api.request(
             'PUT',
             `/nostrmarket/api/v1/order/restore`,
             this.adminkey
           )
-          
+          await this.getOrders()
+          this.$q.notify({
+            type: 'positive',
+            message: 'Orders restored!'
+          })
         } catch (error) {
           LNbits.utils.notifyApiError(error)
+        } finally {
+          this.search.restoring = false
         }
       },
       updateOrderShipped: async function () {

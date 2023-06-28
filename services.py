@@ -285,7 +285,12 @@ async def create_or_update_order_from_dm(merchant_id: str, merchant_pubkey: str,
     
     if type == DirectMessageType.CUSTOMER_ORDER:
         order = await extract_order_from_dm(merchant_id, merchant_pubkey, dm, value)
-        await create_order(merchant_id, order)
+        new_order = await create_order(merchant_id, order)
+        if new_order.stall_id == "None" and order.stall_id != "None":
+            await update_order(merchant_id, order.id, **{
+                "stall_id": order.stall_id,
+                "extra_data": json.dumps(order.extra.dict())
+            })
         return
     
     if type == DirectMessageType.PAYMENT_REQUEST:
@@ -306,6 +311,7 @@ async def create_or_update_order_from_dm(merchant_id: str, merchant_pubkey: str,
             await update_order_paid_status(order_update.id, True)
         if order_update.shipped:
             await update_order_shipped_status(merchant_id, order_update.id, True)
+
 
 async def extract_order_from_dm(merchant_id: str, merchant_pubkey: str, dm: DirectMessage, value):
     order_items = [OrderItem(**i) for i in value.get("items", [])]

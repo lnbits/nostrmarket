@@ -494,7 +494,7 @@ async def get_orders(merchant_id: str, **kwargs) -> List[Order]:
         q = f"AND {q}"
         values = (v for v in kwargs.values() if v != None)
     rows = await db.fetchall(
-        f"SELECT * FROM nostrmarket.orders WHERE merchant_id = ? {q} ORDER BY time DESC",
+        f"SELECT * FROM nostrmarket.orders WHERE merchant_id = ? {q} ORDER BY event_created_at DESC",
         (merchant_id, *values),
     )
     return [Order.from_row(row) for row in rows]
