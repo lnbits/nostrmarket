@@ -22,7 +22,7 @@ async function orderList(path) {
         showShipDialog: false,
         filter: '',
         search: {
-          publicKey: '',
+          publicKey: null,
           isPaid: {
             label: 'All',
             id: null
@@ -103,6 +103,13 @@ async function orderList(path) {
             rowsPerPage: 10
           }
         }
+      }
+    },
+    computed: {
+      customerOptions: function () {
+        const options = this.customers.map(c => ({ label: this.buildCustomerLabel(c), value: c.public_key }))
+        options.unshift({ label: 'All', value: null, id: null })
+        return options
       }
     },
     methods: {

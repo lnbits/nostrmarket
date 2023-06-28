@@ -2,7 +2,7 @@
   <div class="row q-mb-md">
     <div class="col-md-4 col-sm-6 q-pr-lg">
       <q-select v-model="search.publicKey"
-        :options="customers.map(c => ({label: buildCustomerLabel(c), value: c.public_key}))" label="Customer" emit-value
+        :options="customerOptions" label="Customer" emit-value
         class="text-wrap">
       </q-select>
     </div>
