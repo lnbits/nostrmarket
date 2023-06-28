@@ -417,11 +417,11 @@ async def _handle_dirrect_message(
             incoming=True,
             type=type.value,
         )
-        await create_direct_message(merchant_id, dm)
+        new_dm = await create_direct_message(merchant_id, dm)
         # todo: do the same for new order
         await websocketUpdater(
             merchant_id,
-            json.dumps({"type": "new-direct-message", "customerPubkey": from_pubkey}),
+            json.dumps({"type": "new-direct-message", "customerPubkey": from_pubkey, "data": new_dm.dict()}),
         )
 
         if type == DirectMessageType.CUSTOMER_ORDER:

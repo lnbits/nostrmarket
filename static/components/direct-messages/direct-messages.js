@@ -106,10 +106,14 @@ async function directMessages(path) {
           this.showAddPublicKey = false
         }
       },
-      handleNewMessage: async function (data) {
-        if (data.customerPubkey === this.activePublicKey) {
-          await this.getDirectMessages(this.activePublicKey)
-        } else {
+      handleNewMessage: async function (dm) {
+        if (dm.customerPubkey === this.activePublicKey) {
+          this.messages.push(dm.data)
+          this.focusOnChatBox(this.messages.length - 1)
+          // focus back on input box
+        }
+        const customersPubKeys = this.customers.map(c => c.public_key)
+        if (customersPubKeys.indexOf(dm.customerPubkey) == -1){
           await this.getCustomers()
         }
       },
