@@ -178,6 +178,18 @@ async function orderList(path) {
           LNbits.utils.notifyApiError(error)
         }
       },
+      restoreOrders: async function () {
+        try {
+          const { data } = await LNbits.api.request(
+            'PUT',
+            `/nostrmarket/api/v1/order/restore`,
+            this.adminkey
+          )
+          
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        }
+      },
       updateOrderShipped: async function () {
         this.selectedOrder.shipped = !this.selectedOrder.shipped
         try {

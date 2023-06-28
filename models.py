@@ -309,7 +309,7 @@ class OrderExtra(BaseModel):
 
     @classmethod
     async def from_products(cls, products: List[Product]):
-        currency = products[0].config.currency
+        currency = products[0].config.currency if len(products) else "sat"
         exchange_rate = (
             (await btc_price(currency)) if currency and currency != "sat" else 1
         )
@@ -433,8 +433,6 @@ class PartialDirectMessage(BaseModel):
             msg_json = json.loads(msg)
             if "type" in msg_json:
                 return DirectMessageType(msg_json["type"]), msg_json
-            if (type(msg_json) is dict) and "items" in msg_json:
-                return DirectMessageType.CUSTOMER_ORDER, msg_json
            
             return DirectMessageType.PLAIN_TEXT, None
         except Exception:

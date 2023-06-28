@@ -528,6 +528,18 @@ async def get_last_order_time(merchant_id: str) -> int:
     return row[0] if row else 0
 
 
+async def update_order(merchant_id: str, order_id: str, **kwargs) -> Optional[Order]:
+    q = ", ".join([f"{field[0]} = ?" for field in kwargs.items()])
+    await db.execute(
+        f"""
+            UPDATE nostrmarket.orders SET {q} WHERE merchant_id = ? and id = ?
+        """, 
+        (*kwargs.values(), merchant_id, order_id)
+    )
+
+    return await get_order(merchant_id, order_id)
+
+
 async def update_order_paid_status(order_id: str, paid: bool) -> Optional[Order]:
     await db.execute(
         f"UPDATE nostrmarket.orders SET paid = ?  WHERE id = ?",

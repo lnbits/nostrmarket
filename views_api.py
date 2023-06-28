@@ -5,6 +5,7 @@ from typing import List, Optional
 from fastapi import Depends
 from fastapi.exceptions import HTTPException
 from loguru import logger
+from lnbits.bolt11 import decode
 
 from lnbits.decorators import (
     WalletTypeInfo,
@@ -20,6 +21,7 @@ from .crud import (
     create_customer,
     create_direct_message,
     create_merchant,
+    create_order,
     create_product,
     create_stall,
     create_zone,
@@ -41,14 +43,18 @@ from .crud import (
     get_order,
     get_orders,
     get_orders_for_stall,
+    get_orders_from_direct_messages,
     get_product,
     get_products,
+    get_products_by_ids,
     get_stall,
     get_stalls,
     get_zone,
     get_zones,
     update_customer_no_unread_messages,
     update_merchant,
+    update_order,
+    update_order_paid_status,
     update_order_shipped_status,
     update_product,
     update_stall,
@@ -61,12 +67,16 @@ from .models import (
     DirectMessageType,
     Merchant,
     Order,
+    OrderContact,
+    OrderExtra,
+    OrderItem,
     OrderStatusUpdate,
     PartialDirectMessage,
     PartialMerchant,
     PartialProduct,
     PartialStall,
     PartialZone,
+    PaymentRequest,
     Product,
     Stall,
     Zone,
@@ -760,6 +770,75 @@ async def api_update_order_status(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot update order",
         )
+
+
+@nostrmarket_ext.put("/api/v1/order/restore")
+async def api_restore_orders(
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> Order:
+    try:
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+
+        dms = await get_orders_from_direct_messages(merchant.id)
+        for dm in dms:
+            type, value = PartialDirectMessage.parse_message(dm.message)
+            if "id" not in value:
+                continue
+            if type == DirectMessageType.CUSTOMER_ORDER:
+                order = await extract_order(merchant.id, merchant.public_key, dm, value)
+                await create_order(merchant.id, order)
+            elif type == DirectMessageType.PAYMENT_REQUEST:
+                payment_request = PaymentRequest(**value)
+                pr = next((o.link for o in payment_request.payment_options if o.type == "ln"), None)
+                if not pr:
+                    continue
+                invoice = decode(pr)
+                await update_order(merchant.id, payment_request.id, **{
+                    "total": invoice.amount_msat / 1000,
+                    "invoice_id": invoice.payment_hash
+                })
+            elif type == DirectMessageType.ORDER_PAID_OR_SHIPPED:
+                order_update = OrderStatusUpdate(**value)
+                if order_update.paid:
+                    await update_order_paid_status(order_update.id, True)
+                if order_update.shipped:
+                    await update_order_shipped_status(merchant.id, order_update.id, True)
+
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot restore orders",
+        )
+
+async def extract_order(merchant_id: str, merchant_pubkey: str, dm: DirectMessage, value):
+    order_items = [OrderItem(**i) for i in value.get("items", [])]
+    products = await get_products_by_ids(merchant_id, [p.product_id for p in order_items])
+    extra = await OrderExtra.from_products(products)
+    order = Order(
+                    id=value.get("id"),
+                    event_id=dm.event_id,
+                    event_created_at=dm.event_created_at,
+                    public_key=dm.public_key,
+                    merchant_public_key=merchant_pubkey,
+                    shipping_id=value.get("shipping_id", "None"),
+                    items=order_items,
+                    contact=OrderContact(**value.get("contact")) if value.get("contact") else None,
+                    address=value.get("address"),
+                    stall_id=products[0].stall_id if len(products) else "None",
+                    invoice_id="None",
+                    total=0,
+                    extra=extra
+                )
+    
+    return order
+
 
 
 ######################################## DIRECT MESSAGES ########################################
