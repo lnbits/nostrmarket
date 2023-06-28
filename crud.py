@@ -724,16 +724,15 @@ async def update_customer_profile(
     )
 
 
-#??? two merchants
-async def increment_customer_unread_messages(public_key: str):
+async def increment_customer_unread_messages(merchant_id: str, public_key: str):
     await db.execute(
-        f"UPDATE nostrmarket.customers SET unread_messages = unread_messages + 1 WHERE public_key = ?",
-        (public_key,),
+        f"UPDATE nostrmarket.customers SET unread_messages = unread_messages + 1 WHERE merchant_id = ? AND public_key = ?",
+        (merchant_id, public_key,),
     )
 
 #??? two merchants
-async def update_customer_no_unread_messages(public_key: str):
+async def update_customer_no_unread_messages(merchant_id: str, public_key: str):
     await db.execute(
-        f"UPDATE nostrmarket.customers SET unread_messages = 0 WHERE public_key = ?",
-        (public_key,),
+        f"UPDATE nostrmarket.customers SET unread_messages = 0 WHERE merchant_id =? AND public_key = ?",
+        (merchant_id, public_key,),
     )

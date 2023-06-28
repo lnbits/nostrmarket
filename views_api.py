@@ -809,7 +809,7 @@ async def api_get_messages(
         assert merchant, f"Merchant cannot be found"
 
         messages = await get_direct_messages(merchant.id, public_key)
-        await update_customer_no_unread_messages(public_key)
+        await update_customer_no_unread_messages(merchant.id, public_key)
         return messages
     except AssertionError as ex:
         raise HTTPException(

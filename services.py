@@ -360,7 +360,7 @@ async def _handle_incoming_dms(
     if not customer:
         await _handle_new_customer(event, merchant)
     else:
-        await increment_customer_unread_messages(event.pubkey)
+        await increment_customer_unread_messages(merchant.id, event.pubkey)
 
     dm_reply = await _handle_dirrect_message(
         merchant.id,
