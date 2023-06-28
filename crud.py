@@ -705,8 +705,13 @@ async def get_customers(merchant_id: str) -> List[Customer]:
     return [Customer.from_row(row) for row in rows]
 
 
-async def get_all_customers() -> List[Customer]:
-    rows = await db.fetchall("SELECT * FROM nostrmarket.customers")
+async def get_all_unique_customers() -> List[Customer]:
+    q = """
+            SELECT public_key, MAX(merchant_id) as merchant_id, MAX(event_created_at)  
+            FROM nostrmarket.customers 
+            GROUP BY public_key
+        """
+    rows = await db.fetchall(q)
     return [Customer.from_row(row) for row in rows]
 
 
@@ -719,13 +724,14 @@ async def update_customer_profile(
     )
 
 
+#??? two merchants
 async def increment_customer_unread_messages(public_key: str):
     await db.execute(
         f"UPDATE nostrmarket.customers SET unread_messages = unread_messages + 1 WHERE public_key = ?",
         (public_key,),
     )
 
-
+#??? two merchants
 async def update_customer_no_unread_messages(public_key: str):
     await db.execute(
         f"UPDATE nostrmarket.customers SET unread_messages = 0 WHERE public_key = ?",

@@ -4,7 +4,7 @@ from lnbits.core.models import Payment
 from lnbits.tasks import register_invoice_listener
 
 from .crud import (
-    get_all_customers,
+    get_all_unique_customers,
     get_last_direct_messages_time,
     get_last_order_time,
     get_last_product_update_time,
@@ -53,7 +53,7 @@ async def wait_for_nostr_events(nostr_client: NostrClient):
         last_product_update = await get_last_product_update_time(id)
         await nostr_client.subscribe_to_product_events(pk, last_product_update)
 
-    customers = await get_all_customers()
+    customers = await get_all_unique_customers()
     for c in customers:
         await nostr_client.subscribe_to_user_profile(c.public_key, c.event_created_at)
 
