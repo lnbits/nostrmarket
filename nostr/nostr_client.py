@@ -91,6 +91,8 @@ class NostrClient:
             ["REQ", f"direct-messages-out:{public_key}", out_messages_filter]
         )
 
+        logger.debug(f"Subscribed to direct-messages '{public_key}'.")
+
     async def subscribe_to_stall_events(self, public_key: str, since: int):
         stall_filter = {"kinds": [30017], "authors": [public_key]}
         if since and since != 0:
@@ -99,7 +101,8 @@ class NostrClient:
         await self.send_req_queue.put(
             ["REQ", f"stall-events:{public_key}", stall_filter]
         )
-        print("### subscribed to stalls", public_key)
+
+        logger.debug(f"Subscribed to stall-events: '{public_key}'.")
 
     async def subscribe_to_product_events(self, public_key: str, since: int):
         product_filter = {"kinds": [30018], "authors": [public_key]}
@@ -109,7 +112,7 @@ class NostrClient:
         await self.send_req_queue.put(
             ["REQ", f"product-events:{public_key}", product_filter]
         )
-        print("### subscribed to products", public_key)
+        logger.debug(f"Subscribed to product-events: '{public_key}'.")
 
 
     async def subscribe_to_user_profile(self, public_key: str, since: int):
@@ -117,25 +120,31 @@ class NostrClient:
         if since and since != 0:
             profile_filter["since"] = since + 1
 
-        await self.send_req_queue.put(
-            ["REQ", f"user-profile-events:{public_key}", profile_filter]
-        )
+        # Disabled for now. The number of clients can grow large. 
+        # Some relays only allow a small number of subscriptions.
+        # There is the risk that more important subscriptions will be blocked.
+        # await self.send_req_queue.put(
+        #     ["REQ", f"user-profile-events:{public_key}", profile_filter]
+        # )
 
     async def unsubscribe_from_direct_messages(self, public_key: str):
         await self.send_req_queue.put(["CLOSE", f"direct-messages-in:{public_key}"])
         await self.send_req_queue.put(["CLOSE", f"direct-messages-out:{public_key}"])
+        
+        logger.debug(f"Unsubscribed from direct-messages '{public_key}'.")
 
     async def unsubscribe_from_merchant_events(self, public_key: str):
         await self.send_req_queue.put(["CLOSE", f"stall-events:{public_key}"])
         await self.send_req_queue.put(["CLOSE", f"product-events:{public_key}"])
 
+        logger.debug(f"Unsubscribed from stall-events and product-events '{public_key}'.")
+
     async def restart(self, public_keys: List[str]):
-        print("### unsubscribe....")
         await self.unsubscribe_merchants(public_keys)
         # Give some time for the CLOSE events to propagate before restarting
         await asyncio.sleep(10)
 
-        print("### restarting....")
+        logger.info("Restating NostrClient...")
         await self.send_req_queue.put(ValueError("Restarting NostrClient..."))
         await self.recieve_event_queue.put(ValueError("Restarting NostrClient..."))
 
