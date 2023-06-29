@@ -467,5 +467,5 @@ class Customer(BaseModel):
     @classmethod
     def from_row(cls, row: Row) -> "Customer":
         customer = cls(**dict(row))
-        customer.profile = CustomerProfile(**json.loads(row["meta"]))
+        customer.profile = CustomerProfile(**json.loads(row["meta"])) if "meta" in row else None
         return customer
