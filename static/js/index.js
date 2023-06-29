@@ -111,11 +111,11 @@ const merchant = async () => {
       },
       waitForNotifications: async function () {
         if (!this.merchant) return
-        console.log('### reconnecting WS')
         try {
           const scheme = location.protocol === 'http:' ? 'ws' : 'wss'
           const port = location.port ? `:${location.port}` : ''
           const wsUrl = `${scheme}://${document.domain}${port}/api/v1/ws/${this.merchant.id}`
+          console.log('Reconnecting to websocket: ', wsUrl)
           this.wsConnection = new WebSocket(wsUrl)
           this.wsConnection.onmessage = async e => {
             const data = JSON.parse(e.data)
