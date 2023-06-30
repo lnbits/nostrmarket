@@ -1,8 +1,9 @@
 import json
 import time
 from abc import abstractmethod
+from enum import Enum
 from sqlite3 import Row
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from pydantic import BaseModel
 
@@ -120,6 +121,7 @@ class Merchant(PartialMerchant, Nostrable):
 
 ######################################## ZONES ########################################
 class PartialZone(BaseModel):
+    id: Optional[str]
     name: Optional[str]
     currency: str
     cost: float
@@ -140,19 +142,22 @@ class Zone(PartialZone):
 
 
 class StallConfig(BaseModel):
-    """Last published nostr event id for this Stall"""
-
-    event_id: Optional[str]
     image_url: Optional[str]
     description: Optional[str]
 
 
 class PartialStall(BaseModel):
+    id: Optional[str]
     wallet: str
     name: str
     currency: str = "sat"
     shipping_zones: List[Zone] = []
     config: StallConfig = StallConfig()
+    pending: bool = False
+
+    """Last published nostr event for this Stall"""
+    event_id: Optional[str]
+    event_created_at: Optional[int]
 
     def validate_stall(self):
         for z in self.shipping_zones:
@@ -189,7 +194,7 @@ class Stall(PartialStall, Nostrable):
             pubkey=pubkey,
             created_at=round(time.time()),
             kind=5,
-            tags=[["e", self.config.event_id]],
+            tags=[["e", self.event_id]],
             content=f"Stall '{self.name}' deleted",
         )
         delete_event.id = delete_event.event_id
@@ -204,23 +209,28 @@ class Stall(PartialStall, Nostrable):
         return stall
 
 
-######################################## STALLS ########################################
+######################################## PRODUCTS ########################################
 
 
 class ProductConfig(BaseModel):
-    event_id: Optional[str]
     description: Optional[str]
     currency: Optional[str]
 
 
 class PartialProduct(BaseModel):
+    id: Optional[str]
     stall_id: str
     name: str
     categories: List[str] = []
     images: List[str] = []
     price: float
     quantity: int
+    pending: bool = False
     config: ProductConfig = ProductConfig()
+
+    """Last published nostr event for this Product"""
+    event_id: Optional[str]
+    event_created_at: Optional[int]
 
 
 class Product(PartialProduct, Nostrable):
@@ -255,7 +265,7 @@ class Product(PartialProduct, Nostrable):
             pubkey=pubkey,
             created_at=round(time.time()),
             kind=5,
-            tags=[["e", self.config.event_id]],
+            tags=[["e", self.event_id]],
             content=f"Product '{self.name}' deleted",
         )
         delete_event.id = delete_event.event_id
@@ -300,7 +310,7 @@ class OrderExtra(BaseModel):
 
     @classmethod
     async def from_products(cls, products: List[Product]):
-        currency = products[0].config.currency
+        currency = products[0].config.currency if len(products) else "sat"
         exchange_rate = (
             (await btc_price(currency)) if currency and currency != "sat" else 1
         )
@@ -401,13 +411,33 @@ class PaymentRequest(BaseModel):
 ######################################## MESSAGE ########################################
 
 
+
+class DirectMessageType(Enum):
+    """Various types os direct messages."""
+    PLAIN_TEXT = -1
+    CUSTOMER_ORDER = 0
+    PAYMENT_REQUEST = 1
+    ORDER_PAID_OR_SHIPPED = 2
+
 class PartialDirectMessage(BaseModel):
     event_id: Optional[str]
     event_created_at: Optional[int]
     message: str
     public_key: str
+    type: int = DirectMessageType.PLAIN_TEXT.value
     incoming: bool = False
     time: Optional[int]
+
+    @classmethod
+    def parse_message(cls, msg) -> Tuple[DirectMessageType, Optional[Any]]:
+        try:
+            msg_json = json.loads(msg)
+            if "type" in msg_json:
+                return DirectMessageType(msg_json["type"]), msg_json
+           
+            return DirectMessageType.PLAIN_TEXT, None
+        except Exception:
+            return DirectMessageType.PLAIN_TEXT, None
 
 
 class DirectMessage(PartialDirectMessage):
@@ -417,6 +447,7 @@ class DirectMessage(PartialDirectMessage):
     def from_row(cls, row: Row) -> "DirectMessage":
         dm = cls(**dict(row))
         return dm
+
 
 
 ######################################## CUSTOMERS ########################################
@@ -437,5 +468,5 @@ class Customer(BaseModel):
     @classmethod
     def from_row(cls, row: Row) -> "Customer":
         customer = cls(**dict(row))
-        customer.profile = CustomerProfile(**json.loads(row["meta"]))
+        customer.profile = CustomerProfile(**json.loads(row["meta"])) if "meta" in row else None
         return customer

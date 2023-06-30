@@ -1,6 +1,6 @@
 import json
 from http import HTTPStatus
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from fastapi import Depends
 from fastapi.exceptions import HTTPException
@@ -37,9 +37,11 @@ from .crud import (
     get_direct_messages,
     get_merchant_by_pubkey,
     get_merchant_for_user,
+    get_merchants_ids_with_pubkeys,
     get_order,
     get_orders,
     get_orders_for_stall,
+    get_orders_from_direct_messages,
     get_product,
     get_products,
     get_stall,
@@ -57,6 +59,7 @@ from .helpers import normalize_public_key
 from .models import (
     Customer,
     DirectMessage,
+    DirectMessageType,
     Merchant,
     Order,
     OrderStatusUpdate,
@@ -69,7 +72,11 @@ from .models import (
     Stall,
     Zone,
 )
-from .services import sign_and_send_to_nostr, update_merchant_to_nostr
+from .services import (
+    create_or_update_order_from_dm,
+    sign_and_send_to_nostr,
+    update_merchant_to_nostr,
+)
 
 ######################################## MERCHANT ########################################
 
@@ -88,6 +95,20 @@ async def api_create_merchant(
         assert merchant == None, "A merchant already exists for this user"
 
         merchant = await create_merchant(wallet.wallet.user, data)
+
+        await create_zone(
+            merchant.id,
+            PartialZone(
+                id="online",
+                name="Online",
+                currency="sat",
+                cost=0,
+                countries=["Free (digital)"],
+            ),
+        )
+
+        await nostr_client.subscribe_to_stall_events(data.public_key, 0)
+        await nostr_client.subscribe_to_product_events(data.public_key, 0)
         await nostr_client.subscribe_to_direct_messages(data.public_key, 0)
 
         return merchant
@@ -138,6 +159,7 @@ async def api_delete_merchant(
         await delete_merchant_zones(merchant.id)
 
         await nostr_client.unsubscribe_from_direct_messages(merchant.public_key)
+        await nostr_client.unsubscribe_from_merchant_events(merchant.public_key)
         await delete_merchant(merchant.id)
     except AssertionError as ex:
         raise HTTPException(
@@ -317,6 +339,7 @@ async def api_create_stall(
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Stall:
     try:
+        # shipping_zones = await
         data.validate_stall()
 
         merchant = await get_merchant_for_user(wallet.wallet.user)
@@ -325,7 +348,7 @@ async def api_create_stall(
 
         event = await sign_and_send_to_nostr(merchant, stall)
 
-        stall.config.event_id = event.id
+        stall.event_id = event.id
         await update_stall(merchant.id, stall)
 
         return stall
@@ -359,7 +382,7 @@ async def api_update_stall(
 
         event = await sign_and_send_to_nostr(merchant, stall)
 
-        stall.config.event_id = event.id
+        stall.event_id = event.id
         await update_stall(merchant.id, stall)
 
         return stall
@@ -406,11 +429,13 @@ async def api_get_stall(stall_id: str, wallet: WalletTypeInfo = Depends(get_key_
 
 
 @nostrmarket_ext.get("/api/v1/stall")
-async def api_get_stalls(wallet: WalletTypeInfo = Depends(get_key_type)):
+async def api_get_stalls(
+    pending: Optional[bool] = False, wallet: WalletTypeInfo = Depends(get_key_type)
+):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
-        stalls = await get_stalls(merchant.id)
+        stalls = await get_stalls(merchant.id, pending)
         return stalls
     except AssertionError as ex:
         raise HTTPException(
@@ -428,12 +453,13 @@ async def api_get_stalls(wallet: WalletTypeInfo = Depends(get_key_type)):
 @nostrmarket_ext.get("/api/v1/stall/product/{stall_id}")
 async def api_get_stall_products(
     stall_id: str,
+    pending: Optional[bool] = False,
     wallet: WalletTypeInfo = Depends(require_invoice_key),
 ):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
-        products = await get_products(merchant.id, stall_id)
+        products = await get_products(merchant.id, stall_id, pending)
         return products
     except AssertionError as ex:
         raise HTTPException(
@@ -494,7 +520,7 @@ async def api_delete_stall(
 
         event = await sign_and_send_to_nostr(merchant, stall, True)
 
-        stall.config.event_id = event.id
+        stall.event_id = event.id
         await update_stall(merchant.id, stall)
 
     except AssertionError as ex:
@@ -532,7 +558,7 @@ async def api_create_product(
 
         event = await sign_and_send_to_nostr(merchant, product)
 
-        product.config.event_id = event.id
+        product.event_id = event.id
         await update_product(merchant.id, product)
 
         return product
@@ -568,7 +594,7 @@ async def api_update_product(
 
         product = await update_product(merchant.id, product)
         event = await sign_and_send_to_nostr(merchant, product)
-        product.config.event_id = event.id
+        product.event_id = event.id
         await update_product(merchant.id, product)
 
         return product
@@ -626,9 +652,7 @@ async def api_delete_product(
             )
 
         await delete_product(merchant.id, product_id)
-        event = await sign_and_send_to_nostr(merchant, product, True)
-        product.config.event_id = event.id
-        await update_product(merchant.id, product)
+        await sign_and_send_to_nostr(merchant, product, True)
 
     except AssertionError as ex:
         raise HTTPException(
@@ -720,9 +744,23 @@ async def api_update_order_status(
         assert order, "Cannot find updated order"
 
         data.paid = order.paid
-        dm_content = json.dumps(data.dict(), separators=(",", ":"), ensure_ascii=False)
+        dm_content = json.dumps(
+            {"type": DirectMessageType.ORDER_PAID_OR_SHIPPED.value, **data.dict()},
+            separators=(",", ":"),
+            ensure_ascii=False,
+        )
 
         dm_event = merchant.build_dm_event(dm_content, order.public_key)
+
+        dm = PartialDirectMessage(
+            event_id=dm_event.id,
+            event_created_at=dm_event.created_at,
+            message=dm_content,
+            public_key=order.public_key,
+            type=DirectMessageType.ORDER_PAID_OR_SHIPPED.value,
+        )
+        await create_direct_message(merchant.id, dm)
+
         await nostr_client.publish_nostr_event(dm_event)
 
         return order
@@ -740,6 +778,38 @@ async def api_update_order_status(
         )
 
 
+@nostrmarket_ext.put("/api/v1/order/restore")
+async def api_restore_orders(
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> Order:
+    try:
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+
+        dms = await get_orders_from_direct_messages(merchant.id)
+        for dm in dms:
+            try:
+                await create_or_update_order_from_dm(
+                    merchant.id, merchant.public_key, dm
+                )
+            except Exception as e:
+                logger.debug(
+                    f"Failed to restore order friom event '{dm.event_id}': '{str(e)}'."
+                )
+
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot restore orders",
+        )
+
+
 ######################################## DIRECT MESSAGES ########################################
 
 
@@ -752,7 +822,7 @@ async def api_get_messages(
         assert merchant, f"Merchant cannot be found"
 
         messages = await get_direct_messages(merchant.id, public_key)
-        await update_customer_no_unread_messages(public_key)
+        await update_customer_no_unread_messages(merchant.id, public_key)
         return messages
     except AssertionError as ex:
         raise HTTPException(
@@ -822,7 +892,7 @@ async def api_get_customers(
 
 
 @nostrmarket_ext.post("/api/v1/customer")
-async def api_createcustomer(
+async def api_create_customer(
     data: Customer,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Customer:
@@ -867,7 +937,9 @@ async def api_list_currencies_available():
 @nostrmarket_ext.put("/api/v1/restart")
 async def restart_nostr_client(wallet: WalletTypeInfo = Depends(require_admin_key)):
     try:
-        await nostr_client.restart()
+        ids = await get_merchants_ids_with_pubkeys()
+        merchant_public_keys = [id[0] for id in ids]
+        await nostr_client.restart(merchant_public_keys)
     except Exception as ex:
         logger.warning(ex)
 
@@ -880,5 +952,11 @@ async def api_stop(wallet: WalletTypeInfo = Depends(check_admin)):
         except Exception as ex:
             logger.warning(ex)
 
-    nostr_client.stop()
+    try:
+        ids = await get_merchants_ids_with_pubkeys()
+        merchant_public_keys = [id[0] for id in ids]
+        await nostr_client.stop(merchant_public_keys)
+    except Exception as ex:
+        logger.warning(ex)
+
     return {"success": True}

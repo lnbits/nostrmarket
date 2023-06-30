@@ -3,6 +3,7 @@ from typing import List, Optional, Tuple
 
 from loguru import logger
 
+from lnbits.bolt11 import decode
 from lnbits.core import create_invoice, get_wallet
 from lnbits.core.services import websocketUpdater
 
@@ -12,6 +13,8 @@ from .crud import (
     create_customer,
     create_direct_message,
     create_order,
+    create_product,
+    create_stall,
     get_customer,
     get_merchant_by_pubkey,
     get_order,
@@ -23,17 +26,21 @@ from .crud import (
     get_zone,
     increment_customer_unread_messages,
     update_customer_profile,
+    update_order,
     update_order_paid_status,
+    update_order_shipped_status,
     update_product,
     update_product_quantity,
     update_stall,
 )
-from .helpers import order_from_json
 from .models import (
     Customer,
+    DirectMessage,
+    DirectMessageType,
     Merchant,
     Nostrable,
     Order,
+    OrderContact,
     OrderExtra,
     OrderItem,
     OrderStatusUpdate,
@@ -42,6 +49,7 @@ from .models import (
     PaymentOption,
     PaymentRequest,
     Product,
+    Stall,
 )
 from .nostr.event import NostrEvent
 
@@ -126,10 +134,12 @@ async def update_merchant_to_nostr(
         products = await get_products(merchant.id, stall.id)
         for product in products:
             event = await sign_and_send_to_nostr(merchant, product, delete_merchant)
-            product.config.event_id = event.id
+            product.event_id = event.id
+            product.event_created_at = event.created_at
             await update_product(merchant.id, product)
         event = await sign_and_send_to_nostr(merchant, stall, delete_merchant)
-        stall.config.event_id = event.id
+        stall.event_id = event.id
+        stall.event_created_at = event.created_at
         await update_stall(merchant.id, stall)
     if delete_merchant:
         # merchant profile updates not supported yet
@@ -163,6 +173,16 @@ async def handle_order_paid(order_id: str, merchant_pubkey: str):
         # todo: lock
         success, message = await update_products_for_order(merchant, order)
         await notify_client_of_order_status(order, merchant, success, message)
+
+        await websocketUpdater(
+        merchant.id,
+        json.dumps(
+            {
+                "type": "order-paid",
+                "orderId": order_id,
+            }
+        ),
+    )
     except Exception as ex:
         logger.warning(ex)
 
@@ -179,12 +199,26 @@ async def notify_client_of_order_status(
             shipped=order.shipped,
         )
         dm_content = json.dumps(
-            order_status.dict(), separators=(",", ":"), ensure_ascii=False
+            {"type": DirectMessageType.ORDER_PAID_OR_SHIPPED.value, **order_status.dict()},
+            separators=(",", ":"),
+            ensure_ascii=False,
         )
     else:
         dm_content = f"Order cannot be fulfilled. Reason: {message}"
 
     dm_event = merchant.build_dm_event(dm_content, order.public_key)
+
+    dm = PartialDirectMessage(
+        event_id=dm_event.id,
+        event_created_at=dm_event.created_at,
+        message=dm_content,
+        public_key=order.public_key,
+        type=DirectMessageType.ORDER_PAID_OR_SHIPPED.value
+        if success
+        else DirectMessageType.PLAIN_TEXT.value,
+    )
+    await create_direct_message(merchant.id, dm)
+
     await nostr_client.publish_nostr_event(dm_event)
 
 
@@ -201,7 +235,7 @@ async def update_products_for_order(
     for p in products:
         product = await update_product_quantity(p.id, p.quantity)
         event = await sign_and_send_to_nostr(merchant, product)
-        product.config.event_id = event.id
+        product.event_id = event.id
         await update_product(merchant.id, product)
 
     return True, "ok"
@@ -233,17 +267,82 @@ async def compute_products_new_quantity(
 async def process_nostr_message(msg: str):
     try:
         type, *rest = json.loads(msg)
+
         if type.upper() == "EVENT":
             subscription_id, event = rest
             event = NostrEvent(**event)
+            print("kind: ", event.kind, ":     ", msg)
             if event.kind == 0:
                 await _handle_customer_profile_update(event)
-            if event.kind == 4:
+            elif event.kind == 4:
                 _, merchant_public_key = subscription_id.split(":")
                 await _handle_nip04_message(merchant_public_key, event)
+            elif event.kind == 30017:
+                await _handle_stall(event)
+            elif event.kind == 30018:
+                await _handle_product(event)
             return
+
     except Exception as ex:
         logger.warning(ex)
+
+
+async def create_or_update_order_from_dm(merchant_id: str, merchant_pubkey: str, dm: DirectMessage):
+    type, value = PartialDirectMessage.parse_message(dm.message)
+    if "id" not in value:
+        return
+    
+    if type == DirectMessageType.CUSTOMER_ORDER:
+        order = await extract_order_from_dm(merchant_id, merchant_pubkey, dm, value)
+        new_order = await create_order(merchant_id, order)
+        if new_order.stall_id == "None" and order.stall_id != "None":
+            await update_order(merchant_id, order.id, **{
+                "stall_id": order.stall_id,
+                "extra_data": json.dumps(order.extra.dict())
+            })
+        return
+    
+    if type == DirectMessageType.PAYMENT_REQUEST:
+        payment_request = PaymentRequest(**value)
+        pr = next((o.link for o in payment_request.payment_options if o.type == "ln"), None)
+        if not pr:
+            return
+        invoice = decode(pr)
+        await update_order(merchant_id, payment_request.id, **{
+            "total": invoice.amount_msat / 1000,
+            "invoice_id": invoice.payment_hash
+        })
+        return
+    
+    if type == DirectMessageType.ORDER_PAID_OR_SHIPPED:
+        order_update = OrderStatusUpdate(**value)
+        if order_update.paid:
+            await update_order_paid_status(order_update.id, True)
+        if order_update.shipped:
+            await update_order_shipped_status(merchant_id, order_update.id, True)
+
+
+async def extract_order_from_dm(merchant_id: str, merchant_pubkey: str, dm: DirectMessage, value):
+    order_items = [OrderItem(**i) for i in value.get("items", [])]
+    products = await get_products_by_ids(merchant_id, [p.product_id for p in order_items])
+    extra = await OrderExtra.from_products(products)
+    order = Order(
+                    id=value.get("id"),
+                    event_id=dm.event_id,
+                    event_created_at=dm.event_created_at,
+                    public_key=dm.public_key,
+                    merchant_public_key=merchant_pubkey,
+                    shipping_id=value.get("shipping_id", "None"),
+                    items=order_items,
+                    contact=OrderContact(**value.get("contact")) if value.get("contact") else None,
+                    address=value.get("address"),
+                    stall_id=products[0].stall_id if len(products) else "None",
+                    invoice_id="None",
+                    total=0,
+                    extra=extra
+                )
+    
+    return order
 
 
 async def _handle_nip04_message(merchant_public_key: str, event: NostrEvent):
@@ -270,7 +369,7 @@ async def _handle_incoming_dms(
     if not customer:
         await _handle_new_customer(event, merchant)
     else:
-        await increment_customer_unread_messages(event.pubkey)
+        await increment_customer_unread_messages(merchant.id, event.pubkey)
 
     dm_reply = await _handle_dirrect_message(
         merchant.id,
@@ -282,6 +381,14 @@ async def _handle_incoming_dms(
     )
     if dm_reply:
         dm_event = merchant.build_dm_event(dm_reply, event.pubkey)
+        dm = PartialDirectMessage(
+            event_id=dm_event.id,
+            event_created_at=dm_event.created_at,
+            message=dm_reply,
+            public_key=event.pubkey,
+            type=DirectMessageType.PAYMENT_REQUEST.value,
+        )
+        await create_direct_message(merchant.id, dm)
         await nostr_client.publish_nostr_event(dm_event)
 
 
@@ -289,12 +396,14 @@ async def _handle_outgoing_dms(
     event: NostrEvent, merchant: Merchant, clear_text_msg: str
 ):
     sent_to = event.tag_values("p")
+    type, _ = PartialDirectMessage.parse_message(clear_text_msg)
     if len(sent_to) != 0:
         dm = PartialDirectMessage(
             event_id=event.id,
             event_created_at=event.created_at,
-            message=clear_text_msg,  # exclude if json
+            message=clear_text_msg,
             public_key=sent_to[0],
+            type=type.value
         )
         await create_direct_message(merchant.id, dm)
 
@@ -307,22 +416,24 @@ async def _handle_dirrect_message(
     event_created_at: int,
     msg: str,
 ) -> Optional[str]:
-    order, text_msg = order_from_json(msg)
+    type, order = PartialDirectMessage.parse_message(msg)
     try:
         dm = PartialDirectMessage(
             event_id=event_id,
             event_created_at=event_created_at,
-            message=text_msg,
+            message=msg,
             public_key=from_pubkey,
             incoming=True,
+            type=type.value,
         )
-        await create_direct_message(merchant_id, dm)
+        new_dm = await create_direct_message(merchant_id, dm)
+        # todo: do the same for new order
         await websocketUpdater(
             merchant_id,
-            json.dumps({"type": "new-direct-message", "customerPubkey": from_pubkey}),
+            json.dumps({"type": "new-direct-message", "customerPubkey": from_pubkey, "data": new_dm.dict()}),
         )
 
-        if order:
+        if type == DirectMessageType.CUSTOMER_ORDER:
             order["public_key"] = from_pubkey
             order["merchant_public_key"] = merchant_public_key
             order["event_id"] = event_id
@@ -338,17 +449,23 @@ async def _handle_dirrect_message(
 async def _handle_new_order(order: PartialOrder) -> Optional[str]:
     order.validate_order()
 
-    first_product_id = order.items[0].product_id
-    wallet_id = await get_wallet_for_product(first_product_id)
-    assert wallet_id, f"Cannot find wallet id for product id: {first_product_id}"
+    try:
+        first_product_id = order.items[0].product_id
+        wallet_id = await get_wallet_for_product(first_product_id)
+        assert wallet_id, f"Cannot find wallet id for product id: {first_product_id}"
 
-    wallet = await get_wallet(wallet_id)
-    assert wallet, f"Cannot find wallet for product id: {first_product_id}"
+        wallet = await get_wallet(wallet_id)
+        assert wallet, f"Cannot find wallet for product id: {first_product_id}"
 
-    new_order = await create_new_order(order.merchant_public_key, order)
-    if new_order:
-        return json.dumps(new_order.dict(), separators=(",", ":"), ensure_ascii=False)
+        
+        payment_req = await create_new_order(order.merchant_public_key, order)
+    except Exception as e:
+        payment_req = PaymentRequest(id=order.id, message=str(e), payment_options=[])
 
+    if payment_req:
+        response = {"type": DirectMessageType.PAYMENT_REQUEST.value, **payment_req.dict()}
+        return json.dumps(response, separators=(",", ":"), ensure_ascii=False)
+    
     return None
 
 
@@ -372,3 +489,58 @@ async def _handle_customer_profile_update(event: NostrEvent):
         )
     except Exception as ex:
         logger.warning(ex)
+
+
+async def _handle_stall(event: NostrEvent):
+    try:
+        merchant = await get_merchant_by_pubkey(event.pubkey)
+        assert merchant, f"Merchant not found for public key '{event.pubkey}'"
+        stall_json = json.loads(event.content)
+
+        if "id" not in stall_json:
+            return
+
+        stall = Stall(
+            id=stall_json["id"],
+            name=stall_json.get("name", "Recoverd Stall (no name)"),
+            wallet="",
+            currency=stall_json.get("currency", "sat"),
+            shipping_zones=stall_json.get("shipping", []),
+            pending=True,
+            event_id=event.id,
+            event_created_at=event.created_at,
+        )
+        stall.config.description = stall_json.get("description", "")
+        await create_stall(merchant.id, stall)
+
+    except Exception as ex:
+        logger.error(ex)
+
+
+async def _handle_product(event: NostrEvent):
+    try:
+        merchant = await get_merchant_by_pubkey(event.pubkey)
+        assert merchant, f"Merchant not found for public key '{event.pubkey}'"
+        product_json = json.loads(event.content)
+
+        assert "id" in product_json, "Product is missing ID"
+        assert "stall_id" in product_json, "Product is missing Stall ID"
+
+        product = Product(
+            id=product_json["id"],
+            stall_id=product_json["stall_id"],
+            name=product_json.get("name", "Recoverd Product (no name)"),
+            images=product_json.get("images", []),
+            categories=event.tag_values("t"),
+            price=product_json.get("price", 0),
+            quantity=product_json.get("quantity", 0),
+            pending=True,
+            event_id=event.id,
+            event_created_at=event.created_at,
+        )
+        product.config.description = product_json.get("description", "")
+        product.config.currency = product_json.get("currency", "sat")
+        await create_product(merchant.id, product)
+
+    except Exception as ex:
+        logger.error(ex)

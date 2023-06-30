@@ -67,6 +67,7 @@ async function directMessages(path) {
           LNbits.utils.notifyApiError(error)
         }
       },
+      
       sendDirectMesage: async function () {
         try {
           const {data} = await LNbits.api.request(
@@ -106,12 +107,13 @@ async function directMessages(path) {
           this.showAddPublicKey = false
         }
       },
-      handleNewMessage: async function (data) {
-        if (data.customerPubkey === this.activePublicKey) {
-          await this.getDirectMessages(this.activePublicKey)
-        } else {
-          await this.getCustomers()
+      handleNewMessage: async function (dm) {
+        if (dm.customerPubkey === this.activePublicKey) {
+          this.messages.push(dm.data)
+          this.focusOnChatBox(this.messages.length - 1)
+          // focus back on input box
         }
+        this.getCustomersDebounced()
       },
       showClientOrders: function () {
         this.$emit('customer-selected', this.activePublicKey)
@@ -133,6 +135,7 @@ async function directMessages(path) {
     },
     created: async function () {
       await this.getCustomers()
+      this.getCustomersDebounced = _.debounce(this.getCustomers, 2000, false)
     }
   })
 }

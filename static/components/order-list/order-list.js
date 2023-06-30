@@ -8,8 +8,8 @@ async function orderList(path) {
     watch: {
       customerPubkeyFilter: async function (n) {
         this.search.publicKey = n
-        this.search.isPaid = {label: 'All', id: null}
-        this.search.isShipped = {label: 'All', id: null}
+        this.search.isPaid = { label: 'All', id: null }
+        this.search.isShipped = { label: 'All', id: null }
         await this.getOrders()
       }
     },
@@ -22,7 +22,7 @@ async function orderList(path) {
         showShipDialog: false,
         filter: '',
         search: {
-          publicKey: '',
+          publicKey: null,
           isPaid: {
             label: 'All',
             id: null
@@ -30,7 +30,8 @@ async function orderList(path) {
           isShipped: {
             label: 'All',
             id: null
-          }
+          },
+          restoring: false
         },
         customers: [],
         ternaryOptions: [
@@ -92,16 +93,23 @@ async function orderList(path) {
               field: 'pubkey'
             },
             {
-              name: 'time',
+              name: 'event_created_at',
               align: 'left',
-              label: 'Date',
-              field: 'time'
+              label: 'Created At',
+              field: 'event_created_at'
             }
           ],
           pagination: {
             rowsPerPage: 10
           }
         }
+      }
+    },
+    computed: {
+      customerOptions: function () {
+        const options = this.customers.map(c => ({ label: this.buildCustomerLabel(c), value: c.public_key }))
+        options.unshift({ label: 'All', value: null, id: null })
+        return options
       }
     },
     methods: {
@@ -156,26 +164,46 @@ async function orderList(path) {
           if (this.search.isShipped.id) {
             query.push(`shipped=${this.search.isShipped.id}`)
           }
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'GET',
             `/nostrmarket/api/v1/${ordersPath}?${query.join('&')}`,
             this.inkey
           )
-          this.orders = data.map(s => ({...s, expanded: false}))
+          this.orders = data.map(s => ({ ...s, expanded: false }))
+          console.log("### this.orders", this.orders)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
       },
       getOrder: async function (orderId) {
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'GET',
             `/nostrmarket/api/v1/order/${orderId}`,
             this.inkey
           )
-          return {...data, expanded: false, isNew: true}
+          return { ...data, expanded: false, isNew: true }
         } catch (error) {
           LNbits.utils.notifyApiError(error)
+        }
+      },
+      restoreOrders: async function () {
+        try {
+          this.search.restoring = true
+          await LNbits.api.request(
+            'PUT',
+            `/nostrmarket/api/v1/order/restore`,
+            this.adminkey
+          )
+          await this.getOrders()
+          this.$q.notify({
+            type: 'positive',
+            message: 'Orders restored!'
+          })
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        } finally {
+          this.search.restoring = false
         }
       },
       updateOrderShipped: async function () {
@@ -213,8 +241,8 @@ async function orderList(path) {
       showShipOrderDialog: function (order) {
         this.selectedOrder = order
         this.shippingMessage = order.shipped
-          ? `The order has been shipped! Order ID: '${order.id}' `
-          : `The order has NOT yet been shipped! Order ID: '${order.id}'`
+          ? 'The order has been shipped!'
+          : 'The order has NOT yet been shipped!'
 
         // do not change the status yet
         this.selectedOrder.shipped = !order.shipped
@@ -225,7 +253,7 @@ async function orderList(path) {
       },
       getCustomers: async function () {
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'GET',
             '/nostrmarket/api/v1/customer',
             this.inkey
@@ -244,6 +272,12 @@ async function orderList(path) {
           c.public_key.length - 16
         )}`
         return label
+      },
+      orderPaid: function(orderId) {
+        const order = this.orders.find(o => o.id === orderId)
+        if (order) {
+          order.paid = true
+        }
       }
     },
     created: async function () {

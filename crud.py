@@ -72,12 +72,12 @@ async def get_merchant_by_pubkey(public_key: str) -> Optional[Merchant]:
     return Merchant.from_row(row) if row else None
 
 
-async def get_public_keys_for_merchants() -> List[str]:
+async def get_merchants_ids_with_pubkeys() -> List[str]:
     rows = await db.fetchall(
-        """SELECT public_key FROM nostrmarket.merchants""",
+        """SELECT id, public_key FROM nostrmarket.merchants""",
     )
 
-    return [row[0] for row in rows]
+    return [(row[0], row[1]) for row in rows]
 
 
 async def get_merchant_for_user(user_id: str) -> Optional[Merchant]:
@@ -100,7 +100,7 @@ async def delete_merchant(merchant_id: str) -> None:
 
 
 async def create_zone(merchant_id: str, data: PartialZone) -> Zone:
-    zone_id = urlsafe_short_hash()
+    zone_id = data.id or urlsafe_short_hash()
     await db.execute(
         f"""
         INSERT INTO nostrmarket.zones (id, merchant_id, name, currency, cost, regions)
@@ -168,12 +168,14 @@ async def delete_merchant_zones(merchant_id: str) -> None:
 
 
 async def create_stall(merchant_id: str, data: PartialStall) -> Stall:
-    stall_id = urlsafe_short_hash()
+    stall_id = data.id or urlsafe_short_hash()
 
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.stalls (merchant_id, id, wallet, name, currency, zones, meta)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO nostrmarket.stalls
+        (merchant_id, id,  wallet, name, currency, pending, event_id, event_created_at, zones, meta)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO NOTHING
         """,
         (
             merchant_id,
@@ -181,6 +183,9 @@ async def create_stall(merchant_id: str, data: PartialStall) -> Stall:
             data.wallet,
             data.name,
             data.currency,
+            data.pending,
+            data.event_id,
+            data.event_created_at,
             json.dumps(
                 [z.dict() for z in data.shipping_zones]
             ),  # todo: cost is float. should be int for sats
@@ -204,30 +209,42 @@ async def get_stall(merchant_id: str, stall_id: str) -> Optional[Stall]:
     return Stall.from_row(row) if row else None
 
 
-async def get_stalls(merchant_id: str) -> List[Stall]:
+async def get_stalls(merchant_id: str, pending: Optional[bool] = False) -> List[Stall]:
     rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.stalls WHERE merchant_id = ?",
-        (merchant_id,),
+        "SELECT * FROM nostrmarket.stalls WHERE merchant_id = ? AND pending = ?",
+        (merchant_id, pending,),
     )
     return [Stall.from_row(row) for row in rows]
 
+async def get_last_stall_update_time(merchant_id: str) -> int:
+    row = await db.fetchone(
+        """
+            SELECT event_created_at FROM nostrmarket.stalls 
+            WHERE merchant_id = ? ORDER BY event_created_at DESC LIMIT 1
+        """,
+        (merchant_id,),
+    )
+    return row[0] or 0 if row else 0
 
 async def update_stall(merchant_id: str, stall: Stall) -> Optional[Stall]:
     await db.execute(
         f"""
-            UPDATE nostrmarket.stalls SET wallet = ?, name = ?, currency = ?, zones = ?, meta = ?
+            UPDATE nostrmarket.stalls SET wallet = ?, name = ?, currency = ?, pending = ?, event_id = ?, event_created_at = ?, zones = ?, meta = ?
             WHERE merchant_id = ? AND id = ?
         """,
         (
             stall.wallet,
             stall.name,
             stall.currency,
+            stall.pending,
+            stall.event_id,
+            stall.event_created_at,
             json.dumps(
                 [z.dict() for z in stall.shipping_zones]
             ),  # todo: cost is float. should be int for sats
             json.dumps(stall.config.dict()),
             merchant_id,
-            stall.id,
+            stall.id
         ),
     )
     return await get_stall(merchant_id, stall.id)
@@ -254,12 +271,14 @@ async def delete_merchant_stalls(merchant_id: str) -> None:
 
 
 async def create_product(merchant_id: str, data: PartialProduct) -> Product:
-    product_id = urlsafe_short_hash()
+    product_id = data.id or urlsafe_short_hash()
 
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.products (merchant_id, id, stall_id, name, price, quantity, image_urls, category_list, meta)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO nostrmarket.products 
+        (merchant_id, id, stall_id, name, price, quantity, pending, event_id, event_created_at, image_urls, category_list, meta)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO NOTHING
         """,
         (
             merchant_id,
@@ -268,6 +287,9 @@ async def create_product(merchant_id: str, data: PartialProduct) -> Product:
             data.name,
             data.price,
             data.quantity,
+            data.pending,
+            data.event_id,
+            data.event_created_at,
             json.dumps(data.images),
             json.dumps(data.categories),
             json.dumps(data.config.dict()),
@@ -283,13 +305,16 @@ async def update_product(merchant_id: str, product: Product) -> Product:
 
     await db.execute(
         f"""
-        UPDATE nostrmarket.products set name = ?, price = ?, quantity = ?, image_urls = ?, category_list = ?, meta = ?
+        UPDATE nostrmarket.products set name = ?, price = ?, quantity = ?,  pending = ?, event_id =?, event_created_at = ?, image_urls = ?, category_list = ?, meta = ?
         WHERE merchant_id = ? AND id = ?
         """,
         (
             product.name,
             product.price,
             product.quantity,
+            product.pending,
+            product.event_id,
+            product.event_created_at,
             json.dumps(product.images),
             json.dumps(product.categories),
             json.dumps(product.config.dict()),
@@ -328,10 +353,10 @@ async def get_product(merchant_id: str, product_id: str) -> Optional[Product]:
     return Product.from_row(row) if row else None
 
 
-async def get_products(merchant_id: str, stall_id: str) -> List[Product]:
+async def get_products(merchant_id: str, stall_id: str, pending: Optional[bool] = False) -> List[Product]:
     rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.products WHERE merchant_id = ? AND stall_id = ?",
-        (merchant_id, stall_id),
+        "SELECT * FROM nostrmarket.products WHERE merchant_id = ? AND stall_id = ? AND pending = ?",
+        (merchant_id, stall_id, pending),
     )
     return [Product.from_row(row) for row in rows]
 
@@ -341,7 +366,11 @@ async def get_products_by_ids(
 ) -> List[Product]:
     q = ",".join(["?"] * len(product_ids))
     rows = await db.fetchall(
-        f"SELECT id, stall_id, name, price, quantity, category_list, meta  FROM nostrmarket.products WHERE merchant_id = ? AND id IN ({q})",
+        f"""
+            SELECT id, stall_id, name, price, quantity, category_list, meta  
+            FROM nostrmarket.products 
+            WHERE merchant_id = ? AND pending = false AND id IN ({q})
+        """,
         (merchant_id, *product_ids),
     )
     return [Product.from_row(row) for row in rows]
@@ -353,12 +382,21 @@ async def get_wallet_for_product(product_id: str) -> Optional[str]:
         SELECT s.wallet FROM nostrmarket.products p
         INNER JOIN nostrmarket.stalls s
         ON p.stall_id = s.id
-        WHERE p.id=?
+        WHERE p.id = ? AND p.pending = false AND s.pending = false
        """,
         (product_id,),
     )
     return row[0] if row else None
 
+async def get_last_product_update_time(merchant_id: str) -> int:
+    row = await db.fetchone(
+        """
+            SELECT event_created_at FROM nostrmarket.products 
+            WHERE merchant_id = ? ORDER BY event_created_at DESC LIMIT 1
+        """,
+        (merchant_id,),
+    )
+    return row[0] or 0 if row else 0
 
 async def delete_product(merchant_id: str, product_id: str) -> None:
     await db.execute(
@@ -456,7 +494,7 @@ async def get_orders(merchant_id: str, **kwargs) -> List[Order]:
         q = f"AND {q}"
         values = (v for v in kwargs.values() if v != None)
     rows = await db.fetchall(
-        f"SELECT * FROM nostrmarket.orders WHERE merchant_id = ? {q} ORDER BY time DESC",
+        f"SELECT * FROM nostrmarket.orders WHERE merchant_id = ? {q} ORDER BY event_created_at DESC",
         (merchant_id, *values),
     )
     return [Order.from_row(row) for row in rows]
@@ -479,15 +517,27 @@ async def get_orders_for_stall(
     return [Order.from_row(row) for row in rows]
 
 
-async def get_last_order_time(public_key: str) -> int:
+async def get_last_order_time(merchant_id: str) -> int:
     row = await db.fetchone(
         """
             SELECT event_created_at FROM nostrmarket.orders 
-            WHERE merchant_public_key = ? ORDER BY event_created_at DESC LIMIT 1
+            WHERE merchant_id = ? ORDER BY event_created_at DESC LIMIT 1
         """,
-        (public_key,),
+        (merchant_id,),
     )
     return row[0] if row else 0
+
+
+async def update_order(merchant_id: str, order_id: str, **kwargs) -> Optional[Order]:
+    q = ", ".join([f"{field[0]} = ?" for field in kwargs.items()])
+    await db.execute(
+        f"""
+            UPDATE nostrmarket.orders SET {q} WHERE merchant_id = ? and id = ?
+        """, 
+        (*kwargs.values(), merchant_id, order_id)
+    )
+
+    return await get_order(merchant_id, order_id)
 
 
 async def update_order_paid_status(order_id: str, paid: bool) -> Optional[Order]:
@@ -533,8 +583,8 @@ async def create_direct_message(
     dm_id = urlsafe_short_hash()
     await db.execute(
         f"""
-        INSERT INTO nostrmarket.direct_messages (merchant_id, id, event_id, event_created_at, message, public_key, incoming)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO nostrmarket.direct_messages (merchant_id, id, event_id, event_created_at, message, public_key, type, incoming)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(event_id) DO NOTHING
         """,
         (
@@ -544,6 +594,7 @@ async def create_direct_message(
             dm.event_created_at,
             dm.message,
             dm.public_key,
+            dm.type,
             dm.incoming,
         ),
     )
@@ -586,14 +637,24 @@ async def get_direct_messages(merchant_id: str, public_key: str) -> List[DirectM
     )
     return [DirectMessage.from_row(row) for row in rows]
 
+async def get_orders_from_direct_messages(merchant_id: str) -> List[DirectMessage]:
+    rows = await db.fetchall(
+        "SELECT * FROM nostrmarket.direct_messages WHERE merchant_id = ? AND type >= 0 ORDER BY event_created_at, type",
+        (merchant_id),
+    )
+    return [DirectMessage.from_row(row) for row in rows]
 
-async def get_last_direct_messages_time(public_key: str) -> int:
+
+
+
+
+async def get_last_direct_messages_time(merchant_id: str) -> int:
     row = await db.fetchone(
         """
             SELECT event_created_at FROM nostrmarket.direct_messages 
-            WHERE public_key = ? ORDER BY event_created_at DESC LIMIT 1
+            WHERE merchant_id = ? ORDER BY event_created_at DESC LIMIT 1
         """,
-        (public_key,),
+        (merchant_id,),
     )
     return row[0] if row else 0
 
@@ -644,8 +705,13 @@ async def get_customers(merchant_id: str) -> List[Customer]:
     return [Customer.from_row(row) for row in rows]
 
 
-async def get_all_customers() -> List[Customer]:
-    rows = await db.fetchall("SELECT * FROM nostrmarket.customers")
+async def get_all_unique_customers() -> List[Customer]:
+    q = """
+            SELECT public_key, MAX(merchant_id) as merchant_id, MAX(event_created_at)  
+            FROM nostrmarket.customers 
+            GROUP BY public_key
+        """
+    rows = await db.fetchall(q)
     return [Customer.from_row(row) for row in rows]
 
 
@@ -658,15 +724,15 @@ async def update_customer_profile(
     )
 
 
-async def increment_customer_unread_messages(public_key: str):
+async def increment_customer_unread_messages(merchant_id: str, public_key: str):
     await db.execute(
-        f"UPDATE nostrmarket.customers SET unread_messages = unread_messages + 1 WHERE public_key = ?",
-        (public_key,),
+        f"UPDATE nostrmarket.customers SET unread_messages = unread_messages + 1 WHERE merchant_id = ? AND public_key = ?",
+        (merchant_id, public_key,),
     )
 
-
-async def update_customer_no_unread_messages(public_key: str):
+#??? two merchants
+async def update_customer_no_unread_messages(merchant_id: str, public_key: str):
     await db.execute(
-        f"UPDATE nostrmarket.customers SET unread_messages = 0 WHERE public_key = ?",
-        (public_key,),
+        f"UPDATE nostrmarket.customers SET unread_messages = 0 WHERE merchant_id =? AND public_key = ?",
+        (merchant_id, public_key,),
     )

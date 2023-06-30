@@ -20,8 +20,10 @@ async function stallDetails(path) {
         tab: 'products',
         stall: null,
         products: [],
+        pendingProducts: [],
         productDialog: {
           showDialog: false,
+          showRestore: false,
           url: true,
           data: {
             id: null,
@@ -106,15 +108,15 @@ async function stallDetails(path) {
       mapStall: function (stall) {
         stall.shipping_zones.forEach(
           z =>
-            (z.label = z.name
-              ? `${z.name} (${z.countries.join(', ')})`
-              : z.countries.join(', '))
+          (z.label = z.name
+            ? `${z.name} (${z.countries.join(', ')})`
+            : z.countries.join(', '))
         )
         return stall
       },
       getStall: async function () {
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'GET',
             '/nostrmarket/api/v1/stall/' + this.stallId,
             this.inkey
@@ -126,7 +128,7 @@ async function stallDetails(path) {
       },
       updateStall: async function () {
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'PUT',
             '/nostrmarket/api/v1/stall/' + this.stallId,
             this.adminkey,
@@ -189,14 +191,14 @@ async function stallDetails(path) {
           this.productDialog.data.images.splice(index, 1)
         }
       },
-      getProducts: async function () {
+      getProducts: async function (pending = false) {
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'GET',
-            '/nostrmarket/api/v1/stall/product/' + this.stall.id,
+            `/nostrmarket/api/v1/stall/product/${this.stall.id}?pending=${pending}`,
             this.inkey
           )
-          this.products = data
+          return data
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -215,6 +217,7 @@ async function stallDetails(path) {
         }
         this.productDialog.showDialog = false
         if (this.productDialog.data.id) {
+          data.pending = false
           this.updateProduct(data)
         } else {
           this.createProduct(data)
@@ -222,7 +225,7 @@ async function stallDetails(path) {
       },
       updateProduct: async function (product) {
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'PATCH',
             '/nostrmarket/api/v1/product/' + product.id,
             this.adminkey,
@@ -231,6 +234,8 @@ async function stallDetails(path) {
           const index = this.products.findIndex(r => r.id === product.id)
           if (index !== -1) {
             this.products.splice(index, 1, data)
+          } else {
+            this.products.unshift(data)
           }
           this.$q.notify({
             type: 'positive',
@@ -244,7 +249,7 @@ async function stallDetails(path) {
       },
       createProduct: async function (payload) {
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'POST',
             '/nostrmarket/api/v1/product',
             this.adminkey,
@@ -262,7 +267,7 @@ async function stallDetails(path) {
         }
       },
       editProduct: async function (product) {
-        this.productDialog.data = {...product}
+        this.productDialog.data = { ...product }
         this.productDialog.showDialog = true
       },
       deleteProduct: async function (productId) {
@@ -289,8 +294,8 @@ async function stallDetails(path) {
             }
           })
       },
-      showNewProductDialog: async function () {
-        this.productDialog.data = {
+      showNewProductDialog: async function (data) {
+        this.productDialog.data = data || {
           id: null,
           name: '',
           description: '',
@@ -305,13 +310,21 @@ async function stallDetails(path) {
         }
         this.productDialog.showDialog = true
       },
+      openSelectPendingProductDialog: async function () {
+        this.productDialog.showRestore = true
+        this.pendingProducts = await this.getProducts(true)
+      },
+      openRestoreProductDialog: async function (pendingProduct) {
+        pendingProduct.pending = true
+        await this.showNewProductDialog(pendingProduct)
+      },
       customerSelectedForOrder: function (customerPubkey) {
         this.$emit('customer-selected-for-order', customerPubkey)
       }
     },
     created: async function () {
       await this.getStall()
-      await this.getProducts()
+      this.products = await this.getProducts()
     }
   })
 }

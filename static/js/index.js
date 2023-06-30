@@ -28,7 +28,8 @@ const merchant = async () => {
           data: {
             privateKey: null
           }
-        }
+        },
+        wsConnection: null
       }
     },
     methods: {
@@ -114,8 +115,9 @@ const merchant = async () => {
           const scheme = location.protocol === 'http:' ? 'ws' : 'wss'
           const port = location.port ? `:${location.port}` : ''
           const wsUrl = `${scheme}://${document.domain}${port}/api/v1/ws/${this.merchant.id}`
-          const wsConnection = new WebSocket(wsUrl)
-          wsConnection.onmessage = async e => {
+          console.log('Reconnecting to websocket: ', wsUrl)
+          this.wsConnection = new WebSocket(wsUrl)
+          this.wsConnection.onmessage = async e => {
             const data = JSON.parse(e.data)
             if (data.type === 'new-order') {
               this.$q.notify({
@@ -124,10 +126,20 @@ const merchant = async () => {
                 message: 'New Order'
               })
               await this.$refs.orderListRef.addOrder(data)
+            } else if (data.type === 'order-paid') {
+              this.$q.notify({
+                timeout: 5000,
+                type: 'positive',
+                message: 'Order Paid'
+              })
+              await this.$refs.orderListRef.addOrder(data)
             } else if (data.type === 'new-direct-message') {
               await this.$refs.directMessagesRef.handleNewMessage(data)
             }
+            // order paid
+            // order shipped
           }
+
         } catch (error) {
           this.$q.notify({
             timeout: 5000,
@@ -157,7 +169,11 @@ const merchant = async () => {
     },
     created: async function () {
       await this.getMerchant()
-      await this.waitForNotifications()
+      setInterval(async () => {
+        if (!this.wsConnection || this.wsConnection.readyState !== WebSocket.OPEN) {
+          await this.waitForNotifications()
+        }
+      }, 1000)
     }
   })
 }
