@@ -97,7 +97,14 @@ async def api_create_merchant(
         merchant = await create_merchant(wallet.wallet.user, data)
 
         await create_zone(
-            merchant.id, PartialZone(name="Online", currency="sat", cost=0, countries=["Free (digital)"])
+            merchant.id,
+            PartialZone(
+                id="online",
+                name="Online",
+                currency="sat",
+                cost=0,
+                countries=["Free (digital)"],
+            ),
         )
 
         await nostr_client.subscribe_to_stall_events(data.public_key, 0)

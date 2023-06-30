@@ -100,7 +100,7 @@ async def delete_merchant(merchant_id: str) -> None:
 
 
 async def create_zone(merchant_id: str, data: PartialZone) -> Zone:
-    zone_id = urlsafe_short_hash()
+    zone_id = data.id or urlsafe_short_hash()
     await db.execute(
         f"""
         INSERT INTO nostrmarket.zones (id, merchant_id, name, currency, cost, regions)

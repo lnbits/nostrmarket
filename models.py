@@ -121,6 +121,7 @@ class Merchant(PartialMerchant, Nostrable):
 
 ######################################## ZONES ########################################
 class PartialZone(BaseModel):
+    id: Optional[str]
     name: Optional[str]
     currency: str
     cost: float
