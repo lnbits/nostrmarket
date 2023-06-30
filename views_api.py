@@ -96,6 +96,10 @@ async def api_create_merchant(
 
         merchant = await create_merchant(wallet.wallet.user, data)
 
+        await create_zone(
+            merchant.id, PartialZone(name="Online", currency="sat", cost=0, countries=["Free (digital)"])
+        )
+
         await nostr_client.subscribe_to_stall_events(data.public_key, 0)
         await nostr_client.subscribe_to_product_events(data.public_key, 0)
         await nostr_client.subscribe_to_direct_messages(data.public_key, 0)
@@ -778,10 +782,13 @@ async def api_restore_orders(
         dms = await get_orders_from_direct_messages(merchant.id)
         for dm in dms:
             try:
-                await create_or_update_order_from_dm(merchant.id, merchant.public_key, dm)
+                await create_or_update_order_from_dm(
+                    merchant.id, merchant.public_key, dm
+                )
             except Exception as e:
-                logger.debug(f"Failed to restore order friom event '{dm.event_id}': '{str(e)}'.")
-
+                logger.debug(
+                    f"Failed to restore order friom event '{dm.event_id}': '{str(e)}'."
+                )
 
     except AssertionError as ex:
         raise HTTPException(
@@ -794,7 +801,6 @@ async def api_restore_orders(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot restore orders",
         )
-
 
 
 ######################################## DIRECT MESSAGES ########################################
