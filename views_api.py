@@ -99,7 +99,7 @@ async def api_create_merchant(
         await create_zone(
             merchant.id,
             PartialZone(
-                id="online",
+                id=f"online-{merchant.id}",
                 name="Online",
                 currency="sat",
                 cost=0,
