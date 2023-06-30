@@ -272,6 +272,12 @@ async function orderList(path) {
           c.public_key.length - 16
         )}`
         return label
+      },
+      orderPaid: function(orderId) {
+        const order = this.orders.find(o => o.id === orderId)
+        if (order) {
+          order.paid = true
+        }
       }
     },
     created: async function () {

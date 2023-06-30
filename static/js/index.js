@@ -126,6 +126,13 @@ const merchant = async () => {
                 message: 'New Order'
               })
               await this.$refs.orderListRef.addOrder(data)
+            } else if (data.type === 'order-paid') {
+              this.$q.notify({
+                timeout: 5000,
+                type: 'positive',
+                message: 'Order Paid'
+              })
+              await this.$refs.orderListRef.addOrder(data)
             } else if (data.type === 'new-direct-message') {
               await this.$refs.directMessagesRef.handleNewMessage(data)
             }

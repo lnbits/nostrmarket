@@ -173,6 +173,16 @@ async def handle_order_paid(order_id: str, merchant_pubkey: str):
         # todo: lock
         success, message = await update_products_for_order(merchant, order)
         await notify_client_of_order_status(order, merchant, success, message)
+
+        await websocketUpdater(
+        merchant.id,
+        json.dumps(
+            {
+                "type": "order-paid",
+                "orderId": order_id,
+            }
+        ),
+    )
     except Exception as ex:
         logger.warning(ex)
 
