@@ -273,7 +273,6 @@ async def process_nostr_message(msg: str):
                 await _handle_product(event)
             return
 
-        print("### process_nostr_message", msg)
     except Exception as ex:
         logger.warning(ex)
 
