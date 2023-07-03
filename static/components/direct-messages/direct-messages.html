@@ -57,9 +57,8 @@
                   <span v-text="dm.message.message"></span><br>
                   <span v-text="dm.message.id"></span>
                 </div>
-                <div v-else>
-                  <span v-text="JSON.stringify(dm.message)"></span>
-                </div>
+                <q-badge @click="showMessageRawData(index)" class="cursor-pointer">...</q-badge>
+               
               </div>
             </q-chat-message>
           </div>
@@ -84,6 +83,16 @@
           <div class="row q-mt-lg">
             <q-btn unelevated color="primary" :disable="!newPublicKey" type="submit">Add</q-btn>
             <q-btn v-close-popup flat color="grey" class="q-ml-auto">Cancel</q-btn>
+          </div>
+        </q-form>
+      </q-card>
+    </q-dialog>
+    <q-dialog v-model="showRawMessage" position="top">
+      <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+          <q-input filled dense type="textarea" rows="20" v-model.trim="rawMessage" label="Raw Data"></q-input>
+          <div class="row q-mt-lg">
+           
+            <q-btn v-close-popup flat color="grey" class="q-ml-auto">Close</q-btn>
           </div>
         </q-form>
       </q-card>
