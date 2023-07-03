@@ -13,6 +13,25 @@ async function directMessages(path) {
         await this.getDirectMessages(n)
       }
     },
+    computed: {
+      messagesAsJson: function() {
+        return this.messages.map(m => {
+          try {
+            return {
+              isJson: true,
+              ...m,
+              message: JSON.parse(m.message)
+            }
+          } catch (error) {
+            return {
+              isJson: false,
+              ...m,
+              message: m.message
+            }
+          }
+        })
+      }
+    },
     data: function () {
       return {
         customers: [],
