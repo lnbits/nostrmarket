@@ -5,6 +5,7 @@ from typing import List, Optional
 from fastapi import Depends
 from fastapi.exceptions import HTTPException
 from loguru import logger
+from lnbits.core.services import websocketUpdater
 
 from lnbits.decorators import (
     WalletTypeInfo,
@@ -799,6 +800,10 @@ async def api_update_order_status(
         await create_direct_message(merchant.id, dm)
 
         await nostr_client.publish_nostr_event(dm_event)
+        await websocketUpdater(
+            merchant.id,
+            json.dumps({ "type": f"dm:{dm.type}", "customerPubkey": order.public_key, "dm": dm.dict() }),
+        )
 
         return order
 

@@ -109,17 +109,6 @@ async def create_new_order(
         extra=extra,
     )
     await create_order(merchant.id, order)
-    await websocketUpdater(
-        merchant.id,
-        json.dumps(
-            {
-                "type": "new-order",
-                "stallId": products[0].stall_id,
-                "customerPubkey": data.public_key,
-                "orderId": order.id,
-            }
-        ),
-    )
 
     return PaymentRequest(
         id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)]
@@ -174,15 +163,7 @@ async def handle_order_paid(order_id: str, merchant_pubkey: str):
         success, message = await update_products_for_order(merchant, order)
         await notify_client_of_order_status(order, merchant, success, message)
 
-        await websocketUpdater(
-        merchant.id,
-        json.dumps(
-            {
-                "type": "order-paid",
-                "orderId": order_id,
-            }
-        ),
-    )
+       
     except Exception as ex:
         logger.warning(ex)
 
@@ -217,9 +198,14 @@ async def notify_client_of_order_status(
         if success
         else DirectMessageType.PLAIN_TEXT.value,
     )
-    await create_direct_message(merchant.id, dm)
+    dm_reply = await create_direct_message(merchant.id, dm)
 
     await nostr_client.publish_nostr_event(dm_event)
+
+    await websocketUpdater(
+        merchant.id,
+        json.dumps({ "type": f"dm:{dm.type}", "customerPubkey": order.public_key, "dm": dm_reply.dict() }),
+    )
 
 
 async def update_products_for_order(
@@ -375,9 +361,9 @@ async def _handle_incoming_dms(
     new_dm = await _persist_dm(merchant.id, dm_type.value, event.pubkey, event.id, event.created_at, clear_text_msg)
 
     if json_data:
-        dm_reply = await _handle_incoming_structured_dm(merchant, new_dm, json_data)
+        reply_type, dm_reply = await _handle_incoming_structured_dm(merchant, new_dm, json_data)
         if dm_reply:
-            await _reply_to_structured_dm(merchant, event, dm_reply)
+            await _reply_to_structured_dm(merchant, event, reply_type.value, dm_reply)
 
 
 async def _handle_outgoing_dms(
@@ -396,14 +382,16 @@ async def _handle_outgoing_dms(
         await create_direct_message(merchant.id, dm)
 
 
-async def _handle_incoming_structured_dm(merchant: Merchant, dm: DirectMessage, json_data) -> Optional[str]:
+async def _handle_incoming_structured_dm(merchant: Merchant, dm: DirectMessage, json_data) -> Tuple[DirectMessageType, Optional[str]]:
     try:
         if dm.type == DirectMessageType.CUSTOMER_ORDER.value and merchant.config.active:
             json_data["public_key"] = dm.public_key
             json_data["merchant_public_key"] = merchant.public_key
             json_data["event_id"] = dm.event_id
             json_data["event_created_at"] = dm.event_created_at
-            return await _handle_new_order(PartialOrder(**json_data))
+
+            json_data = await _handle_new_order(PartialOrder(**json_data))
+            return DirectMessageType.PAYMENT_REQUEST, json_data
 
         return None
     except Exception as ex:
@@ -411,7 +399,7 @@ async def _handle_incoming_structured_dm(merchant: Merchant, dm: DirectMessage, 
         return None
 
 
-async def _persist_dm(merchant_id: str, dm_type: str, from_pubkey:str, event_id:str, event_created_at: int, msg: str) -> DirectMessage:
+async def _persist_dm(merchant_id: str, dm_type: int, from_pubkey:str, event_id:str, event_created_at: int, msg: str) -> DirectMessage:
     dm = PartialDirectMessage(
             event_id=event_id,
             event_created_at=event_created_at,
@@ -424,21 +412,26 @@ async def _persist_dm(merchant_id: str, dm_type: str, from_pubkey:str, event_id:
 
     await websocketUpdater(
         merchant_id,
-        json.dumps({"type": "new-direct-message", "customerPubkey": from_pubkey, "data": new_dm.dict()}),
+        json.dumps({"type": f"dm:{dm_type}", "customerPubkey": from_pubkey, "dm": new_dm.dict()}),
     )
     return new_dm
 
-async def _reply_to_structured_dm(merchant: Merchant, event: NostrEvent,  dm_reply: str):
+async def _reply_to_structured_dm(merchant: Merchant, event: NostrEvent, dm_type: int, dm_reply: str):
     dm_event = merchant.build_dm_event(dm_reply, event.pubkey)
     dm = PartialDirectMessage(
             event_id=dm_event.id,
             event_created_at=dm_event.created_at,
             message=dm_reply,
             public_key=event.pubkey,
-            type=DirectMessageType.PAYMENT_REQUEST.value,
+            type=dm_type,
         )
     await create_direct_message(merchant.id, dm)
     await nostr_client.publish_nostr_event(dm_event)
+    print("### _reply_to_structured_dm", json.dumps({ "type": f"dm:{dm_type}", "customerPubkey": dm.public_key, "dm": dm.dict() }))
+    await websocketUpdater(
+        merchant.id,
+        json.dumps({ "type": f"dm:{dm_type}", "customerPubkey": dm.public_key, "dm": dm.dict() }),
+    )
 
 
 
@@ -455,6 +448,7 @@ async def _handle_new_order(order: PartialOrder) -> Optional[str]:
 
         
         payment_req = await create_new_order(order.merchant_public_key, order)
+        print("### payment_req", payment_req)
     except Exception as e:
         payment_req = PaymentRequest(id=order.id, message=str(e), payment_options=[])
 

@@ -233,7 +233,8 @@ async function orderList(path) {
           !this.search.publicKey ||
           this.search.publicKey === data.customerPubkey
         ) {
-          const order = await this.getOrder(data.orderId)
+          const orderData = JSON.parse(data.dm.message)
+          const order = await this.getOrder(orderData.id)
           this.orders.unshift(order)
         }
       },

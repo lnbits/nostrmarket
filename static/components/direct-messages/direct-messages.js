@@ -107,9 +107,9 @@ async function directMessages(path) {
           this.showAddPublicKey = false
         }
       },
-      handleNewMessage: async function (dm) {
-        if (dm.customerPubkey === this.activePublicKey) {
-          this.messages.push(dm.data)
+      handleNewMessage: async function (data) {
+        if (data.customerPubkey === this.activePublicKey) {
+          this.messages.push(data.dm)
           this.focusOnChatBox(this.messages.length - 1)
           // focus back on input box
         }

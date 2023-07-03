@@ -162,21 +162,37 @@ const merchant = async () => {
           this.wsConnection = new WebSocket(wsUrl)
           this.wsConnection.onmessage = async e => {
             const data = JSON.parse(e.data)
-            if (data.type === 'new-order') {
+            console.log('#### onmessage', data)
+            if (data.type === 'dm:0') {
               this.$q.notify({
                 timeout: 5000,
                 type: 'positive',
                 message: 'New Order'
               })
+              
+              await this.$refs.directMessagesRef.handleNewMessage(data)
+              return
+            }
+            if (data.type === 'dm:1') {
+              await this.$refs.directMessagesRef.handleNewMessage(data)
               await this.$refs.orderListRef.addOrder(data)
-            } else if (data.type === 'order-paid') {
+              return
+            } 
+            if (data.type === 'dm:2') {
+              const orderStatus = JSON.parse(data.dm.message)
+              console.log('### orderStatus', orderStatus)
               this.$q.notify({
                 timeout: 5000,
                 type: 'positive',
-                message: 'Order Paid'
+                message: orderStatus.message
               })
-              await this.$refs.orderListRef.addOrder(data)
-            } else if (data.type === 'new-direct-message') {
+              if (orderStatus.paid) {
+                await this.$refs.orderListRef.orderPaid(orderStatus.id)
+              }
+              await this.$refs.directMessagesRef.handleNewMessage(data)
+              return
+            } 
+             if (data.type === 'dm:-1') {
               await this.$refs.directMessagesRef.handleNewMessage(data)
             }
             // order paid
