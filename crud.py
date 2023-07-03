@@ -1,4 +1,5 @@
 import json
+import time
 from typing import List, Optional
 
 from lnbits.helpers import urlsafe_short_hash
@@ -43,10 +44,22 @@ async def update_merchant(
 ) -> Optional[Merchant]:
     await db.execute(
         f"""
-            UPDATE nostrmarket.merchants SET meta = ?
+            UPDATE nostrmarket.merchants SET meta = ?, time = {db.timestamp_now}
             WHERE id = ? AND user_id = ?
         """,
         (json.dumps(config.dict()), merchant_id, user_id),
+    )
+    return await get_merchant(user_id, merchant_id)
+
+async def touch_merchant(
+    user_id: str, merchant_id: str
+) -> Optional[Merchant]:
+    await db.execute(
+        f"""
+            UPDATE nostrmarket.merchants SET time = {db.timestamp_now}
+            WHERE id = ? AND user_id = ?
+        """,
+        (merchant_id, user_id),
     )
     return await get_merchant(user_id, merchant_id)
 
@@ -88,6 +101,22 @@ async def get_merchant_for_user(user_id: str) -> Optional[Merchant]:
 
     return Merchant.from_row(row) if row else None
 
+
+async def get_merchant_activity(merchant_id):
+   
+    rows = await db.fetchall(
+        """
+            SELECT time from nostrmarket.direct_messages WHERE merchant_id = ?
+            ORDER by time DESC
+        """,
+        (merchant_id,),
+    )
+
+    # row = await db.fetchone("SELECT now()")
+
+    print("### time", time.time())
+    print("### rows", rows)
+    return rows
 
 async def delete_merchant(merchant_id: str) -> None:
     await db.execute(
@@ -645,10 +674,19 @@ async def get_orders_from_direct_messages(merchant_id: str) -> List[DirectMessag
     return [DirectMessage.from_row(row) for row in rows]
 
 
-
-
-
 async def get_last_direct_messages_time(merchant_id: str) -> int:
+    row = await db.fetchone(
+        """
+            SELECT time FROM nostrmarket.direct_messages 
+            WHERE merchant_id = ? ORDER BY time DESC LIMIT 1
+        """,
+        (merchant_id,),
+    )
+    return row[0] if row else 0
+
+
+
+async def get_last_direct_messages_created_at(merchant_id: str) -> int:
     row = await db.fetchone(
         """
             SELECT event_created_at FROM nostrmarket.direct_messages 
@@ -657,6 +695,7 @@ async def get_last_direct_messages_time(merchant_id: str) -> int:
         (merchant_id,),
     )
     return row[0] if row else 0
+
 
 
 async def delete_merchant_direct_messages(merchant_id: str) -> None:

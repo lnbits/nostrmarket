@@ -42,7 +42,8 @@ class MerchantProfile(BaseModel):
 class MerchantConfig(MerchantProfile):
     event_id: Optional[str]
     sync_from_nostr = False
-
+    active: bool = False
+    restore_in_progress: Optional[bool] = False
 
 class PartialMerchant(BaseModel):
     private_key: str
@@ -52,6 +53,7 @@ class PartialMerchant(BaseModel):
 
 class Merchant(PartialMerchant, Nostrable):
     id: str
+    time: Optional[int]
 
     def sign_hash(self, hash: bytes) -> str:
         return sign_message_hash(self.private_key, hash)

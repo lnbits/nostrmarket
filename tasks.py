@@ -5,7 +5,7 @@ from lnbits.tasks import register_invoice_listener
 
 from .crud import (
     get_all_unique_customers,
-    get_last_direct_messages_time,
+    get_last_direct_messages_created_at,
     get_last_order_time,
     get_last_product_update_time,
     get_last_stall_update_time,
@@ -40,7 +40,7 @@ async def wait_for_nostr_events(nostr_client: NostrClient):
     merchant_ids = await get_merchants_ids_with_pubkeys()
     for id, pk in merchant_ids:
         last_order_time = await get_last_order_time(id)
-        last_dm_time = await get_last_direct_messages_time(id)
+        last_dm_time = await get_last_direct_messages_created_at(id)
         since = max(last_order_time, last_dm_time)
 
         await nostr_client.subscribe_to_direct_messages(pk, since)
