@@ -6,7 +6,7 @@
       <q-card>
         <q-card-section>
           <div class="row">
-            <div class="col-2">
+            <div class="col-3">
               <merchant-details
                 :merchant-id="merchant.id"
                 :inkey="g.user.wallets[0].inkey"
@@ -15,7 +15,17 @@
                 @merchant-deleted="handleMerchantDeleted"
               ></merchant-details>
             </div>
-            <div class="col-8"></div>
+            <div class="col-2">
+              <q-toggle
+              @input="toggleMerchantState()"
+              size="md"
+              checked-icon="check"
+              v-model="merchant.config.active"
+              color="green"
+              unchecked-icon="clear"
+            /> <span v-text="merchant.config.active ? 'Active': 'Deactivated'"></span>
+            </div>
+            <div class="col-5"></div>
             <div class="col-2">
               <shipping-zones
                 :inkey="g.user.wallets[0].inkey"

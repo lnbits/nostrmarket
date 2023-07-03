@@ -140,7 +140,7 @@ async def api_get_merchant(
         merchant = await touch_merchant(wallet.wallet.user, merchant.id)
         last_dm_time = await get_last_direct_messages_time(merchant.id)
 
-        merchant.config.restore_in_progress = (merchant.time - last_dm_time) < 60
+        merchant.config.restore_in_progress = (merchant.time - last_dm_time) < 30
 
         return merchant
     except Exception as ex:
@@ -208,6 +208,33 @@ async def api_republish_merchant(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get merchant",
         )
+
+@nostrmarket_ext.put("/api/v1/merchant/{merchant_id}/toggle")
+async def api_republish_merchant(
+    merchant_id: str,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> Merchant:
+    try:
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+        assert merchant.id == merchant_id, "Wrong merchant ID"
+
+        merchant.config.active = not merchant.config.active
+        await update_merchant(wallet.wallet.user, merchant.id, merchant.config)
+
+        return merchant
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot get merchant",
+        )
+
 
 
 @nostrmarket_ext.delete("/api/v1/merchant/{merchant_id}/nostr")

@@ -61,6 +61,48 @@ const merchant = async () => {
       toggleMerchantKeys: function (value) {
         this.showKeys = value
       },
+      toggleMerchantState: async function () {
+        const merchant = await this.getMerchant()
+        if (!merchant) {
+          this.$q.notify({
+            timeout: 5000,
+            type: 'warning',
+            message: "Cannot fetch merchant!"
+          })
+          return
+        }
+        const message = merchant.config.active ?
+          'New orders will not be processed. Are you sure you want to deactivate?' :
+          merchant.config.restore_in_progress ?
+            'Merchant restore  from nostr in progress. Please wait!! ' +
+            'Activating now can lead to duplicate order processing. Click "OK" if you want to activate anyway?' :
+            'Are you sure you want activate this merchant?'
+
+        LNbits.utils
+          .confirmDialog(message)
+          .onOk(async () => {
+            await this.toggleMerchant()
+          })
+      },
+      toggleMerchant: async function () {
+        try {
+          const { data } = await LNbits.api.request(
+            'PUT',
+            `/nostrmarket/api/v1/merchant/${this.merchant.id}/toggle`,
+            this.g.user.wallets[0].adminkey,
+          )
+          const state = data.config.active ? 'activated' : 'disabled'
+          this.merchant = data
+          this.$q.notify({
+            type: 'positive',
+            message: `'Merchant ${state}`,
+            timeout: 5000
+          })
+        } catch (error) {
+          console.warn(error)
+          LNbits.utils.notifyApiError(error)
+        }
+      },
       handleMerchantDeleted: function () {
         this.merchant = null
         this.shippingZones = []
@@ -75,7 +117,7 @@ const merchant = async () => {
             public_key: pubkey,
             config: {}
           }
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'POST',
             '/nostrmarket/api/v1/merchant',
             this.g.user.wallets[0].adminkey,
@@ -93,12 +135,13 @@ const merchant = async () => {
       },
       getMerchant: async function () {
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'GET',
             '/nostrmarket/api/v1/merchant',
             this.g.user.wallets[0].inkey
           )
           this.merchant = data
+          return data
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
