@@ -14,7 +14,7 @@ async function directMessages(path) {
       }
     },
     computed: {
-      messagesAsJson: function() {
+      messagesAsJson: function () {
         return this.messages.map(m => {
           try {
             return {
@@ -40,11 +40,13 @@ async function directMessages(path) {
         messages: [],
         newMessage: '',
         showAddPublicKey: false,
-        newPublicKey: null
+        newPublicKey: null,
+        showRawMessage: false,
+        rawMessage: null,
       }
     },
     methods: {
-      sendMessage: async function () {},
+      sendMessage: async function () { },
       buildCustomerLabel: function (c) {
         let label = `${c.profile.name || 'unknown'} ${c.profile.about || ''}`
         if (c.unread_messages) {
@@ -61,7 +63,7 @@ async function directMessages(path) {
           return
         }
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'GET',
             '/nostrmarket/api/v1/message/' + pubkey,
             this.inkey
@@ -75,7 +77,7 @@ async function directMessages(path) {
       },
       getCustomers: async function () {
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'GET',
             '/nostrmarket/api/v1/customer',
             this.inkey
@@ -86,10 +88,10 @@ async function directMessages(path) {
           LNbits.utils.notifyApiError(error)
         }
       },
-      
+
       sendDirectMesage: async function () {
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'POST',
             '/nostrmarket/api/v1/message',
             this.adminkey,
@@ -105,9 +107,9 @@ async function directMessages(path) {
           LNbits.utils.notifyApiError(error)
         }
       },
-      addPublicKey: async function(){
+      addPublicKey: async function () {
         try {
-          const {data} = await LNbits.api.request(
+          const { data } = await LNbits.api.request(
             'POST',
             '/nostrmarket/api/v1/customer',
             this.adminkey,
@@ -140,6 +142,10 @@ async function directMessages(path) {
       selectActiveCustomer: async function () {
         await this.getDirectMessages(this.activePublicKey)
         await this.getCustomers()
+      },
+      showMessageRawData: function (index) {
+        this.rawMessage = this.messages[index]?.message
+        this.showRawMessage = true
       },
       focusOnChatBox: function (index) {
         setTimeout(() => {
