@@ -371,25 +371,13 @@ async def _handle_incoming_dms(
     else:
         await increment_customer_unread_messages(merchant.id, event.pubkey)
 
-    dm_reply = await _handle_dirrect_message(
-        merchant.id,
-        merchant.public_key,
-        event.pubkey,
-        event.id,
-        event.created_at,
-        clear_text_msg,
-    )
-    if dm_reply:
-        dm_event = merchant.build_dm_event(dm_reply, event.pubkey)
-        dm = PartialDirectMessage(
-            event_id=dm_event.id,
-            event_created_at=dm_event.created_at,
-            message=dm_reply,
-            public_key=event.pubkey,
-            type=DirectMessageType.PAYMENT_REQUEST.value,
-        )
-        await create_direct_message(merchant.id, dm)
-        await nostr_client.publish_nostr_event(dm_event)
+    dm_type, json_data = PartialDirectMessage.parse_message(clear_text_msg)
+    new_dm = await _persist_dm(merchant.id, dm_type.value, event.pubkey, event.id, event.created_at, clear_text_msg)
+
+    if json_data:
+        dm_reply = await _handle_incoming_structured_dm(merchant, new_dm, json_data)
+        if dm_reply:
+            await _reply_to_structured_dm(merchant, event, dm_reply)
 
 
 async def _handle_outgoing_dms(
@@ -408,42 +396,51 @@ async def _handle_outgoing_dms(
         await create_direct_message(merchant.id, dm)
 
 
-async def _handle_dirrect_message(
-    merchant_id: str,
-    merchant_public_key: str,
-    from_pubkey: str,
-    event_id: str,
-    event_created_at: int,
-    msg: str,
-) -> Optional[str]:
-    type, order = PartialDirectMessage.parse_message(msg)
+async def _handle_incoming_structured_dm(merchant: Merchant, dm: DirectMessage, json_data) -> Optional[str]:
     try:
-        dm = PartialDirectMessage(
-            event_id=event_id,
-            event_created_at=event_created_at,
-            message=msg,
-            public_key=from_pubkey,
-            incoming=True,
-            type=type.value,
-        )
-        new_dm = await create_direct_message(merchant_id, dm)
-        # todo: do the same for new order
-        await websocketUpdater(
-            merchant_id,
-            json.dumps({"type": "new-direct-message", "customerPubkey": from_pubkey, "data": new_dm.dict()}),
-        )
-
-        if type == DirectMessageType.CUSTOMER_ORDER:
-            order["public_key"] = from_pubkey
-            order["merchant_public_key"] = merchant_public_key
-            order["event_id"] = event_id
-            order["event_created_at"] = event_created_at
-            return await _handle_new_order(PartialOrder(**order))
+        if dm.type == DirectMessageType.CUSTOMER_ORDER.value:
+        # and merchant.config.active:
+            json_data["public_key"] = dm.public_key
+            json_data["merchant_public_key"] = merchant.public_key
+            json_data["event_id"] = dm.event_id
+            json_data["event_created_at"] = dm.event_created_at
+            return await _handle_new_order(PartialOrder(**json_data))
 
         return None
     except Exception as ex:
         logger.warning(ex)
         return None
+
+
+async def _persist_dm(merchant_id: str, dm_type: str, from_pubkey:str, event_id:str, event_created_at: int, msg: str) -> DirectMessage:
+    dm = PartialDirectMessage(
+            event_id=event_id,
+            event_created_at=event_created_at,
+            message=msg,
+            public_key=from_pubkey,
+            incoming=True,
+            type=dm_type,
+        )
+    new_dm = await create_direct_message(merchant_id, dm)
+
+    await websocketUpdater(
+        merchant_id,
+        json.dumps({"type": "new-direct-message", "customerPubkey": from_pubkey, "data": new_dm.dict()}),
+    )
+    return new_dm
+
+async def _reply_to_structured_dm(merchant: Merchant, event: NostrEvent,  dm_reply: str):
+    dm_event = merchant.build_dm_event(dm_reply, event.pubkey)
+    dm = PartialDirectMessage(
+            event_id=dm_event.id,
+            event_created_at=dm_event.created_at,
+            message=dm_reply,
+            public_key=event.pubkey,
+            type=DirectMessageType.PAYMENT_REQUEST.value,
+        )
+    await create_direct_message(merchant.id, dm)
+    await nostr_client.publish_nostr_event(dm_event)
+
 
 
 async def _handle_new_order(order: PartialOrder) -> Optional[str]:
