@@ -398,8 +398,7 @@ async def _handle_outgoing_dms(
 
 async def _handle_incoming_structured_dm(merchant: Merchant, dm: DirectMessage, json_data) -> Optional[str]:
     try:
-        if dm.type == DirectMessageType.CUSTOMER_ORDER.value:
-        # and merchant.config.active:
+        if dm.type == DirectMessageType.CUSTOMER_ORDER.value and merchant.config.active:
             json_data["public_key"] = dm.public_key
             json_data["merchant_public_key"] = merchant.public_key
             json_data["event_id"] = dm.event_id
