@@ -168,3 +168,8 @@ async def m003_update_direct_message_type(db):
     await db.execute(
         "ALTER TABLE nostrmarket.direct_messages ADD COLUMN type INTEGER NOT NULL DEFAULT -1;"
     )
+
+async def m004_add_merchant_timestamp(db):
+    await db.execute(
+        f"ALTER TABLE nostrmarket.merchants ADD COLUMN  time TIMESTAMP NOT NULL DEFAULT {db.timestamp_now};"
+    )

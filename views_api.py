@@ -35,6 +35,7 @@ from .crud import (
     get_customer,
     get_customers,
     get_direct_messages,
+    get_last_direct_messages_time,
     get_merchant_by_pubkey,
     get_merchant_for_user,
     get_merchants_ids_with_pubkeys,
@@ -48,6 +49,7 @@ from .crud import (
     get_stalls,
     get_zone,
     get_zones,
+    touch_merchant,
     update_customer_no_unread_messages,
     update_merchant,
     update_order_shipped_status,
@@ -132,6 +134,14 @@ async def api_get_merchant(
 
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
+        if not merchant:
+            return
+        
+        merchant = await touch_merchant(wallet.wallet.user, merchant.id)
+        last_dm_time = await get_last_direct_messages_time(merchant.id)
+
+        merchant.config.restore_in_progress = (merchant.time - last_dm_time) < 60
+
         return merchant
     except Exception as ex:
         logger.warning(ex)
