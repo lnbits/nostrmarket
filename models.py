@@ -309,6 +309,7 @@ class OrderExtra(BaseModel):
     btc_price: str
     shipping_cost: float = 0
     shipping_cost_sat: float = 0
+    fail_message: Optional[str]
 
     @classmethod
     async def from_products(cls, products: List[Product]):

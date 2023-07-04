@@ -117,6 +117,14 @@
                 <div class="col-3 col-sm-1"></div>
               </div>
 
+              <div v-if="props.row.extra.fail_message" class="row items-center no-wrap q-mb-md">
+                <div class="col-3 q-pr-lg">Error:</div>
+                <div class="col-6 col-sm-8 q-pr-lg">
+                  <q-badge color="pink"><span v-text="props.row.extra.fail_message"></span></q-badge>
+                </div>
+                <div class="col-3 col-sm-1"></div>
+              </div>
+
               <div class="row items-center no-wrap q-mb-md">
                 <div class="col-3 q-pr-lg">Address:</div>
                 <div class="col-6 col-sm-8 q-pr-lg">
