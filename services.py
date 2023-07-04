@@ -407,7 +407,9 @@ async def _handle_incoming_dms(
             merchant, new_dm, json_data
         )
         if dm_reply:
-            await _reply_to_structured_dm(merchant, event, reply_type.value, dm_reply)
+            await reply_to_structured_dm(
+                merchant, event.pubkey, reply_type.value, dm_reply
+            )
 
 
 async def _handle_outgoing_dms(
@@ -474,15 +476,15 @@ async def _persist_dm(
     return new_dm
 
 
-async def _reply_to_structured_dm(
-    merchant: Merchant, event: NostrEvent, dm_type: int, dm_reply: str
+async def reply_to_structured_dm(
+    merchant: Merchant, customer_pubkey: str, dm_type: int, dm_reply: str
 ):
-    dm_event = merchant.build_dm_event(dm_reply, event.pubkey)
+    dm_event = merchant.build_dm_event(dm_reply, customer_pubkey)
     dm = PartialDirectMessage(
         event_id=dm_event.id,
         event_created_at=dm_event.created_at,
         message=dm_reply,
-        public_key=event.pubkey,
+        public_key=customer_pubkey,
         type=dm_type,
     )
     await create_direct_message(merchant.id, dm)
