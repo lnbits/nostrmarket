@@ -65,7 +65,7 @@ async def create_new_order(
     if data.event_id and await get_order_by_event_id(merchant.id, data.event_id):
         return None
 
-    order, invoice = await _build_order_with_payment(
+    order, invoice = await build_order_with_payment(
         merchant.id, merchant.public_key, data
     )
     await create_order(merchant.id, order)
@@ -75,7 +75,7 @@ async def create_new_order(
     )
 
 
-async def _build_order_with_payment(
+async def build_order_with_payment(
     merchant_id: str, merchant_public_key: str, data: PartialOrder
 ):
     products = await get_products_by_ids(
