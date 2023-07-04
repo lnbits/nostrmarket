@@ -53,6 +53,7 @@ from .crud import (
     touch_merchant,
     update_customer_no_unread_messages,
     update_merchant,
+    update_order,
     update_order_shipped_status,
     update_product,
     update_stall,
@@ -68,14 +69,19 @@ from .models import (
     OrderStatusUpdate,
     PartialDirectMessage,
     PartialMerchant,
+    PartialOrder,
     PartialProduct,
     PartialStall,
     PartialZone,
+    PaymentOption,
+    PaymentRequest,
     Product,
     Stall,
     Zone,
 )
 from .services import (
+    reply_to_structured_dm,
+    build_order_with_payment,
     create_or_update_order_from_dm,
     sign_and_send_to_nostr,
     update_merchant_to_nostr,
@@ -102,7 +108,7 @@ async def api_create_merchant(
         await create_zone(
             merchant.id,
             PartialZone(
-                id=f"online-{merchant.id}",
+                id=f"online-{merchant.public_key}",
                 name="Online",
                 currency="sat",
                 cost=0,
@@ -137,7 +143,7 @@ async def api_get_merchant(
         merchant = await get_merchant_for_user(wallet.wallet.user)
         if not merchant:
             return
-        
+
         merchant = await touch_merchant(wallet.wallet.user, merchant.id)
         last_dm_time = await get_last_direct_messages_time(merchant.id)
 
@@ -210,6 +216,7 @@ async def api_republish_merchant(
             detail="Cannot get merchant",
         )
 
+
 @nostrmarket_ext.put("/api/v1/merchant/{merchant_id}/toggle")
 async def api_republish_merchant(
     merchant_id: str,
@@ -235,7 +242,6 @@ async def api_republish_merchant(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get merchant",
         )
-
 
 
 @nostrmarket_ext.delete("/api/v1/merchant/{merchant_id}/nostr")
@@ -802,7 +808,13 @@ async def api_update_order_status(
         await nostr_client.publish_nostr_event(dm_event)
         await websocketUpdater(
             merchant.id,
-            json.dumps({ "type": f"dm:{dm.type}", "customerPubkey": order.public_key, "dm": dm.dict() }),
+            json.dumps(
+                {
+                    "type": f"dm:{dm.type}",
+                    "customerPubkey": order.public_key,
+                    "dm": dm.dict(),
+                }
+            ),
         )
 
         return order
@@ -839,6 +851,62 @@ async def api_restore_orders(
                     f"Failed to restore order friom event '{dm.event_id}': '{str(e)}'."
                 )
 
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot restore orders",
+        )
+
+
+@nostrmarket_ext.put("/api/v1/order/{order_id}/reissue")
+async def api_reissue_order_invoice(
+    order_id: str,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> Order:
+    try:
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+
+        data = await get_order(merchant.id, order_id)
+        assert data, "Order cannot be found"
+
+        order, invoice = await build_order_with_payment(
+            merchant.id, merchant.public_key, PartialOrder(**data.dict())
+        )
+
+        await update_order(
+            merchant.id,
+            order.id,
+            **{
+                "stall_id": order.stall_id,
+                "total": order.total,
+                "invoice_id": order.invoice_id,
+                "extra_data": json.dumps(order.extra.dict()),
+            },
+        )
+        payment_req = PaymentRequest(
+            id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)]
+        )
+        response = {
+            "type": DirectMessageType.PAYMENT_REQUEST.value,
+            **payment_req.dict(),
+        }
+        dm_reply = json.dumps(response, separators=(",", ":"), ensure_ascii=False)
+
+        await reply_to_structured_dm(
+            merchant,
+            order.public_key,
+            DirectMessageType.PAYMENT_REQUEST.value,
+            dm_reply,
+        )
+
+        return order
     except AssertionError as ex:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,

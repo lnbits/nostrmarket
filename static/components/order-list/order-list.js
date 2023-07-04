@@ -205,6 +205,27 @@ async function orderList(path) {
           this.search.restoring = false
         }
       },
+      reissueOrderInvoice: async function (orderId) {
+        try {
+          const { data } = await LNbits.api.request(
+            'PUT',
+            `/nostrmarket/api/v1/order/${orderId}/reissue`,
+            this.adminkey
+          )
+          this.$q.notify({
+            type: 'positive',
+            message: 'Order invoice reissued!'
+          })
+
+          const i = this.orders.map(o => o.id).indexOf(orderId)
+          console.log('### order', i)
+          if (i !== -1) {
+            this.orders[i] = { ...this.orders[i], ...data}
+          }
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        }
+      },
       updateOrderShipped: async function () {
         this.selectedOrder.shipped = !this.selectedOrder.shipped
         try {

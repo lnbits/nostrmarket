@@ -156,7 +156,16 @@
                 <div class="col-6 col-sm-8 q-pr-lg">
                   <q-input filled dense readonly disabled v-model.trim="props.row.invoice_id" type="text"></q-input>
                 </div>
-                <div class="col-3 col-sm-1"></div>
+                <div class="col-3">
+                 
+                </div>
+              </div>
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col-3 q-pr-lg"></div>
+               
+                <div class="col-9">
+                  <q-btn @click="reissueOrderInvoice(props.row.id)" unelevated color="primary" type="submit" class="float-left" label="Reissue Invoice"></q-btn>
+                </div>
               </div>
             </q-td>
           </q-tr>
