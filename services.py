@@ -275,7 +275,6 @@ async def process_nostr_message(msg: str):
         if type.upper() == "EVENT":
             subscription_id, event = rest
             event = NostrEvent(**event)
-            print("kind: ", event.kind, ":     ", msg)
             if event.kind == 0:
                 await _handle_customer_profile_update(event)
             elif event.kind == 4:

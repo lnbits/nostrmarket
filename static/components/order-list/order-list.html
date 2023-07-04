@@ -121,18 +121,19 @@
                 </div>
                 <div class="col-3 col-sm-1"></div>
               </div>
-              <div class="row items-center no-wrap q-mb-md">
-                <div class="col-3 q-pr-lg">Address:</div>
-                <div class="col-6 col-sm-8 q-pr-lg">
-                  <q-input filled dense readonly disabled v-model.trim="props.row.address" type="text"></q-input>
-                </div>
-                <div class="col-3 col-sm-1"></div>
-              </div>
 
               <div class="row items-center no-wrap q-mb-md">
                 <div class="col-3 q-pr-lg">Customer Public Key:</div>
                 <div class="col-6 col-sm-8 q-pr-lg">
                   <q-input filled dense readonly disabled v-model.trim="props.row.public_key" type="text"></q-input>
+                </div>
+                <div class="col-3 col-sm-1"></div>
+              </div>
+
+              <div v-if="props.row.address" class="row items-center no-wrap q-mb-md">
+                <div class="col-3 q-pr-lg">Address:</div>
+                <div class="col-6 col-sm-8 q-pr-lg">
+                  <q-input filled dense readonly disabled v-model.trim="props.row.address" type="text"></q-input>
                 </div>
                 <div class="col-3 col-sm-1"></div>
               </div>
@@ -152,19 +153,28 @@
                 <div class="col-3 col-sm-1"></div>
               </div>
               <div class="row items-center no-wrap q-mb-md">
+                <div class="col-3 q-pr-lg">Shipping Zone:</div>
+                <div class="col-6 col-sm-8 q-pr-lg">
+                  <q-select :options="getStallZones(props.row.stall_id)" filled dense emit-value
+                    v-model.trim="props.row.shipping_id" label="Shipping Zones"></q-select>
+                </div>
+                <div class="col-3 col-sm-1"></div>
+              </div>
+              <div class="row items-center no-wrap q-mb-md">
                 <div class="col-3 q-pr-lg">Invoice ID:</div>
                 <div class="col-6 col-sm-8 q-pr-lg">
                   <q-input filled dense readonly disabled v-model.trim="props.row.invoice_id" type="text"></q-input>
                 </div>
                 <div class="col-3">
-                 
+
                 </div>
               </div>
               <div class="row items-center no-wrap q-mb-md">
                 <div class="col-3 q-pr-lg"></div>
-               
+
                 <div class="col-9">
-                  <q-btn @click="reissueOrderInvoice(props.row.id)" unelevated color="primary" type="submit" class="float-left" label="Reissue Invoice"></q-btn>
+                  <q-btn @click="reissueOrderInvoice(props.row)" unelevated color="primary" type="submit"
+                    class="float-left" label="Reissue Invoice"></q-btn>
                 </div>
               </div>
             </q-td>

@@ -45,6 +45,7 @@ class MerchantConfig(MerchantProfile):
     active: bool = False
     restore_in_progress: Optional[bool] = False
 
+
 class PartialMerchant(BaseModel):
     private_key: str
     public_key: str
@@ -400,6 +401,11 @@ class OrderStatusUpdate(BaseModel):
     shipped: Optional[bool]
 
 
+class OrderReissue(BaseModel):
+    id: str
+    shipping_id: Optional[str] = None
+
+
 class PaymentOption(BaseModel):
     type: str
     link: str
@@ -414,13 +420,14 @@ class PaymentRequest(BaseModel):
 ######################################## MESSAGE ########################################
 
 
-
 class DirectMessageType(Enum):
     """Various types os direct messages."""
+
     PLAIN_TEXT = -1
     CUSTOMER_ORDER = 0
     PAYMENT_REQUEST = 1
     ORDER_PAID_OR_SHIPPED = 2
+
 
 class PartialDirectMessage(BaseModel):
     event_id: Optional[str]
@@ -437,7 +444,7 @@ class PartialDirectMessage(BaseModel):
             msg_json = json.loads(msg)
             if "type" in msg_json:
                 return DirectMessageType(msg_json["type"]), msg_json
-           
+
             return DirectMessageType.PLAIN_TEXT, None
         except Exception:
             return DirectMessageType.PLAIN_TEXT, None
@@ -450,7 +457,6 @@ class DirectMessage(PartialDirectMessage):
     def from_row(cls, row: Row) -> "DirectMessage":
         dm = cls(**dict(row))
         return dm
-
 
 
 ######################################## CUSTOMERS ########################################
@@ -471,5 +477,7 @@ class Customer(BaseModel):
     @classmethod
     def from_row(cls, row: Row) -> "Customer":
         customer = cls(**dict(row))
-        customer.profile = CustomerProfile(**json.loads(row["meta"])) if "meta" in row else None
+        customer.profile = (
+            CustomerProfile(**json.loads(row["meta"])) if "meta" in row else None
+        )
         return customer
