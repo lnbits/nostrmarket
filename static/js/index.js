@@ -162,7 +162,6 @@ const merchant = async () => {
           this.wsConnection = new WebSocket(wsUrl)
           this.wsConnection.onmessage = async e => {
             const data = JSON.parse(e.data)
-            console.log('#### onmessage', data)
             if (data.type === 'dm:0') {
               this.$q.notify({
                 timeout: 5000,
