@@ -41,6 +41,7 @@
           <div class="chat-messages" style="height: 45vh">
             <q-chat-message v-for="(dm, index) in messagesAsJson" :key="index" :name="dm.incoming ? 'customer': 'me'"
               :text="dm.isJson ? [] : [dm.message]" :sent="!dm.incoming"
+              :stamp="dm.dateFrom"
               :bg-color="dm.incoming ? 'white' : 'light-green-2'" :class="'chat-mesage-index-'+index">
               <div v-if="dm.isJson">
                 <div v-if="dm.message.type === 0">

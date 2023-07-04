@@ -16,16 +16,19 @@ async function directMessages(path) {
     computed: {
       messagesAsJson: function () {
         return this.messages.map(m => {
+          const dateFrom =  moment(m.event_created_at * 1000).fromNow()
           try {
             const message = JSON.parse(m.message)
             return {
               isJson: message.type >= 0,
+              dateFrom,
               ...m,
               message
             }
           } catch (error) {
             return {
               isJson: false,
+              dateFrom,
               ...m,
               message: m.message
             }
