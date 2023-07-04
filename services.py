@@ -65,11 +65,24 @@ async def create_new_order(
     if data.event_id and await get_order_by_event_id(merchant.id, data.event_id):
         return None
 
+    order, invoice = await _build_order_with_payment(
+        merchant.id, merchant.public_key, data
+    )
+    await create_order(merchant.id, order)
+
+    return PaymentRequest(
+        id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)]
+    )
+
+
+async def _build_order_with_payment(
+    merchant_id: str, merchant_public_key: str, data: PartialOrder
+):
     products = await get_products_by_ids(
-        merchant.id, [p.product_id for p in data.items]
+        merchant_id, [p.product_id for p in data.items]
     )
     data.validate_order_items(products)
-    shipping_zone = await get_zone(merchant.id, data.shipping_id)
+    shipping_zone = await get_zone(merchant_id, data.shipping_id)
     assert shipping_zone, f"Shipping zone not found for order '{data.id}'"
 
     product_cost_sat, shipping_cost_sat = await data.costs_in_sats(
@@ -81,10 +94,10 @@ async def create_new_order(
 
     product_ids = [i.product_id for i in data.items]
     success, _, message = await compute_products_new_quantity(
-        merchant.id, product_ids, data.items
+        merchant_id, product_ids, data.items
     )
     if not success:
-        return PaymentRequest(id=data.id, message=message, payment_options=[])
+        raise ValueError(message)
 
     payment_hash, invoice = await create_invoice(
         wallet_id=wallet_id,
@@ -93,7 +106,7 @@ async def create_new_order(
         extra={
             "tag": "nostrmarket",
             "order_id": data.id,
-            "merchant_pubkey": merchant.public_key,
+            "merchant_pubkey": merchant_public_key,
         },
     )
 
@@ -108,11 +121,8 @@ async def create_new_order(
         total=product_cost_sat + shipping_cost_sat,
         extra=extra,
     )
-    await create_order(merchant.id, order)
 
-    return PaymentRequest(
-        id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)]
-    )
+    return order, invoice
 
 
 async def update_merchant_to_nostr(
@@ -284,12 +294,14 @@ async def process_nostr_message(msg: str):
 async def create_or_update_order_from_dm(
     merchant_id: str, merchant_pubkey: str, dm: DirectMessage
 ):
-    type, value = PartialDirectMessage.parse_message(dm.message)
-    if "id" not in value:
+    type, json_data = PartialDirectMessage.parse_message(dm.message)
+    if "id" not in json_data:
         return
 
     if type == DirectMessageType.CUSTOMER_ORDER:
-        order = await extract_order_from_dm(merchant_id, merchant_pubkey, dm, value)
+        order = await extract_customer_order_from_dm(
+            merchant_id, merchant_pubkey, dm, json_data
+        )
         new_order = await create_order(merchant_id, order)
         if new_order.stall_id == "None" and order.stall_id != "None":
             await update_order(
@@ -303,7 +315,7 @@ async def create_or_update_order_from_dm(
         return
 
     if type == DirectMessageType.PAYMENT_REQUEST:
-        payment_request = PaymentRequest(**value)
+        payment_request = PaymentRequest(**json_data)
         pr = next(
             (o.link for o in payment_request.payment_options if o.type == "ln"), None
         )
@@ -318,31 +330,33 @@ async def create_or_update_order_from_dm(
         return
 
     if type == DirectMessageType.ORDER_PAID_OR_SHIPPED:
-        order_update = OrderStatusUpdate(**value)
+        order_update = OrderStatusUpdate(**json_data)
         if order_update.paid:
             await update_order_paid_status(order_update.id, True)
         if order_update.shipped:
             await update_order_shipped_status(merchant_id, order_update.id, True)
 
 
-async def extract_order_from_dm(
-    merchant_id: str, merchant_pubkey: str, dm: DirectMessage, value
-):
-    order_items = [OrderItem(**i) for i in value.get("items", [])]
+async def extract_customer_order_from_dm(
+    merchant_id: str, merchant_pubkey: str, dm: DirectMessage, json_data: dict
+) -> Order:
+    order_items = [OrderItem(**i) for i in json_data.get("items", [])]
     products = await get_products_by_ids(
         merchant_id, [p.product_id for p in order_items]
     )
     extra = await OrderExtra.from_products(products)
     order = Order(
-        id=value.get("id"),
+        id=json_data.get("id"),
         event_id=dm.event_id,
         event_created_at=dm.event_created_at,
         public_key=dm.public_key,
         merchant_public_key=merchant_pubkey,
-        shipping_id=value.get("shipping_id", "None"),
+        shipping_id=json_data.get("shipping_id", "None"),
         items=order_items,
-        contact=OrderContact(**value.get("contact")) if value.get("contact") else None,
-        address=value.get("address"),
+        contact=OrderContact(**json_data.get("contact"))
+        if json_data.get("contact")
+        else None,
+        address=json_data.get("address"),
         stall_id=products[0].stall_id if len(products) else "None",
         invoice_id="None",
         total=0,
@@ -413,22 +427,21 @@ async def _handle_outgoing_dms(
 
 
 async def _handle_incoming_structured_dm(
-    merchant: Merchant, dm: DirectMessage, json_data
-) -> Tuple[DirectMessageType, Optional[str]]:
+    merchant: Merchant, dm: DirectMessage, json_data: dict
+) -> Tuple[DirectMessageType, str]:
     try:
         if dm.type == DirectMessageType.CUSTOMER_ORDER.value and merchant.config.active:
-            json_data["public_key"] = dm.public_key
-            json_data["merchant_public_key"] = merchant.public_key
-            json_data["event_id"] = dm.event_id
-            json_data["event_created_at"] = dm.event_created_at
+            json_resp = await _handle_new_order(
+                merchant.id, merchant.public_key, dm, json_data
+            )
 
-            json_data = await _handle_new_order(PartialOrder(**json_data))
-            return DirectMessageType.PAYMENT_REQUEST, json_data
+            return DirectMessageType.PAYMENT_REQUEST, json_resp
 
-        return None
+        
     except Exception as ex:
         logger.warning(ex)
-        return None
+    
+    return None, None
 
 
 async def _persist_dm(
@@ -484,29 +497,54 @@ async def _reply_to_structured_dm(
     )
 
 
-async def _handle_new_order(order: PartialOrder) -> Optional[str]:
-    order.validate_order()
+async def _handle_new_order(
+    merchant_id: str, merchant_public_key: str, dm: DirectMessage, json_data: dict
+) -> str:
+
+    partial_order = PartialOrder(
+        **{
+            **json_data,
+            "merchant_public_key": merchant_public_key,
+            "public_key": dm.public_key,
+            "event_id": dm.event_id,
+            "event_created_at": dm.event_created_at,
+        }
+    )
+    partial_order.validate_order()
 
     try:
-        first_product_id = order.items[0].product_id
+        first_product_id = partial_order.items[0].product_id
         wallet_id = await get_wallet_for_product(first_product_id)
         assert wallet_id, f"Cannot find wallet id for product id: {first_product_id}"
 
         wallet = await get_wallet(wallet_id)
         assert wallet, f"Cannot find wallet for product id: {first_product_id}"
 
-        payment_req = await create_new_order(order.merchant_public_key, order)
+        payment_req = await create_new_order(merchant_public_key, partial_order)
     except Exception as e:
-        payment_req = PaymentRequest(id=order.id, message=str(e), payment_options=[])
+        payment_req = await create_new_failed_order(
+            merchant_id, merchant_public_key, dm, json_data, str(e)
+        )
 
-    if payment_req:
-        response = {
-            "type": DirectMessageType.PAYMENT_REQUEST.value,
-            **payment_req.dict(),
-        }
-        return json.dumps(response, separators=(",", ":"), ensure_ascii=False)
+    response = {
+        "type": DirectMessageType.PAYMENT_REQUEST.value,
+        **payment_req.dict(),
+    }
+    return json.dumps(response, separators=(",", ":"), ensure_ascii=False)
 
-    return None
+
+async def create_new_failed_order(
+    merchant_id: str,
+    merchant_public_key: str,
+    dm: DirectMessage,
+    json_data: dict,
+    failed_message: str,
+) -> PaymentRequest:
+    order = await extract_customer_order_from_dm(
+        merchant_id, merchant_public_key, dm, json_data
+    )
+    await create_order(merchant_id, order)
+    return PaymentRequest(id=order.id, message=failed_message, payment_options=[])
 
 
 async def _handle_new_customer(event, merchant: Merchant):
