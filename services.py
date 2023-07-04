@@ -260,7 +260,7 @@ async def compute_products_new_quantity(
             return (
                 False,
                 [],
-                f"Quantity not sufficient for product: {p.id}. Required {required_quantity} but only have {p.quantity}",
+                f"Quantity not sufficient for product: '{p.name}' ({p.id}). Required '{required_quantity}' but only have '{p.quantity}'.",
             )
 
         p.quantity -= required_quantity
@@ -437,10 +437,9 @@ async def _handle_incoming_structured_dm(
 
             return DirectMessageType.PAYMENT_REQUEST, json_resp
 
-        
     except Exception as ex:
         logger.warning(ex)
-    
+
     return None, None
 
 
@@ -538,13 +537,14 @@ async def create_new_failed_order(
     merchant_public_key: str,
     dm: DirectMessage,
     json_data: dict,
-    failed_message: str,
+    fail_message: str,
 ) -> PaymentRequest:
     order = await extract_customer_order_from_dm(
         merchant_id, merchant_public_key, dm, json_data
     )
+    order.extra.fail_message = fail_message
     await create_order(merchant_id, order)
-    return PaymentRequest(id=order.id, message=failed_message, payment_options=[])
+    return PaymentRequest(id=order.id, message=fail_message, payment_options=[])
 
 
 async def _handle_new_customer(event, merchant: Merchant):
