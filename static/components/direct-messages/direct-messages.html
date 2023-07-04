@@ -45,20 +45,22 @@
               <div v-if="dm.isJson">
                 <div v-if="dm.message.type === 0">
                   <strong>New order:</strong>
-                  <span v-text="dm.message.id"></span>
                 </div>
                 <div v-else-if="dm.message.type === 1">
                   <strong>Invoice sent for order: </strong>
-                  <span v-text="dm.message.id"></span>
                 </div>
                 <div v-else-if="dm.message.type === 2">
                   <q-badge v-if="dm.message.paid" color="green">Paid </q-badge>
                   <q-badge v-if="dm.message.shipped" color="green">Shipped </q-badge>
                   <span v-text="dm.message.message"></span><br>
-                  <span v-text="dm.message.id"></span>
+                  
+                </div>
+                <div>
+                 <span v-text="dm.message.id" @click="showOrderDetails(dm.message.id)"
+                    class="cursor-pointer"></span>
                 </div>
                 <q-badge @click="showMessageRawData(index)" class="cursor-pointer">...</q-badge>
-               
+
               </div>
             </q-chat-message>
           </div>
@@ -89,11 +91,11 @@
     </q-dialog>
     <q-dialog v-model="showRawMessage" position="top">
       <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
-          <q-input filled dense type="textarea" rows="20" v-model.trim="rawMessage" label="Raw Data"></q-input>
-          <div class="row q-mt-lg">
-           
-            <q-btn v-close-popup flat color="grey" class="q-ml-auto">Close</q-btn>
-          </div>
+        <q-input filled dense type="textarea" rows="20" v-model.trim="rawMessage" label="Raw Data"></q-input>
+        <div class="row q-mt-lg">
+
+          <q-btn v-close-popup flat color="grey" class="q-ml-auto">Close</q-btn>
+        </div>
         </q-form>
       </q-card>
     </q-dialog>

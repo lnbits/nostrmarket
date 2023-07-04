@@ -136,6 +136,9 @@ async function directMessages(path) {
         }
         this.getCustomersDebounced()
       },
+      showOrderDetails: function (orderId) {
+        this.$emit('order-selected', orderId)
+      },
       showClientOrders: function () {
         this.$emit('customer-selected', this.activePublicKey)
       },
