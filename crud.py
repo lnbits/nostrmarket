@@ -102,22 +102,6 @@ async def get_merchant_for_user(user_id: str) -> Optional[Merchant]:
     return Merchant.from_row(row) if row else None
 
 
-async def get_merchant_activity(merchant_id):
-   
-    rows = await db.fetchall(
-        """
-            SELECT time from nostrmarket.direct_messages WHERE merchant_id = ?
-            ORDER by time DESC
-        """,
-        (merchant_id,),
-    )
-
-    # row = await db.fetchone("SELECT now()")
-
-    print("### time", time.time())
-    print("### rows", rows)
-    return rows
-
 async def delete_merchant(merchant_id: str) -> None:
     await db.execute(
         "DELETE FROM nostrmarket.merchants WHERE id = ?",
