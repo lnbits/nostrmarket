@@ -5,8 +5,8 @@ from typing import List, Optional
 from fastapi import Depends
 from fastapi.exceptions import HTTPException
 from loguru import logger
-from lnbits.core.services import websocketUpdater
 
+from lnbits.core.services import websocketUpdater
 from lnbits.decorators import (
     WalletTypeInfo,
     check_admin,

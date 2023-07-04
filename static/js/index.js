@@ -152,6 +152,9 @@ const merchant = async () => {
       filterOrdersForCustomer: function (customerPubkey) {
         this.orderPubkey = customerPubkey
       },
+      showOrderDetails: async function (orderId) {
+        await this.$refs.orderListRef.orderSelected(orderId)
+      },
       waitForNotifications: async function () {
         if (!this.merchant) return
         try {

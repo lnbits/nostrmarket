@@ -170,7 +170,6 @@ async function orderList(path) {
             this.inkey
           )
           this.orders = data.map(s => ({ ...s, expanded: false }))
-          console.log("### this.orders", this.orders)
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -238,7 +237,13 @@ async function orderList(path) {
           this.orders.unshift(order)
         }
       },
-
+      orderSelected: async function (orderId) {
+        const order = await this.getOrder(orderId)
+        if (!order) return
+        order.expanded = true
+        order.isNew = false
+        this.orders = [order]
+      },
       showShipOrderDialog: function (order) {
         this.selectedOrder = order
         this.shippingMessage = order.shipped
@@ -274,7 +279,7 @@ async function orderList(path) {
         )}`
         return label
       },
-      orderPaid: function(orderId) {
+      orderPaid: function (orderId) {
         const order = this.orders.find(o => o.id === orderId)
         if (order) {
           order.paid = true
