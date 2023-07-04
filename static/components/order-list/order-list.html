@@ -1,9 +1,7 @@
 <div>
   <div class="row q-mb-md">
     <div class="col-md-4 col-sm-6 q-pr-lg">
-      <q-select v-model="search.publicKey"
-        :options="customerOptions" label="Customer" emit-value
-        class="text-wrap">
+      <q-select v-model="search.publicKey" :options="customerOptions" label="Customer" emit-value class="text-wrap">
       </q-select>
     </div>
     <div class="col-md-2 col-sm-6 q-pr-lg">
@@ -15,10 +13,10 @@
       </q-select>
     </div>
     <div class="col-md-4 col-sm-6">
-     
-      <q-btn-dropdown  @click="getOrders()" :disable="search.restoring" outline unelevated split class="q-pt-md float-right"
-        :label="search.restoring ? 'Restoring Orders...' : 'Search Orders'">
-        <q-spinner v-if="search.restoring" color="primary" size="2.55em"  class="q-pt-md float-right"></q-spinner>
+
+      <q-btn-dropdown @click="getOrders()" :disable="search.restoring" outline unelevated split
+        class="q-pt-md float-right" :label="search.restoring ? 'Restoring Orders...' : 'Search Orders'">
+        <q-spinner v-if="search.restoring" color="primary" size="2.55em" class="q-pt-md float-right"></q-spinner>
         <q-item @click="restoreOrders" clickable v-close-popup>
           <q-item-section>
             <q-item-label>Restore Orders</q-item-label>
@@ -109,14 +107,6 @@
                 </div>
                 <div class="col-3 col-sm-1"></div>
               </div>
-              <div class="row items-center no-wrap q-mb-md q-mt-md">
-                <div class="col-3 q-pr-lg">Order ID:</div>
-                <div class="col-6 col-sm-8 q-pr-lg">
-                  <q-input filled dense readonly disabled v-model.trim="props.row.id" type="text"></q-input>
-                </div>
-                <div class="col-3 col-sm-1"></div>
-              </div>
-
               <div v-if="props.row.extra.fail_message" class="row items-center no-wrap q-mb-md">
                 <div class="col-3 q-pr-lg">Error:</div>
                 <div class="col-6 col-sm-8 q-pr-lg">
@@ -124,7 +114,13 @@
                 </div>
                 <div class="col-3 col-sm-1"></div>
               </div>
-
+              <div class="row items-center no-wrap q-mb-md q-mt-md">
+                <div class="col-3 q-pr-lg">Order ID:</div>
+                <div class="col-6 col-sm-8 q-pr-lg">
+                  <q-input filled dense readonly disabled v-model.trim="props.row.id" type="text"></q-input>
+                </div>
+                <div class="col-3 col-sm-1"></div>
+              </div>
               <div class="row items-center no-wrap q-mb-md">
                 <div class="col-3 q-pr-lg">Address:</div>
                 <div class="col-6 col-sm-8 q-pr-lg">
