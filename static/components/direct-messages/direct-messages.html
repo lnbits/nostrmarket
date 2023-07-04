@@ -47,17 +47,17 @@
                   <strong>New order:</strong>
                 </div>
                 <div v-else-if="dm.message.type === 1">
-                  <strong>Invoice sent for order: </strong>
+                  <strong>Reply sent for order: </strong>
                 </div>
                 <div v-else-if="dm.message.type === 2">
                   <q-badge v-if="dm.message.paid" color="green">Paid </q-badge>
                   <q-badge v-if="dm.message.shipped" color="green">Shipped </q-badge>
-                  <span v-text="dm.message.message"></span><br>
-                  
                 </div>
                 <div>
-                 <span v-text="dm.message.id" @click="showOrderDetails(dm.message.id)"
-                    class="cursor-pointer"></span>
+                  <span v-text="dm.message.message"></span>
+                  <q-badge color="orange">
+                    <span v-text="dm.message.id" @click="showOrderDetails(dm.message.id)" class="cursor-pointer"></span>
+                  </q-badge>
                 </div>
                 <q-badge @click="showMessageRawData(index)" class="cursor-pointer">...</q-badge>
 

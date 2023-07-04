@@ -17,10 +17,11 @@ async function directMessages(path) {
       messagesAsJson: function () {
         return this.messages.map(m => {
           try {
+            const message = JSON.parse(m.message)
             return {
-              isJson: true,
+              isJson: message.type >= 0,
               ...m,
-              message: JSON.parse(m.message)
+              message
             }
           } catch (error) {
             return {
