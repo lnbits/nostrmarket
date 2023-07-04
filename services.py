@@ -427,7 +427,7 @@ async def _reply_to_structured_dm(merchant: Merchant, event: NostrEvent, dm_type
         )
     await create_direct_message(merchant.id, dm)
     await nostr_client.publish_nostr_event(dm_event)
-    print("### _reply_to_structured_dm", json.dumps({ "type": f"dm:{dm_type}", "customerPubkey": dm.public_key, "dm": dm.dict() }))
+
     await websocketUpdater(
         merchant.id,
         json.dumps({ "type": f"dm:{dm_type}", "customerPubkey": dm.public_key, "dm": dm.dict() }),
@@ -448,7 +448,6 @@ async def _handle_new_order(order: PartialOrder) -> Optional[str]:
 
         
         payment_req = await create_new_order(order.merchant_public_key, order)
-        print("### payment_req", payment_req)
     except Exception as e:
         payment_req = PaymentRequest(id=order.id, message=str(e), payment_options=[])
 
