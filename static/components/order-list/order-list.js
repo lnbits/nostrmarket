@@ -17,6 +17,7 @@ async function orderList(path) {
     data: function () {
       return {
         orders: [],
+        stalls: [],
         selectedOrder: null,
         shippingMessage: '',
         showShipDialog: false,
@@ -48,6 +49,7 @@ async function orderList(path) {
             id: 'false'
           }
         ],
+        zoneOptions: [],
         ordersTable: {
           columns: [
             {
@@ -205,22 +207,26 @@ async function orderList(path) {
           this.search.restoring = false
         }
       },
-      reissueOrderInvoice: async function (orderId) {
+      reissueOrderInvoice: async function (order) {
         try {
           const { data } = await LNbits.api.request(
             'PUT',
-            `/nostrmarket/api/v1/order/${orderId}/reissue`,
-            this.adminkey
+            `/nostrmarket/api/v1/order/reissue`,
+            this.adminkey,
+            {
+              id: order.id,
+              shipping_id: order.shipping_id
+            }
           )
           this.$q.notify({
             type: 'positive',
             message: 'Order invoice reissued!'
           })
+          data.expanded = order.expanded
 
-          const i = this.orders.map(o => o.id).indexOf(orderId)
-          console.log('### order', i)
+          const i = this.orders.map(o => o.id).indexOf(order.id)
           if (i !== -1) {
-            this.orders[i] = { ...this.orders[i], ...data}
+            this.orders[i] = { ...this.orders[i], ...data }
           }
         } catch (error) {
           LNbits.utils.notifyApiError(error)
@@ -264,6 +270,44 @@ async function orderList(path) {
         order.expanded = true
         order.isNew = false
         this.orders = [order]
+      },
+      getZones: async function () {
+        try {
+          const { data } = await LNbits.api.request(
+            'GET',
+            '/nostrmarket/api/v1/zone',
+            this.inkey
+          )
+          return data.map(z => ({
+            id: z.id,
+            value: z.id,
+            label: z.name
+              ? `${z.name} (${z.countries.join(', ')})`
+              : z.countries.join(', ')
+          }))
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        }
+        return []
+      },
+      getStalls: async function (pending = false) {
+        try {
+          const { data } = await LNbits.api.request(
+            'GET',
+            `/nostrmarket/api/v1/stall?pending=${pending}`,
+            this.inkey
+          )
+          return data.map(s => ({ ...s, expanded: false }))
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        }
+        return []
+      },
+      getStallZones: function (stallId) {
+        const stall = this.stalls.find(s => s.id === stallId)
+        if (!stall) return []
+
+        return this.zoneOptions.filter(z => stall.shipping_zones.find(s => s.id === z.id))
       },
       showShipOrderDialog: function (order) {
         this.selectedOrder = order
@@ -312,6 +356,8 @@ async function orderList(path) {
         await this.getOrders()
       }
       await this.getCustomers()
+      this.zoneOptions = await this.getZones()
+      this.stalls = await this.getStalls()
     }
   })
 }

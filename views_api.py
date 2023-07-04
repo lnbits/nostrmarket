@@ -66,6 +66,7 @@ from .models import (
     DirectMessageType,
     Merchant,
     Order,
+    OrderReissue,
     OrderStatusUpdate,
     PartialDirectMessage,
     PartialMerchant,
@@ -864,31 +865,37 @@ async def api_restore_orders(
         )
 
 
-@nostrmarket_ext.put("/api/v1/order/{order_id}/reissue")
+@nostrmarket_ext.put("/api/v1/order/reissue")
 async def api_reissue_order_invoice(
-    order_id: str,
+    reissue_data: OrderReissue,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Order:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
 
-        data = await get_order(merchant.id, order_id)
+        data = await get_order(merchant.id, reissue_data.id)
         assert data, "Order cannot be found"
+
+        if reissue_data.shipping_id:
+            data.shipping_id = reissue_data.shipping_id
 
         order, invoice = await build_order_with_payment(
             merchant.id, merchant.public_key, PartialOrder(**data.dict())
         )
 
+        order_update = {
+            "stall_id": order.stall_id,
+            "total": order.total,
+            "invoice_id": order.invoice_id,
+            "shipping_id": order.shipping_id,
+            "extra_data": json.dumps(order.extra.dict()),
+        }
+
         await update_order(
             merchant.id,
             order.id,
-            **{
-                "stall_id": order.stall_id,
-                "total": order.total,
-                "invoice_id": order.invoice_id,
-                "extra_data": json.dumps(order.extra.dict()),
-            },
+            **order_update,
         )
         payment_req = PaymentRequest(
             id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)]
