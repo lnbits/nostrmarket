@@ -145,10 +145,11 @@ async function orderList(path) {
         return ''
       },
       orderTotal: function (order) {
-        return order.items.reduce((t, item) => {
+        const productCost = order.items.reduce((t, item) => {
           product = order.extra.products.find(p => p.id === item.product_id)
           return t + item.quantity * product.price
         }, 0)
+        return productCost + order.extra.shipping_cost
       },
       getOrders: async function () {
         try {

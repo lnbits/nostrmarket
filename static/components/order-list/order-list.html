@@ -69,14 +69,14 @@
           </q-tr>
           <q-tr v-if="props.row.expanded" :props="props">
             <q-td colspan="100%">
-              <div class="row items-center no-wrap q-mb-md">
+              <div class="row items-center no-wrap">
                 <div class="col-3 q-pr-lg">Products:</div>
                 <div class="col-8">
                   <div class="row items-center no-wrap q-mb-md">
-                    <div class="col-1">Quantity</div>
+                    <div class="col-1"><strong>Quantity</strong></div>
                     <div class="col-1"></div>
-                    <div class="col-4">Name</div>
-                    <div class="col-2">Price</div>
+                    <div class="col-4"><strong>Name</strong></div>
+                    <div class="col-2"><strong>Price</strong></div>
                     <div class="col-4"></div>
                   </div>
                 </div>
@@ -93,6 +93,15 @@
                     </div>
                     <div class="col-2">
                       {{productPrice(props.row, item.product_id)}}
+                    </div>
+                    <div class="col-4"></div>
+                  </div>
+                  <div v-if="props.row.extra.shipping_cost" class="row items-center no-wrap q-mb-md">
+                    <div class="col-1"></div>
+                    <div class="col-1"></div>
+                    <div class="col-4">Shipping Cost</div>
+                    <div class="col-2">
+                      {{props.row.extra.shipping_cost}} {{props.row.extra.currency}}
                     </div>
                     <div class="col-4"></div>
                   </div>

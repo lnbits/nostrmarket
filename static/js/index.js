@@ -182,7 +182,6 @@ const merchant = async () => {
             } 
             if (data.type === 'dm:2') {
               const orderStatus = JSON.parse(data.dm.message)
-              console.log('### orderStatus', orderStatus)
               this.$q.notify({
                 timeout: 5000,
                 type: 'positive',
