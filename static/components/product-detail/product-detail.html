@@ -1,5 +1,5 @@
-<div class="row q-mt-sm">
-  <div class="col-lg-5 col-md-5 col-sm-12 col-xs-12">
+<div class="row">
+  <div class="col-lg-5 col-md-5 col-sm-12 col-xs-12  q-mt-sm">
     <div class="q-pr-md" v-if="product.images && product.images[0]">
       <q-carousel
         swipeable
@@ -22,14 +22,13 @@
           :img-src="img"
         ></q-carousel-slide>
       </q-carousel>
-      <q-img
-        v-if="!product.images"
-        src="/nostrmarket/static/images/placeholder.png"
-        :ratio="16/9"
-      ></q-img>
+
+    </div>
+    <div v-else class="q-pr-md">
+      <q-img src="/nostrmarket/static/images/placeholder.png" :ratio="16/9"></q-img>
     </div>
   </div>
-  <div class="col-lg-7 col-md-7 col-sm-12 col-xs-12">
+  <div class="col-lg-7 col-md-7 col-sm-12 col-xs-12  q-mt-sm">
     <q-card>
       <q-card-section>
         <div class="row">
