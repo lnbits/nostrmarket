@@ -129,7 +129,7 @@ async function customerStall(path) {
         }
         this.$q.notify({
           type: 'positive',
-          message: `${item.name} added to cart`,
+          message: `'${item.name}' added to cart`,
           icon: 'thumb_up'
         })
         this.cart.products = prod
