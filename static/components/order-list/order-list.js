@@ -261,8 +261,12 @@ async function orderList(path) {
           this.search.publicKey === data.customerPubkey
         ) {
           const orderData = JSON.parse(data.dm.message)
-          const order = await this.getOrder(orderData.id)
-          this.orders.unshift(order)
+          const i = this.orders.map(o => o.id).indexOf(orderData.id)
+          if (i === -1) {
+            const order = await this.getOrder(orderData.id)
+            this.orders.unshift(order)
+          }
+          
         }
       },
       orderSelected: async function (orderId) {
