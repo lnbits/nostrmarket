@@ -1,12 +1,12 @@
 {% extends "public.html" %} {% block page %}
-<q-layout view="hHh Lpr lff">
-  <q-header reveal bordered class="bg-marginal-bg">
+<q-layout view="lHh Lpr lff">
+  <!-- <q-header reveal bordered class="bg-marginal-bg">
     <q-toolbar>
       <q-btn flat @click="drawerLeft = !drawerLeft" round dense icon="menu" />
       <q-toolbar-title>Header</q-toolbar-title>
       <q-btn flat @click="drawerRight = !drawerRight" round dense icon="menu" />
     </q-toolbar>
-  </q-header>
+  </q-header> -->
   <q-drawer v-model="drawer" side="left">
     <q-toolbar class="bg-primary text-white shadow-2">
       <q-toolbar-title>Settings</q-toolbar-title>
@@ -152,7 +152,7 @@
       </q-list>
     </div>
   </q-drawer>
-  <q-drawer v-model="drawer" side="right"></q-drawer>
+  <!-- <q-drawer v-model="drawer" side="right"></q-drawer> -->
   <q-page-container>
     <div class="row q-mb-md">
       <!-- <q-toolbar class="col-2">
@@ -170,6 +170,8 @@
         <div class="float-right">
           <q-btn color="gray" icon="travel_explore" flat size="lg" @click="searchNostr = !searchNostr"><q-tooltip>Search
               for products on Nostr</q-tooltip></q-btn>
+          <q-btn color="gray" icon="settings" flat size="lg" @click="searchNostr = !searchNostr"><q-tooltip>
+              Settings</q-tooltip></q-btn>
           <q-btn color="gray" icon="perm_identity" flat size="lg" @click="searchNostr = !searchNostr"><q-tooltip>User
               Config</q-tooltip></q-btn>
           <q-btn color="gray" icon="shopping_cart" flat size="lg"
