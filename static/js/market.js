@@ -435,25 +435,22 @@ const market = async () => {
           url.searchParams.set('merchant_pubkey', pubkey)
         }
 
-        switch (page) {
-          case 'stall':
-            if (stall) {
-              this.activeStall = stall
-              url.searchParams.set('stall_id', stall)
+        if (page === 'stall' || page === 'product') {
+          if (stall) {
+            this.activeStall = stall
+            url.searchParams.set('stall_id', stall)
 
-              this.activeProduct = product
-              if (product) {
-                url.searchParams.set('product_id', product)
-              }
+            this.activeProduct = product
+            if (product) {
+              url.searchParams.set('product_id', product)
             }
-            break
-          default:
-            this.activeStall = null
-            this.activeProduct = null
-            url.searchParams.delete('merchant_pubkey')
-            url.searchParams.delete('stall_id')
-            url.searchParams.delete('product_id')
-            break
+          }
+        } else {
+          this.activeStall = null
+          this.activeProduct = null
+          url.searchParams.delete('merchant_pubkey')
+          url.searchParams.delete('stall_id')
+          url.searchParams.delete('product_id')
         }
 
         window.history.pushState({}, '', url)
