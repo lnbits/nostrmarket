@@ -1,0 +1,55 @@
+<q-card>
+  <div class="q-pa-md">
+    <div class="q-gutter-y-md">
+      <q-tabs v-model="tab" active-color="primary" align="justify">
+        <q-tab name="merchants" label="Merchants" @update="val => tab = val.name"></q-tab>
+        <q-tab name="relays" label="Relays" @update="val => tab = val.name"></q-tab>
+        <q-tab name="marketplace" label="Look And Feel" @update="val => tab = val.name"></q-tab>
+
+      </q-tabs>
+      <q-tab-panels v-model="tab">
+        <q-tab-panel name="merchants">
+          <div>
+            <q-input filled v-model="inputPubkey" @keydown.enter="addPubkey(null)" type="text" label="Pubkey/Npub"
+              hint="Add merchants">
+              <q-btn @click="addPubkey(null)" dense flat icon="add"></q-btn>
+            </q-input>
+            <q-list class="q-mt-md">
+              <q-item v-for="pub in Array.from(pubkeys)" :key="pub">
+
+                <q-item-section avatar>
+                  <q-avatar>
+                    <img v-if="profiles.get(pub) && profiles.get(pub)?.picture" :src="profiles.get(pub).picture" />
+                    <img v-else src="/nostrmarket/static/images/blank-avatar.webp" />
+                  </q-avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label v-if="profiles.get(pub) && profiles.get(pub)?.name">{{ profiles.get(pub).name
+                    }}</q-item-label>
+                  <q-item-label v-else>{{ `${pub.slice(0, 5)}...${pub.slice(-5)}`
+                    }}</q-item-label>
+                  <q-tooltip>{{ pub }}</q-tooltip>
+                </q-item-section>
+                <q-item-section side>
+                  <q-btn class="gt-xs" size="12px" flat dense round icon="delete" @click="removePubkey(pub)" />
+                </q-item-section>
+
+              </q-item>
+            </q-list>
+          </div>
+        </q-tab-panel>
+        <q-tab-panel name="relays">
+          <div>
+            Relays
+          </div>
+        </q-tab-panel>
+        <q-tab-panel name="marketplace">
+          <div>
+            Marketplace
+          </div>
+        </q-tab-panel>
+      </q-tab-panels>
+    </div>
+  </div>
+
+</q-card>

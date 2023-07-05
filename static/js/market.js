@@ -30,7 +30,8 @@ const market = async () => {
     customerStall('static/components/customer-stall/customer-stall.html'),
     productDetail('static/components/product-detail/product-detail.html'),
     shoppingCart('static/components/shopping-cart/shopping-cart.html'),
-    chatDialog('static/components/chat-dialog/chat-dialog.html')
+    chatDialog('static/components/chat-dialog/chat-dialog.html'),
+    marketConfig('static/components/market-config/market-config.html')
   ])
 
   new Vue({
@@ -47,6 +48,7 @@ const market = async () => {
             key: null
           }
         },
+        showMarketConfig: false,
         searchNostr: false,
         drawer: true,
         pubkeys: new Set(),
