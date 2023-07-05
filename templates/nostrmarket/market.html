@@ -7,7 +7,9 @@
       <q-btn flat @click="drawerRight = !drawerRight" round dense icon="menu" />
     </q-toolbar>
   </q-header> -->
-  <q-drawer v-model="drawer" side="left">
+  <!-- <q-drawer v-model="drawer" side="left"></q-drawer>
+  <q-drawer v-model="drawer" side="right"></q-drawer> -->
+  <!-- <q-drawer v-model="drawer" side="left">
     <q-toolbar class="bg-primary text-white shadow-2">
       <q-toolbar-title>Settings</q-toolbar-title>
       <q-btn flat round dense icon="close" @click="drawer = !drawer"></q-btn>
@@ -151,61 +153,69 @@
         </q-expansion-item>
       </q-list>
     </div>
-  </q-drawer>
+  </q-drawer> -->
   <!-- <q-drawer v-model="drawer" side="right"></q-drawer> -->
-  <q-page-container>
-
+  <q-page-container class="q-mr-md">
     <div class="row q-mb-md">
-      <!-- <q-toolbar class="col-2">
+      <div class="col-lg-2 col-md-1 col-sm-0"></div>
+      <div class="col-lg-8 col-md-10 col-sm-12 auto-width">
+
+        <div class="row q-mb-md">
+          <!-- <q-toolbar class="col-2">
         <q-btn flat round dense icon="menu" @click="drawer = !drawer"></q-btn>
       </q-toolbar> -->
-      <q-toolbar class="col-lg-9 col-md-8 col-sm-6 auto-width">
-        <q-input class="rounded-pill" style="width:100%;" rounded outlined clearable v-model.trim="searchText"
-          label="Filter products">
-          <template v-slot:append>
-            <q-icon v-if="!searchText" name="search" />
-          </template>
-        </q-input>
-      </q-toolbar>
-      <q-toolbar class="col-lg-3 col-md-4 col-sm-6">
-        <div class="float-right">
-          <q-btn color="gray" icon="travel_explore" flat size="lg" @click="searchNostr = !searchNostr"><q-tooltip>Search
-              for products on Nostr</q-tooltip></q-btn>
-          <q-btn color="gray" icon="settings" flat size="lg" @click="showMarketConfig = !showMarketConfig"><q-tooltip>
-              Settings</q-tooltip></q-btn>
-          <q-btn v-if="account" color="gray" icon="perm_identity" flat size="lg"><q-tooltip>User
-              Login</q-tooltip></q-btn>
-          <q-btn v-else @click="accountDialog.show = true" color="gray" icon="person_add" flat size="lg"><q-tooltip>User
-              Config</q-tooltip></q-btn>
-          <q-btn color="gray" icon="shopping_cart" flat size="lg"
-            @click="searchNostr = !searchNostr"><q-tooltip>Shopping
-              Cart</q-tooltip></q-btn>
+          <q-toolbar class="col-lg-8 col-md-7 col-sm-6 auto-width">
+            <q-input class="rounded-pill" style="width:100%;" rounded outlined clearable v-model.trim="searchText"
+              label="Filter products">
+              <template v-slot:append>
+                <q-icon v-if="!searchText" name="search" />
+              </template>
+            </q-input>
+          </q-toolbar>
+          <q-toolbar class="col-lg-4 col-md-5 col-sm-6">
+            <div class="float-right">
+              <q-btn color="gray" icon="travel_explore" flat size="lg"
+                @click="searchNostr = !searchNostr"><q-tooltip>Search
+                  for products on Nostr</q-tooltip></q-btn>
+              <q-btn color="gray" icon="settings" flat size="lg"
+                @click="showMarketConfig = !showMarketConfig"><q-tooltip>
+                  Settings</q-tooltip></q-btn>
+              <q-btn v-if="account" color="gray" icon="perm_identity" flat size="lg"><q-tooltip>User
+                  Login</q-tooltip></q-btn>
+              <q-btn v-else @click="accountDialog.show = true" color="gray" icon="person_add" flat
+                size="lg"><q-tooltip>User
+                  Config</q-tooltip></q-btn>
+              <q-btn color="gray" icon="shopping_cart" flat size="lg"
+                @click="searchNostr = !searchNostr"><q-tooltip>Shopping
+                  Cart</q-tooltip></q-btn>
+            </div>
+          </q-toolbar>
+
         </div>
-      </q-toolbar>
+        <div class="q-mt-xl">
+          <q-breadcrumbs class="cursor">
+            <q-breadcrumbs-el :label="'Market'" icon="home" @click="navigateTo('market')"
+              class="cursor-pointer"></q-breadcrumbs-el>
+            <q-breadcrumbs-el v-if="activeStall" :label="stallName" @click="navigateTo('stall', {stall: activeStall})"
+              icon="widgets" class="cursor-pointer"></q-breadcrumbs-el>
+            <q-breadcrumbs-el v-if="activeProduct" :label="productName"
+              @click="navigateTo('product', {stall: activeStall, product: activeProduct})" class="cursor-pointer"
+              icon="widgets"></q-breadcrumbs-el>
+          </q-breadcrumbs>
+        </div>
 
+        <q-separator class="q-mt-md q-mb-md"></q-separator>
+
+        <market-config v-if="showMarketConfig"></market-config>
+        <customer-stall v-else-if="!isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
+          :products="filterProducts" :stall-products="products.filter(p => p.stall_id == activeStall)"
+          :product-detail="activeProduct" :relays="relays" :account="account" :pool="pool" :styles="config?.opts ?? {}"
+          @login-dialog="openAccountDialog" @change-page="navigateTo"></customer-stall>
+        <customer-market v-else :search-nostr="searchNostr" :relays="relays" :products="filterProducts"
+          :styles="config?.opts ?? {}" @change-page="navigateTo" @update-data="updateData"></customer-market>
+      </div>
+      <div class="col-lg-2 col-md-1 col-sm-0 auto-width"></div>
     </div>
-    <div class="q-mt-xl">
-      <q-breadcrumbs class="cursor">
-        <q-breadcrumbs-el :label="'Market'" icon="home" @click="navigateTo('market')"
-          class="cursor-pointer"></q-breadcrumbs-el>
-        <q-breadcrumbs-el v-if="activeStall" :label="stallName" @click="navigateTo('stall', {stall: activeStall})"
-          icon="widgets" class="cursor-pointer"></q-breadcrumbs-el>
-        <q-breadcrumbs-el v-if="activeProduct" :label="productName"
-          @click="navigateTo('product', {stall: activeStall, product: activeProduct})" class="cursor-pointer"
-          icon="widgets"></q-breadcrumbs-el>
-      </q-breadcrumbs>
-    </div>
-
-    <q-separator class="q-mt-md q-mb-md"></q-separator>
-
-    <market-config v-if="showMarketConfig"></market-config>
-    <customer-stall v-else-if="!isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
-      :products="filterProducts" :stall-products="products.filter(p => p.stall_id == activeStall)"
-      :product-detail="activeProduct" :relays="relays" :account="account" :pool="pool" :styles="config?.opts ?? {}"
-      @login-dialog="openAccountDialog" @change-page="navigateTo"></customer-stall>
-    <customer-market v-else :search-nostr="searchNostr" :relays="relays" :products="filterProducts"
-      :styles="config?.opts ?? {}" @change-page="navigateTo" @update-data="updateData"></customer-market>
-
   </q-page-container>
 
   <!-- ACCOUNT DIALOG -->
