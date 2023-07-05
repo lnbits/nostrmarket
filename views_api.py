@@ -923,7 +923,7 @@ async def api_reissue_order_invoice(
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot restore orders",
+            detail="Cannot reissue order invoice",
         )
 
 
