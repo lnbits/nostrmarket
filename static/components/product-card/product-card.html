@@ -1,30 +1,15 @@
 <q-card class="card--product">
   <q-img
     :src="(product.images && product.images.length > 0 && product.images[0]) ? product.images[0] : '/nostrmarket/static/images/placeholder.png'"
-    alt="Product Image"
-    loading="lazy"
-    spinner-color="white"
-    fit="contain"
-    height="300px"
-  ></q-img>
+    alt="Product Image" loading="lazy" spinner-color="white" fit="contain" height="300px"></q-img>
 
   <q-card-section class="q-pb-xs q-pt-md">
-    <q-btn
-      v-if="isStall"
-      round
-      :disabled="product.quantity < 1"
-      color="primary"
-      icon="shopping_cart"
-      size="lg"
-      style="
+    <q-btn v-if="isStall" round :disabled="product.quantity < 1" color="primary" icon="shopping_cart" size="lg" style="
         position: absolute;
         top: 0;
         right: 0;
         transform: translate(-50%, -50%);
-      "
-      @click="$emit('add-to-cart', product)"
-      ><q-tooltip> Add to cart </q-tooltip></q-btn
-    >
+      " @click="$emit('add-to-cart', product)"><q-tooltip> Add to cart </q-tooltip></q-btn>
     <div class="row no-wrap items-center">
       <div class="col text-subtitle2 ellipsis-2-lines">{{ product.name }}</div>
     </div>
@@ -36,27 +21,26 @@
     <div>
       <div class="text-caption text-weight-bolder">{{ product.stallName }}</div>
       <span v-if="product.currency == 'sat'">
-        <span class="text-h6">{{ product.price }} sats</span
-        ><span class="q-ml-sm text-grey-6"
-          >BTC {{ (product.price / 1e8).toFixed(8) }}</span
-        >
+        <span class="text-h6">{{ product.price }} sats</span><span class="q-ml-sm text-grey-6">BTC {{ (product.price /
+          1e8).toFixed(8) }}</span>
       </span>
       <span v-else>
         <span class="text-h6">{{ product.formatedPrice }}</span>
       </span>
-      <span class="q-ml-md text-caption text-green-8 text-weight-bolder q-mt-md"
-        >{{ product.quantity }} left</span
-      >
+      <span class="q-ml-md text-caption text-green-8 text-weight-bolder q-mt-md">{{ product.quantity }} left</span>
     </div>
     <div v-if="product.categories" class="text-subtitle1">
-      <q-chip v-for="(cat, i) in product.categories" :key="i" dense
-        >{{cat}}</q-chip
-      >
+      <q-virtual-scroll :items="product.categories || []" virtual-scroll-horizontal>
+        <template v-slot="{ item, index }">
+          <q-chip :key="index" dense><span v-text="item"></span></q-chip>
+        </template>
+      </q-virtual-scroll>
     </div>
-    <div
-      class="text-caption text-grey ellipsis-2-lines"
-      style="min-height: 40px"
-    >
+    <div v-else class="text-subtitle1">
+      &nbsp
+    </div>
+
+    <div class="text-caption text-grey ellipsis-2-lines" style="min-height: 40px">
       <p v-if="product.description">{{ product.description }}</p>
     </div>
   </q-card-section>
@@ -67,23 +51,12 @@
     <span>Stall: {{ product.stallName }}</span>
     <span>{{ $parent.activeStall }}</span>
     <div class="q-ml-auto">
-      <q-btn
-        flat
-        class="text-weight-bold text-capitalize q-ml-auto"
-        dense
-        color="primary"
-        @click="$emit('change-page', 'stall', {stall: product.stall_id, product: product.id})"
-      >
+      <q-btn flat class="text-weight-bold text-capitalize q-ml-auto" dense color="primary"
+        @click="$emit('change-page', 'stall', {stall: product.stall_id, product: product.id})">
         View details
       </q-btn>
-      <q-btn
-        v-if="!isStall"
-        flat
-        class="text-weight-bold text-capitalize q-ml-auto"
-        dense
-        color="primary"
-        @click="$emit('change-page', 'stall', {stall: product.stall_id})"
-      >
+      <q-btn v-if="!isStall" flat class="text-weight-bold text-capitalize q-ml-auto" dense color="primary"
+        @click="$emit('change-page', 'stall', {stall: product.stall_id})">
         Visit Stall
       </q-btn>
     </div>
