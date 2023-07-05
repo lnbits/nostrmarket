@@ -184,6 +184,20 @@
       </q-toolbar>
 
     </div>
+    <div class="q-mt-xl">
+      <q-breadcrumbs class="cursor">
+        <q-breadcrumbs-el :label="'Market'" icon="home" @click="navigateTo('market')"
+          class="cursor-pointer"></q-breadcrumbs-el>
+        <q-breadcrumbs-el v-if="activeStall" :label="stallName" @click="navigateTo('stall', {stall: activeStall})"
+          icon="widgets" class="cursor-pointer"></q-breadcrumbs-el>
+        <q-breadcrumbs-el v-if="activeProduct" :label="productName"
+          @click="navigateTo('product', {product: activeStall})" class="cursor-pointer"
+          icon="widgets"></q-breadcrumbs-el>
+      </q-breadcrumbs>
+    </div>
+
+    <q-separator class="q-mt-md q-mb-md"></q-separator>
+
     <market-config v-if="showMarketConfig"></market-config>
     <customer-stall v-else-if="!isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
       :products="filterProducts" :stall-products="products.filter(p => p.stall_id == activeStall)"
@@ -191,7 +205,9 @@
       @login-dialog="openAccountDialog" @change-page="navigateTo"></customer-stall>
     <customer-market v-else :search-nostr="searchNostr" :relays="relays" :products="filterProducts"
       :styles="config?.opts ?? {}" @change-page="navigateTo" @update-data="updateData"></customer-market>
+
   </q-page-container>
+
   <!-- ACCOUNT DIALOG -->
   <q-dialog v-model="accountDialog.show" persistent>
     <q-card style="min-width: 350px">
