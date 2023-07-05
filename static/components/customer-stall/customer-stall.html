@@ -1,10 +1,6 @@
 <div>
   <q-toolbar>
-    <q-breadcrumbs class="cursor">
-      <q-breadcrumbs-el :label="styles.name ?? 'Market'" icon="home" @click="$emit('change-page', 'market')"
-        style="cursor: pointer"></q-breadcrumbs-el>
-      <q-breadcrumbs-el :label="stall?.name || 'Stall'" icon="widgets"></q-breadcrumbs-el>
-    </q-breadcrumbs>
+
     <q-toolbar-title></q-toolbar-title>
     <chat-dialog v-if="this.customerPrivkey || this.customerUseExtension" :account="account ? account : dropIn"
       :merchant="stall.pubkey" :relays="relays" :pool="pool" />

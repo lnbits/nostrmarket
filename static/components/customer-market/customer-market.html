@@ -24,11 +24,7 @@
   <q-banner v-if="styles?.ui?.banner" class="row q-pa-none q-mb-md">
     <q-img :src="styles.ui.banner" style="width: 100%; height: 250px" cover></q-img>
   </q-banner>
-  <q-toolbar>
-    <q-breadcrumbs>
-      <q-breadcrumbs-el :label="styles.name ?? 'Market'" icon="home"></q-breadcrumbs-el>
-    </q-breadcrumbs>
-  </q-toolbar>
+
   <div class="row q-col-gutter-md">
     <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3" v-for="(item, idx) in products" :key="idx">
       <product-card :product="item" @change-page="changePageM"></product-card>

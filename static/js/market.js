@@ -17,9 +17,9 @@ const market = async () => {
       ...Object.values(event.tags).reduce((acc, tag) => {
         let [key, value] = tag
         if (key == 't') {
-          return {...acc, [key]: [...(acc[key] || []), value]}
+          return { ...acc, [key]: [...(acc[key] || []), value] }
         } else {
-          return {...acc, [key]: value}
+          return { ...acc, [key]: value }
         }
       }, {})
     }
@@ -115,12 +115,12 @@ const market = async () => {
       isValidKey() {
         let key = this.accountDialog.data.key
         if (key && key.startsWith('n')) {
-          let {type, data} = NostrTools.nip19.decode(key)
+          let { type, data } = NostrTools.nip19.decode(key)
           key = data
         }
         return key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)
       },
-      canEditConfig(){
+      canEditConfig() {
         return this.account && this.account.pubkey == this.config?.pubkey
       }
     },
@@ -154,10 +154,10 @@ const market = async () => {
       let product_id = params.get('product_id')
       let naddr = params.get('naddr')
 
-      if(naddr) {
+      if (naddr) {
         try {
-          let {type, data} = NostrTools.nip19.decode(naddr)
-          if(type == 'naddr' && data.kind == '30019') { // just double check
+          let { type, data } = NostrTools.nip19.decode(naddr)
+          if (type == 'naddr' && data.kind == '30019') { // just double check
             this.config = {
               d: data.identifier,
               pubkey: data.pubkey,
@@ -165,7 +165,7 @@ const market = async () => {
             }
           }
           this.naddr = naddr
-        }catch (err){
+        } catch (err) {
           console.error(err)
         }
       }
@@ -211,9 +211,9 @@ const market = async () => {
           nip07 = true
         }
         if (this.isValidKey) {
-          let {key, watchOnly} = this.accountDialog.data
+          let { key, watchOnly } = this.accountDialog.data
           if (key.startsWith('n')) {
-            let {type, data} = NostrTools.nip19.decode(key)
+            let { type, data } = NostrTools.nip19.decode(key)
             key = data
           }
           this.$q.localStorage.set('diagonAlley.account', {
@@ -241,42 +241,42 @@ const market = async () => {
       openAccountDialog() {
         this.accountDialog.show = true
       },
-      editConfigDialog(){
-        if(this.canEditConfig && this.config?.opts){
-          let {name, about, ui} = this.config.opts
-          this.configDialog.data = {name, about, ui}
+      editConfigDialog() {
+        if (this.canEditConfig && this.config?.opts) {
+          let { name, about, ui } = this.config.opts
+          this.configDialog.data = { name, about, ui }
           this.configDialog.data.identifier = this.config?.d
         }
         this.openConfigDialog()
       },
       openConfigDialog() {
-        if(!this.account){
+        if (!this.account) {
           this.$q.notify({
             message: `You need to be logged in first.`,
             color: 'negative',
             icon: 'warning'
           })
-          return 
+          return
         }
         this.configDialog.show = true
       },
       async sendConfig() {
-        let {name, about, ui} = this.configDialog.data
+        let { name, about, ui } = this.configDialog.data
         let merchants = Array.from(this.pubkeys)
         let identifier = this.configDialog.data.identifier ?? crypto.randomUUID()
         let event = {
           ...(await NostrTools.getBlankEvent()),
           kind: 30019,
-          content: JSON.stringify({name, about, ui, merchants}),
+          content: JSON.stringify({ name, about, ui, merchants }),
           created_at: Math.floor(Date.now() / 1000),
           tags: [['d', identifier]],
           pubkey: this.account.pubkey
         }
         event.id = NostrTools.getEventHash(event)
         try {
-          if(this.account.useExtension){
+          if (this.account.useExtension) {
             event = await window.nostr.signEvent(event)
-          }else if (this.account.privkey) {
+          } else if (this.account.privkey) {
             event.sig = await NostrTools.signEvent(event, this.account.privkey)
           }
           let pub = this.pool.publish(Array.from(this.relays), event)
@@ -299,20 +299,22 @@ const market = async () => {
         })
         this.config = this.configDialog.data
         this.resetConfig()
-        return 
+        return
       },
       resetConfig() {
-        this.configDialog = {show: false,
+        this.configDialog = {
+          show: false,
           identifier: null,
-        data: {
-          name: null,
-          about: null,
-          ui: {
-            picture: null,
-            banner: null,
-            theme: null
+          data: {
+            name: null,
+            about: null,
+            ui: {
+              picture: null,
+              banner: null,
+              theme: null
+            }
           }
-        }}
+        }
       },
       async updateData(events) {
         if (events.length < 1) {
@@ -336,10 +338,10 @@ const market = async () => {
             return
           } else if (e.kind == 30018) {
             //it's a product `d` is the prod. id
-            products.set(e.d, {...e.content, id: e.d, categories: e.t})
+            products.set(e.d, { ...e.content, id: e.d, categories: e.t })
           } else if (e.kind == 30017) {
             // it's a stall `d` is the stall id
-            stalls.set(e.d, {...e.content, id: e.d, pubkey: e.pubkey})
+            stalls.set(e.d, { ...e.content, id: e.d, pubkey: e.pubkey })
           }
         })
 
@@ -364,9 +366,9 @@ const market = async () => {
       async initNostr() {
         this.$q.loading.show()
         const pool = new NostrTools.SimplePool()
-        
+
         // If there is an naddr in the URL, get it and parse content
-        if (this.config) {  
+        if (this.config) {
           // add relays to the set   
           this.config.relays.forEach(r => this.relays.add(r))
           await pool.get(this.config.relays, {
@@ -375,17 +377,17 @@ const market = async () => {
             authors: [this.config.pubkey],
             '#d': [this.config.d]
           }).then(event => {
-            if(!event) return 
-            let content = JSON.parse(event.content)   
-            this.config = {... this.config, opts: content}            
+            if (!event) return
+            let content = JSON.parse(event.content)
+            this.config = { ... this.config, opts: content }
             // add merchants 
             this.config.opts?.merchants.forEach(m => this.pubkeys.add(m))
             // change theme
-            let {theme} = this.config.opts?.ui
+            let { theme } = this.config.opts?.ui
             theme && document.body.setAttribute('data-theme', theme)
-          }).catch(err => console.error(err))          
+          }).catch(err => console.error(err))
         }
-        
+
         let relays = Array.from(this.relays)
 
         // Get metadata and market data from the pubkeys
@@ -419,11 +421,12 @@ const market = async () => {
           event => {
             this.updateData([event])
           },
-          {id: 'masterSub'} //pass ID to cancel previous sub
+          { id: 'masterSub' } //pass ID to cancel previous sub
         )
       },
-      navigateTo(page, opts = {stall: null, product: null, pubkey: null}) {
-        let {stall, product, pubkey} = opts
+      navigateTo(page, opts = { stall: null, product: null, pubkey: null }) {
+        console.log("### navigateTo", page, opts)
+        let { stall, product, pubkey } = opts
         let url = new URL(window.location)
 
         if (pubkey) url.searchParams.set('merchant_pubkey', pubkey)
@@ -437,8 +440,9 @@ const market = async () => {
             if (stall) {
               this.activeStall = stall
               url.searchParams.set('stall_id', stall)
+
+              this.activeProduct = product
               if (product) {
-                this.activeProduct = product
                 url.searchParams.set('product_id', product)
               }
             }
@@ -474,7 +478,7 @@ const market = async () => {
         let regExp = /^#([0-9a-f]{3}){1,2}$/i
         if (pubkey.startsWith('n')) {
           try {
-            let {type, data} = NostrTools.nip19.decode(pubkey)
+            let { type, data } = NostrTools.nip19.decode(pubkey)
             if (type === 'npub') pubkey = data
             else if (type === 'nprofile') {
               pubkey = data.pubkey
