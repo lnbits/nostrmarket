@@ -14,12 +14,10 @@
       <div class="col text-subtitle2 ellipsis-2-lines">{{ product.name }}</div>
     </div>
 
-    <!-- <q-rating v-model="stars" color="orange" :max="5" readonly size="17px"></q-rating> -->
   </q-card-section>
 
   <q-card-section class="q-py-sm">
     <div>
-      <div class="text-caption text-weight-bolder">{{ product.stallName }}</div>
       <span v-if="product.currency == 'sat'">
         <span class="text-h6">{{ product.price }} sats</span><span class="q-ml-sm text-grey-6">BTC {{ (product.price /
           1e8).toFixed(8) }}</span>
@@ -43,22 +41,27 @@
     <div class="text-caption text-grey ellipsis-2-lines" style="min-height: 40px">
       <p v-if="product.description">{{ product.description }}</p>
     </div>
+
+
   </q-card-section>
+  <q-separator></q-separator>
+  <q-card-actions>
+    <div class="text-caption text-weight-bolder">{{ product.stallName }}</div>
+  </q-card-actions>
 
   <q-separator></q-separator>
 
   <q-card-actions>
-    <span>Stall: {{ product.stallName }}</span>
-    <span>{{ $parent.activeStall }}</span>
     <div class="q-ml-auto">
+      <q-btn v-if="!isStall" flat class="text-weight-bold text-capitalize q-ml-auto float-left" dense color="primary"
+        @click="$emit('change-page', 'stall', {stall: product.stall_id})">
+        Visit Stall
+      </q-btn>
       <q-btn flat class="text-weight-bold text-capitalize q-ml-auto" dense color="primary"
         @click="$emit('change-page', 'stall', {stall: product.stall_id, product: product.id})">
         View details
       </q-btn>
-      <q-btn v-if="!isStall" flat class="text-weight-bold text-capitalize q-ml-auto" dense color="primary"
-        @click="$emit('change-page', 'stall', {stall: product.stall_id})">
-        Visit Stall
-      </q-btn>
+      
     </div>
   </q-card-actions>
 </q-card>
