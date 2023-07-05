@@ -48,7 +48,7 @@ const market = async () => {
           }
         },
         searchNostr: false,
-        drawer: false,
+        drawer: true,
         pubkeys: new Set(),
         relays: new Set(),
         events: [],
