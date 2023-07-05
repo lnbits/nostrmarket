@@ -172,7 +172,9 @@
               for products on Nostr</q-tooltip></q-btn>
           <q-btn color="gray" icon="settings" flat size="lg" @click="searchNostr = !searchNostr"><q-tooltip>
               Settings</q-tooltip></q-btn>
-          <q-btn color="gray" icon="perm_identity" flat size="lg" @click="searchNostr = !searchNostr"><q-tooltip>User
+          <q-btn v-if="account" color="gray" icon="perm_identity" flat size="lg"><q-tooltip>User
+              Login</q-tooltip></q-btn>
+          <q-btn v-else @click="accountDialog.show = true" color="gray" icon="person_add" flat size="lg"><q-tooltip>User
               Config</q-tooltip></q-btn>
           <q-btn color="gray" icon="shopping_cart" flat size="lg"
             @click="searchNostr = !searchNostr"><q-tooltip>Shopping
