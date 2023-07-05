@@ -10,7 +10,7 @@
       <q-tab-panels v-model="tab">
         <q-tab-panel name="merchants">
           <div>
-            <q-input filled v-model="inputPubkey" @keydown.enter="addPubkey(null)" type="text" label="Pubkey/Npub"
+            <q-input outlined v-model="inputPubkey" @keydown.enter="addPubkey(null)" type="text" label="Pubkey/Npub"
               hint="Add merchants">
               <q-btn @click="addPubkey(null)" dense flat icon="add"></q-btn>
             </q-input>
