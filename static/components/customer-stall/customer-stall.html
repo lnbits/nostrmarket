@@ -9,14 +9,9 @@
       @open-checkout="openCheckout"></shopping-cart>
   </q-toolbar>
    -->
-  <div  v-if="productDetail && product" class="row">
+  <div v-if="productDetail && product" class="row">
     <div class="col-12 auto-width">
-      <q-card>
-        <q-card-section>
-          <product-detail :product="product" @add-to-cart="addToCart"></product-detail>
-
-        </q-card-section>
-      </q-card>
+      <product-detail :product="product" @add-to-cart="addToCart"></product-detail>
     </div>
 
     <div class="col-12 q-my-lg">
