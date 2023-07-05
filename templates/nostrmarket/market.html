@@ -154,6 +154,7 @@
   </q-drawer>
   <!-- <q-drawer v-model="drawer" side="right"></q-drawer> -->
   <q-page-container>
+
     <div class="row q-mb-md">
       <!-- <q-toolbar class="col-2">
         <q-btn flat round dense icon="menu" @click="drawer = !drawer"></q-btn>
@@ -170,7 +171,7 @@
         <div class="float-right">
           <q-btn color="gray" icon="travel_explore" flat size="lg" @click="searchNostr = !searchNostr"><q-tooltip>Search
               for products on Nostr</q-tooltip></q-btn>
-          <q-btn color="gray" icon="settings" flat size="lg" @click="searchNostr = !searchNostr"><q-tooltip>
+          <q-btn color="gray" icon="settings" flat size="lg" @click="showMarketConfig = !showMarketConfig"><q-tooltip>
               Settings</q-tooltip></q-btn>
           <q-btn v-if="account" color="gray" icon="perm_identity" flat size="lg"><q-tooltip>User
               Login</q-tooltip></q-btn>
@@ -183,7 +184,8 @@
       </q-toolbar>
 
     </div>
-    <customer-stall v-if="!isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
+    <market-config v-if="showMarketConfig"></market-config>
+    <customer-stall v-else-if="!isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
       :products="filterProducts" :stall-products="products.filter(p => p.stall_id == activeStall)"
       :product-detail="activeProduct" :relays="relays" :account="account" :pool="pool" :styles="config?.opts ?? {}"
       @login-dialog="openAccountDialog" @change-page="navigateTo"></customer-stall>
@@ -275,6 +277,7 @@
 <script src="{{ url_for('nostrmarket_static', path='components/product-detail/product-detail.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/shopping-cart/shopping-cart.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/chat-dialog/chat-dialog.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/market-config/market-config.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/market.js') }}"></script>
 <style scoped>
   .q-field__native span {
