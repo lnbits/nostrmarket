@@ -55,8 +55,8 @@
               </q-item-section>
               <!-- @change="addQty(p.id, p.quantity)" -->
               <q-item-section class="q-mt-sm">
-                <q-input v-model.number="product.orderedQuantity" type="number" rounded outlined
-                  :max="products.quantity"></q-input>
+                <q-input v-model.number="product.orderedQuantity" type="number" rounded outlined min="1"
+                  :max="product.quantity"></q-input>
               </q-item-section>
               <q-item-section>
                 <!-- @click="add(p.id)"  -->
