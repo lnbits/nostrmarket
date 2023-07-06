@@ -53,8 +53,8 @@ const market = async () => {
         merchants: [],
         shoppingCarts: [],
 
-        showMarketConfig: false,
-        showShoppingCartList: false,
+        activePage: 'market',
+
         searchNostr: false,
         drawer: true,
         pubkeys: new Set(),
@@ -460,11 +460,12 @@ const market = async () => {
         } else {
           this.activeStall = null
           this.activeProduct = null
-          this.showMarketConfig = false
-          this.showShoppingCartList = false
+          
           url.searchParams.delete('merchant_pubkey')
           url.searchParams.delete('stall_id')
           url.searchParams.delete('product_id')
+
+          this.setActivePage('market')
         }
 
         window.history.pushState({}, '', url)
@@ -541,6 +542,9 @@ const market = async () => {
         this.initNostr()
       },
 
+      setActivePage(page = 'market'){
+        this.activePage = page
+      },
 
       addMerchant(publicKey) {
         console.log('### addMerchat', publicKey)

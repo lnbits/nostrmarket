@@ -172,10 +172,9 @@
           <q-toolbar class="col-lg-4 col-md-5 col-sm-6">
             <div class="float-right">
               <q-btn color="gray" icon="travel_explore" flat size="lg"
-                @click="searchNostr = !searchNostr"><q-tooltip>Search
+                @click="setActivePage('search-nostr')"><q-tooltip>Search
                   for products on Nostr</q-tooltip></q-btn>
-              <q-btn color="gray" icon="settings" flat size="lg"
-                @click="showMarketConfig = !showMarketConfig"><q-tooltip>
+              <q-btn color="gray" icon="settings" flat size="lg" @click="setActivePage('market-config')"><q-tooltip>
                   Settings</q-tooltip></q-btn>
               <q-btn v-if="account" color="gray" icon="perm_identity" flat size="lg"><q-tooltip>User
                   Login</q-tooltip></q-btn>
@@ -183,7 +182,7 @@
                 size="lg"><q-tooltip>User
                   Config</q-tooltip></q-btn>
               <q-btn color="gray" icon="shopping_cart" flat size="lg"
-                @click="showShoppingCartList = !showShoppingCartList"><q-tooltip>Shopping
+                @click="setActivePage('shopping-cart-list')"><q-tooltip>Shopping
                   Cart</q-tooltip></q-btn>
             </div>
           </q-toolbar>
@@ -203,9 +202,10 @@
 
         <q-separator class="q-mt-md q-mb-md"></q-separator>
 
-        <market-config v-if="showMarketConfig" :merchants="merchants" @add-merchant="addMerchant"
+        <market-config v-if="activePage === 'market-config'" :merchants="merchants" @add-merchant="addMerchant"
           @remove-merchant="removeMerchant"></market-config>
-        <shopping-cart-list v-else-if="showShoppingCartList" :carts="shoppingCarts" :products="products"></shopping-cart-list>
+        <shopping-cart-list v-else-if="activePage === 'shopping-cart-list'" :carts="shoppingCarts"
+          :products="products"></shopping-cart-list>
         <customer-stall v-else-if="!isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
           :products="filterProducts" :stall-products="products.filter(p => p.stall_id == activeStall)"
           :product-detail="activeProduct" :relays="relays" :account="account" :pool="pool" :styles="config?.opts ?? {}"
