@@ -203,7 +203,8 @@
 
         <q-separator class="q-mt-md q-mb-md"></q-separator>
 
-        <market-config v-if="showMarketConfig"></market-config>
+        <market-config v-if="showMarketConfig" :merchants="merchants" @add-merchant="addMerchant"
+          @remove-merchant="removeMerchant"></market-config>
         <customer-stall v-else-if="!isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
           :products="filterProducts" :stall-products="products.filter(p => p.stall_id == activeStall)"
           :product-detail="activeProduct" :relays="relays" :account="account" :pool="pool" :styles="config?.opts ?? {}"
