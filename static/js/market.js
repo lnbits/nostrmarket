@@ -115,19 +115,16 @@ const market = async () => {
       hasExtension() {
         return window.nostr
       },
-      isValidKey() {
-        let key = this.accountDialog.data.key
-        if (key && key.startsWith('n')) {
-          let { type, data } = NostrTools.nip19.decode(key)
-          key = data
-        }
-        return key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)
+      isValidAccountKey() {
+        return isValidKey(this.accountDialog.data.key)
       },
       canEditConfig() {
         return this.account && this.account.pubkey == this.config?.pubkey
       }
     },
     async created() {
+      this.merchants = this.$q.localStorage.getItem('nostrmarket.merchants') || []
+
       // Check for user stored
       this.account = this.$q.localStorage.getItem('diagonAlley.account') || null
       //console.log("UUID", crypto.randomUUID())
@@ -340,7 +337,6 @@ const market = async () => {
               this.accountMetadata = this.profiles.get(this.account.pubkey)
             }
             this.merchants.filter(m => m.publicKey === e.pubkey).forEach(m => m.profile = e.content)
-            this.merchants = this.merchants.concat([])
             console.log('### this.merchants', this.merchants)
             return
           } else if (e.kind == 30018) {
@@ -538,17 +534,22 @@ const market = async () => {
         this.$q.localStorage.set(`diagonAlley.relays`, Array.from(this.relays))
         this.initNostr()
       },
+
+
       addMerchant(publicKey){
         console.log('### addMerchat', publicKey)
+        
         this.merchants.unshift({
           publicKey,
           profile: null
         })
+        this.$q.localStorage.set('nostrmarket.merchants', this.merchants)
         this.initNostr() // todo: improve
       },
       removeMerchant(publicKey){
         console.log('### removeMerchat', publicKey)
         this.merchants = this.merchants.filter(m => m.publicKey !== publicKey)
+        this.$q.localStorage.set('nostrmarket.merchants', this.merchants)
         this.initNostr() // todo: improve
       }
     }

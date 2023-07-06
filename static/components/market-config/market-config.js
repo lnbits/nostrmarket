@@ -14,12 +14,20 @@ async function marketConfig(path) {
             }
         },
         methods: {
-            addMerchant: async function() {
+            addMerchant: async function () {
                 console.log('### market config', this.merchants)
-                this.$emit('add-merchant', this.inputPubkey)
+                if (!isValidKey(this.inputPubkey, 'npub')) {
+                    this.$q.notify({
+                        message: 'Invalid Public Key!',
+                        type: 'warning'
+                    })
+                    return
+                }
+                const publicKey = isValidKeyHex(this.inputPubkey) ? this.inputPubkey : NostrTools.nip19.decode(this.inputPubkey).data
+                this.$emit('add-merchant', publicKey)
                 this.inputPubkey = null
             },
-            removeMerchant: async function(publicKey) {
+            removeMerchant: async function (publicKey) {
                 this.$emit('remove-merchant', publicKey)
             },
             // async addPubkey(pubkey) {
