@@ -128,6 +128,7 @@ const market = async () => {
     },
     async created() {
       this.merchants = this.$q.localStorage.getItem('nostrmarket.merchants') || []
+      this.shoppingCarts = this.$q.localStorage.getItem('nostrmarket.shoppingCarts') || []
 
       // Check for user stored
       this.account = this.$q.localStorage.getItem('diagonAlley.account') || null
@@ -460,7 +461,7 @@ const market = async () => {
         } else {
           this.activeStall = null
           this.activeProduct = null
-          
+
           url.searchParams.delete('merchant_pubkey')
           url.searchParams.delete('stall_id')
           url.searchParams.delete('product_id')
@@ -542,7 +543,7 @@ const market = async () => {
         this.initNostr()
       },
 
-      setActivePage(page = 'market'){
+      setActivePage(page = 'market') {
         this.activePage = page
       },
 
@@ -563,7 +564,32 @@ const market = async () => {
         this.products = this.products.filter(p => p.pubkey !== publicKey)
         this.stalls = this.stalls.filter(p => p.pubkey !== publicKey)
         this.initNostr() // todo: improve
+      },
+
+      addProductToCart(item) {
+        console.log('### addProductToCart:', item)
+
+        let stallCart = this.shoppingCarts.find(s => s.id === item.stall_id)
+        if (!stallCart) {
+          stallCart = {
+            id: item.stall_id,
+            products: []
+          }
+          this.shoppingCarts.push(stallCart)
+        }
+        stallCart.merchant = this.merchants.find(m => m.publicKey === item.pubkey)
+
+        const product = stallCart.products.find(p => p.id === item.id)
+        if (product) {
+          product.orderedQuantity = item.orderedQuantity || (product.orderedQuantity + 1)
+        } else {
+          stallCart.products.push({ ...item, orderedQuantity: 1 })
+        }
+
+        this.$q.localStorage.set('nostrmarket.shoppingCarts', this.shoppingCarts)
+        console.log('### this.shoppingCarts', this.shoppingCarts)
       }
+
     }
   })
 }
