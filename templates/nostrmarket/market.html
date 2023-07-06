@@ -231,7 +231,7 @@
 
       <q-card-section class="q-pt-none">
         <q-input dense label="nsec/npub/hex" v-model="accountDialog.data.key" autofocus @keyup.enter="createAccount"
-          :error="accountDialog.data.key && !isValidKey"
+          :error="accountDialog.data.key && !isValidAccountKey"
           hint="Enter you private key (recommended) or public key"></q-input>
 
         <q-item tag="label">
@@ -253,7 +253,7 @@
       <q-card-actions align="right" class="text-primary">
         <q-btn v-if="hasExtension" flat label="Use Public Key from Extension"
           @click="() => createAccount(true)"></q-btn>
-        <q-btn v-if="isValidKey" label="Add key" color="primary" @click="() => createAccount()"></q-btn>
+        <q-btn v-if="isValidAccountKey" label="Add key" color="primary" @click="() => createAccount()"></q-btn>
         <q-btn v-else flat label="Generate" @click="generateKeyPair"></q-btn>
       </q-card-actions>
     </q-card>

@@ -23,7 +23,7 @@ function imgSizeFit(img, maxWidth = 1024, maxHeight = 768) {
     maxWidth / img.naturalWidth,
     maxHeight / img.naturalHeight
   )
-  return {width: img.naturalWidth * ratio, height: img.naturalHeight * ratio}
+  return { width: img.naturalWidth * ratio, height: img.naturalHeight * ratio }
 }
 
 async function hash(string) {
@@ -52,8 +52,8 @@ function satOrBtc(val, showUnit = true, showSats = false) {
   const value = showSats
     ? LNbits.utils.formatSat(val)
     : val == 0
-    ? 0.0
-    : (val / 100000000).toFixed(8)
+      ? 0.0
+      : (val / 100000000).toFixed(8)
   if (!showUnit) return value
   return showSats ? value + ' sat' : value + ' BTC'
 }
@@ -120,4 +120,20 @@ function isValidImageUrl(string) {
     return false
   }
   return url.protocol === 'http:' || url.protocol === 'https:'
+}
+
+function isValidKey(key, prefix = 'n') {
+  try {
+    if (key && key.startsWith(prefix)) {
+      let { _, data } = NostrTools.nip19.decode(key)
+      key = data
+    }
+    return isValidKeyHex(key)
+  } catch (error) {
+    return false
+  }
+}
+
+function isValidKeyHex(key) {
+  return key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)
 }
