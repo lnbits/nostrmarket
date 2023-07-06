@@ -31,7 +31,7 @@
 
         <q-separator vertical /> -->
 
-        <q-card-section class="col-12 q-ml-xl">
+        <q-card-section class="col-12">
           <q-list class="q-mt-md">
             <q-item v-for="product in cart.products" :key="product.id">
 
@@ -54,21 +54,18 @@
                 <q-item-label></q-item-label>
               </q-item-section>
               <!-- @change="addQty(p.id, p.quantity)" -->
-              <q-item-section class="q-mt-sm">
+              <q-item-section class="q-ma-sm">
                 <q-input v-model.number="product.orderedQuantity" type="number" rounded outlined min="1"
                   :max="product.quantity"></q-input>
               </q-item-section>
-              <q-item-section>
-                <!-- @click="add(p.id)"  -->
-                <q-item-label class="q-pl-md"><q-btn color="green" size="xs" icon="add" /></q-item-label>
-              </q-item-section>
+   
               <q-item-section>
                 <q-item-label><strong>{{ formatCurrency(product.price * product.orderedQuantity, product.currency)}}
                   </strong></q-item-label>
               </q-item-section>
               <q-item-section side>
-                <div class="q-pr-xl">
-                  <q-btn class="gt-xs" size="12px" flat dense round icon="delete"
+                <div>
+                  <q-btn flat dense round icon="delete"
                     @click="removeProduct(product.stall_id, product.id)" />
                 </div>
               </q-item-section>
