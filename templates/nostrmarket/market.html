@@ -183,7 +183,7 @@
                 size="lg"><q-tooltip>User
                   Config</q-tooltip></q-btn>
               <q-btn color="gray" icon="shopping_cart" flat size="lg"
-                @click="searchNostr = !searchNostr"><q-tooltip>Shopping
+                @click="showShoppingCartList = !showShoppingCartList"><q-tooltip>Shopping
                   Cart</q-tooltip></q-btn>
             </div>
           </q-toolbar>
@@ -205,6 +205,7 @@
 
         <market-config v-if="showMarketConfig" :merchants="merchants" @add-merchant="addMerchant"
           @remove-merchant="removeMerchant"></market-config>
+        <shopping-cart-list v-else-if="showShoppingCartList" :carts="shoppingCarts" :products="products"></shopping-cart-list>
         <customer-stall v-else-if="!isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
           :products="filterProducts" :stall-products="products.filter(p => p.stall_id == activeStall)"
           :product-detail="activeProduct" :relays="relays" :account="account" :pool="pool" :styles="config?.opts ?? {}"
@@ -300,6 +301,7 @@
 <script src="{{ url_for('nostrmarket_static', path='components/customer-stall/customer-stall.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/product-detail/product-detail.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/shopping-cart/shopping-cart.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/shopping-cart-list/shopping-cart-list.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/chat-dialog/chat-dialog.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/market-config/market-config.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/market.js') }}"></script>
