@@ -1,3 +1,54 @@
 <div>
-  xxxx
+  <div v-for="cart in carts">
+
+    <q-card bordered class="q-mb-md">
+      <q-item>
+        <q-item-section avatar>
+          <q-avatar>
+            <img v-if="cart.merchant?.profile?.picture" :src="cart.merchant?.profile?.picture">
+            <img v-else src="/nostrmarket/static/images/blank-avatar.webp">
+          </q-avatar>
+        </q-item-section>
+
+        <q-item-section>
+          <q-item-label>
+            <strong>
+              <span v-text="cart.products[0]?.stallName"></span>
+            </strong>
+          </q-item-label>
+          <q-item-label caption>
+            By <span v-text="cart.merchant?.profile?.name || cart.merchant?.publicKey"></span>
+          </q-item-label>
+        </q-item-section>
+      </q-item>
+
+      <q-separator />
+
+      <q-card-section horizontal>
+        <q-card-section>
+        </q-card-section>
+
+        <q-separator vertical />
+
+        <q-card-section class="col-10">
+          <div v-for="product in cart.products">
+            {{product.name}}
+          </div>
+        </q-card-section>
+      </q-card-section>
+      <q-separator />
+
+      <q-card-actions align="right">
+        <q-btn flat round icon="event" />
+        <q-btn flat>
+          7:30PM
+        </q-btn>
+        <q-btn flat color="primary">
+          Proceed to Checkout
+        </q-btn>
+      </q-card-actions>
+    </q-card>
+
+  </div>
+
 </div>

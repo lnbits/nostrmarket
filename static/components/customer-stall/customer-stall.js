@@ -104,50 +104,53 @@ async function customerStall(path) {
         this.updateCart()
       },
       addToCart(item) {
-        let prod = this.cart.products
-        if (prod.has(item.id)) {
-          let qty = prod.get(item.id).quantity
-          if (qty == item.quantity) {
-            this.$q.notify({
-              type: 'warning',
-              message: `${item.name} only has ${item.quantity} units!`,
-              icon: 'production_quantity_limits'
-            })
-            return
-          }
-          prod.set(item.id, {
-            ...prod.get(item.id),
-            quantity: qty + 1
-          })
-        } else {
-          prod.set(item.id, {
-            name: item.name,
-            quantity: 1,
-            price: item.price,
-            image: item?.images[0] || null
-          })
-        }
-        this.$q.notify({
-          type: 'positive',
-          message: `'${item.name}' added to cart`,
-          icon: 'thumb_up'
-        })
-        this.cart.products = prod
-        this.updateCart()
-      },
-      removeFromCart(item, del = false) {
-        let prod = this.cart.products
-        let qty = prod.get(item.id).quantity
-        if (qty == 1 || del) {
-          prod.delete(item.id)
-        } else {
-          prod.set(item.id, {
-            ...prod.get(item.id),
-            quantity: qty - 1
-          })
-        }
-        this.cart.products = prod
-        this.updateCart()
+        this.$emit('add-to-cart', item)
+      //   console.log('### addToCart', item)
+      //   console.log('### this.cart.products', this.cart.products)
+      //   let prod = this.cart.products
+      //   if (prod.has(item.id)) {
+      //     let qty = prod.get(item.id).quantity
+      //     if (qty == item.quantity) {
+      //       this.$q.notify({
+      //         type: 'warning',
+      //         message: `${item.name} only has ${item.quantity} units!`,
+      //         icon: 'production_quantity_limits'
+      //       })
+      //       return
+      //     }
+      //     prod.set(item.id, {
+      //       ...prod.get(item.id),
+      //       quantity: qty + 1
+      //     })
+      //   } else {
+      //     prod.set(item.id, {
+      //       name: item.name,
+      //       quantity: 1,
+      //       price: item.price,
+      //       image: item?.images[0] || null
+      //     })
+      //   }
+      //   this.$q.notify({
+      //     type: 'positive',
+      //     message: `'${item.name}' added to cart`,
+      //     icon: 'thumb_up'
+      //   })
+      //   this.cart.products = prod
+      //   this.updateCart()
+      // },
+      // removeFromCart(item, del = false) {
+      //   let prod = this.cart.products
+      //   let qty = prod.get(item.id).quantity
+      //   if (qty == 1 || del) {
+      //     prod.delete(item.id)
+      //   } else {
+      //     prod.set(item.id, {
+      //       ...prod.get(item.id),
+      //       quantity: qty - 1
+      //     })
+      //   }
+      //   this.cart.products = prod
+      //   this.updateCart()
       },
       updateCart() {
         this.cart.total = 0
