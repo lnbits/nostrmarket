@@ -10,28 +10,30 @@
       <q-tab-panels v-model="tab">
         <q-tab-panel name="merchants">
           <div>
-            <q-input outlined v-model="inputPubkey" @keydown.enter="addPubkey(null)" type="text" label="Pubkey/Npub"
+            <q-input outlined v-model="inputPubkey" @keydown.enter="addMerchant" type="text" label="Pubkey/Npub"
               hint="Add merchants">
-              <q-btn @click="addPubkey(null)" dense flat icon="add"></q-btn>
+              <q-btn @click="addMerchant" dense flat icon="add"></q-btn>
             </q-input>
             <q-list class="q-mt-md">
-              <q-item v-for="pub in Array.from(pubkeys)" :key="pub">
+              <q-item v-for="{publicKey, profile} in merchants" :key="publicKey">
 
                 <q-item-section avatar>
                   <q-avatar>
-                    <img v-if="profiles.get(pub) && profiles.get(pub)?.picture" :src="profiles.get(pub).picture" />
+                    <img v-if="profile?.picture" :src="profile.picture" />
                     <img v-else src="/nostrmarket/static/images/blank-avatar.webp" />
                   </q-avatar>
                 </q-item-section>
-                <q-item-section>
-                  <q-item-label v-if="profiles.get(pub) && profiles.get(pub)?.name">{{ profiles.get(pub).name
-                    }}</q-item-label>
-                  <q-item-label v-else>{{ `${pub.slice(0, 5)}...${pub.slice(-5)}`
-                    }}</q-item-label>
-                  <q-tooltip>{{ pub }}</q-tooltip>
+                <q-item-section class="q-mt-sm">
+                  <q-item-label><strong>{{ profile?.name}}</strong></q-item-label>
+                  <q-item-label>
+                    <div class="text-caption text-grey ellipsis-2-lines">
+                      <p>{{ publicKey }}</p>
+                    </div>
+                  </q-item-label>
+                  <q-tooltip>{{ publicKey }}</q-tooltip>
                 </q-item-section>
                 <q-item-section side>
-                  <q-btn class="gt-xs" size="12px" flat dense round icon="delete" @click="removePubkey(pub)" />
+                  <q-btn class="gt-xs" size="12px" flat dense round icon="delete" @click="removeMerchant(publicKey)" />
                 </q-item-section>
 
               </q-item>

@@ -48,6 +48,9 @@ const market = async () => {
             key: null
           }
         },
+
+        merchants: [],
+
         showMarketConfig: false,
         searchNostr: false,
         drawer: true,
@@ -317,6 +320,7 @@ const market = async () => {
         }
       },
       async updateData(events) {
+        console.log('### updateData', events)
         if (events.length < 1) {
           this.$q.notify({
             message: 'No matches were found!'
@@ -335,6 +339,9 @@ const market = async () => {
             if (e.pubkey == this.account?.pubkey) {
               this.accountMetadata = this.profiles.get(this.account.pubkey)
             }
+            this.merchants.filter(m => m.publicKey === e.pubkey).forEach(m => m.profile = e.content)
+            this.merchants = this.merchants.concat([])
+            console.log('### this.merchants', this.merchants)
             return
           } else if (e.kind == 30018) {
             //it's a product `d` is the prod. id
@@ -390,15 +397,18 @@ const market = async () => {
 
         let relays = Array.from(this.relays)
 
+        const authors = Array.from(this.pubkeys).concat(this.merchants.map(m => m.publicKey))
+        console.log('### stupid', authors)
         // Get metadata and market data from the pubkeys
         await pool
           .list(relays, [
             {
               kinds: [0, 30017, 30018], // for production kind is 30017
-              authors: Array.from(this.pubkeys)
+              authors
             }
           ])
           .then(async events => {
+            console.log('### stupid response', events)
             if (!events || events.length == 0) return
             await this.updateData(events)
           })
@@ -409,10 +419,12 @@ const market = async () => {
         return
       },
       async poolSubscribe() {
+        const authors = Array.from(this.pubkeys).concat(this.merchants.map(m => m.publicKey))
+        console.log('### poolSubscribe.authors', authors)
         this.poolSub = this.pool.sub(Array.from(this.relays), [
           {
             kinds: [0, 30017, 30018],
-            authors: Array.from(this.pubkeys),
+            authors,
             since: Date.now() / 1000
           }
         ])
@@ -525,6 +537,19 @@ const market = async () => {
         this.relays = new Set(Array.from(relays))
         this.$q.localStorage.set(`diagonAlley.relays`, Array.from(this.relays))
         this.initNostr()
+      },
+      addMerchant(publicKey){
+        console.log('### addMerchat', publicKey)
+        this.merchants.unshift({
+          publicKey,
+          profile: null
+        })
+        this.initNostr() // todo: improve
+      },
+      removeMerchant(publicKey){
+        console.log('### removeMerchat', publicKey)
+        this.merchants = this.merchants.filter(m => m.publicKey !== publicKey)
+        this.initNostr() // todo: improve
       }
     }
   })
