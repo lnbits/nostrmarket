@@ -205,7 +205,7 @@
         <market-config v-if="activePage === 'market-config'" :merchants="merchants" @add-merchant="addMerchant"
           @remove-merchant="removeMerchant"></market-config>
         <shopping-cart-list v-else-if="activePage === 'shopping-cart-list'" :carts="shoppingCarts"
-          :products="products"></shopping-cart-list>
+          @remove-from-cart="removeProductFromCart"></shopping-cart-list>
         <customer-stall v-else-if="!isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
           :products="filterProducts" :stall-products="products.filter(p => p.stall_id == activeStall)"
           :product-detail="activeProduct" :relays="relays" :account="account" :pool="pool" :styles="config?.opts ?? {}"

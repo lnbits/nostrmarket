@@ -588,6 +588,14 @@ const market = async () => {
 
         this.$q.localStorage.set('nostrmarket.shoppingCarts', this.shoppingCarts)
         console.log('### this.shoppingCarts', this.shoppingCarts)
+      },
+
+      removeProductFromCart(item) {
+        const stallCart = this.shoppingCarts.find(c => c.id === item.stallId)
+        if (stallCart) {
+          stallCart.products = stallCart.products.filter(p => p.id !== item.productId)
+          this.$q.localStorage.set('nostrmarket.shoppingCarts', this.shoppingCarts)
+        }
       }
 
     }
