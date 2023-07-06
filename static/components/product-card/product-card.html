@@ -19,8 +19,8 @@
   <q-card-section class="q-py-sm">
     <div>
       <span v-if="product.currency == 'sat'">
-        <span class="text-h6">{{ product.price }} sats</span><span class="q-ml-sm text-grey-6">BTC {{ (product.price /
-          1e8).toFixed(8) }}</span>
+        <span class="text-h6">{{ product.price }} sats</span><q-tooltip> BTC {{ (product.price /
+          1e8).toFixed(8) }}</q-tooltip>
       </span>
       <span v-else>
         <span class="text-h6">{{ product.formatedPrice }}</span>

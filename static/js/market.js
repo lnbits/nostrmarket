@@ -86,6 +86,7 @@ const market = async () => {
     computed: {
       filterProducts() {
         let products = this.products
+        console.log('### this.products', this.products)
         if (this.activeStall) {
           products = products.filter(p => p.stall_id == this.activeStall)
         }
@@ -341,10 +342,10 @@ const market = async () => {
             return
           } else if (e.kind == 30018) {
             //it's a product `d` is the prod. id
-            products.set(e.d, { ...e.content, id: e.d, categories: e.t })
+            products.set(e.d, { ...e.content, pubkey: e.pubkey, id: e.d, categories: e.t })
           } else if (e.kind == 30017) {
             // it's a stall `d` is the stall id
-            stalls.set(e.d, { ...e.content, id: e.d, pubkey: e.pubkey })
+            stalls.set(e.d, { ...e.content, pubkey: e.pubkey, id: e.d, pubkey: e.pubkey })
           }
         })
 
@@ -536,9 +537,9 @@ const market = async () => {
       },
 
 
-      addMerchant(publicKey){
+      addMerchant(publicKey) {
         console.log('### addMerchat', publicKey)
-        
+
         this.merchants.unshift({
           publicKey,
           profile: null
@@ -546,10 +547,12 @@ const market = async () => {
         this.$q.localStorage.set('nostrmarket.merchants', this.merchants)
         this.initNostr() // todo: improve
       },
-      removeMerchant(publicKey){
+      removeMerchant(publicKey) {
         console.log('### removeMerchat', publicKey)
         this.merchants = this.merchants.filter(m => m.publicKey !== publicKey)
         this.$q.localStorage.set('nostrmarket.merchants', this.merchants)
+        this.products = this.products.filter(p => p.pubkey !== publicKey)
+        this.stalls = this.stalls.filter(p => p.pubkey !== publicKey)
         this.initNostr() // todo: improve
       }
     }
