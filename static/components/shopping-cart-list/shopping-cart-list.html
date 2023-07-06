@@ -25,15 +25,57 @@
       <q-separator />
 
       <q-card-section horizontal>
-        <q-card-section>
+        <!-- <q-card-section >
+          xxx
         </q-card-section>
 
-        <q-separator vertical />
+        <q-separator vertical /> -->
 
-        <q-card-section class="col-10">
-          <div v-for="product in cart.products">
-            {{product.name}}
-          </div>
+        <q-card-section class="col-12 q-ml-xl">
+          <q-list class="q-mt-md">
+            <q-item v-for="product in cart.products" :key="product.id">
+
+              <q-item-section avatar>
+                <q-avatar>
+                  <img v-if="product.images[0] || product.image" :src="product.images[0] || product.image" />
+                  <img v-else src="/nostrmarket/static/images/placeholder.png" />
+                </q-avatar>
+              </q-item-section>
+              <q-item-section class="q-mt-sm">
+                <q-item-label>{{ product.name}}</q-item-label>
+                <q-item-label>
+                  <div class="text-caption text-grey ellipsis-2-lines">
+                    <p>{{ product.description }}</p>
+                  </div>
+                </q-item-label>
+              </q-item-section>
+              <q-item-section class="q-mt-sm">
+                <q-item-label><strong>{{ formatCurrency(product.price, product.currency)}}</strong></q-item-label>
+                <q-item-label></q-item-label>
+              </q-item-section>
+              <!-- @change="addQty(p.id, p.quantity)" -->
+              <q-item-section class="q-mt-sm">
+                <q-input v-model.number="product.orderedQuantity" type="number" rounded outlined
+                  :max="products.quantity"></q-input>
+              </q-item-section>
+              <q-item-section>
+                <!-- @click="add(p.id)"  -->
+                <q-item-label class="q-pl-md"><q-btn color="green" size="xs" icon="add" /></q-item-label>
+              </q-item-section>
+              <q-item-section>
+                <q-item-label><strong>{{ formatCurrency(product.price * product.orderedQuantity, product.currency)}}
+                  </strong></q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <div class="q-pr-xl">
+                  <q-btn class="gt-xs" size="12px" flat dense round icon="delete"
+                    @click="removeProduct(product.stall_id, product.id)" />
+                </div>
+              </q-item-section>
+
+            </q-item>
+
+          </q-list>
         </q-card-section>
       </q-card-section>
       <q-separator />

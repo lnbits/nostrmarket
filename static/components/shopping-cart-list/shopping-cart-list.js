@@ -11,7 +11,12 @@ async function shoppingCartList(path) {
     },
     computed: {},
     methods: {
-
+      formatCurrency: function(value, unit){
+        return formatCurrency(value, unit)
+      },
+      removeProduct: function (stallId, productId) {
+        console.log('### stallId, productId', stallId, productId)
+      }
     },
     created() { }
   })
