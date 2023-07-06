@@ -137,3 +137,10 @@ function isValidKey(key, prefix = 'n') {
 function isValidKeyHex(key) {
   return key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)
 }
+
+function formatCurrency(value, currency) {
+  return new Intl.NumberFormat(window.LOCALE, {
+    style: 'currency',
+    currency: currency
+  }).format(value)
+}
