@@ -15,7 +15,11 @@ async function customerMarket(path) {
     ],
     data: function () {
       return {
-        search: null
+        search: null,
+        partialProducts: [],
+        productsPerPage: 24,
+        startIndex: 0,
+        lastProductIndex: 0
       }
     },
     methods: {
@@ -48,8 +52,23 @@ async function customerMarket(path) {
         pool.close(relays)
         await this.$emit('update-data', [...stallEvents, ...productEvents])
         this.$q.loading.hide()
+      },
+      onLoad(_, done) {
+        setTimeout(() => {
+          if (this.startIndex >= this.products.length) {
+            done()
+            return
+          }
+          this.startIndex = this.lastProductIndex
+          this.lastProductIndex = Math.min(this.products.length, this.lastProductIndex + this.productsPerPage)
+          this.partialProducts.push(...this.products.slice(this.startIndex, this.lastProductIndex))
+          done()
+        }, 100)
       }
     },
-    created() {}
+    created() {
+      this.lastProductIndex = Math.min(this.products.length, 24)
+      this.partialProducts.push(...this.products.slice(0, this.lastProductIndex))
+    }
   })
 }
