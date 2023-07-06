@@ -30,6 +30,7 @@ const market = async () => {
     customerStall('static/components/customer-stall/customer-stall.html'),
     productDetail('static/components/product-detail/product-detail.html'),
     shoppingCart('static/components/shopping-cart/shopping-cart.html'),
+    shoppingCartList('static/components/shopping-cart-list/shopping-cart-list.html'),
     chatDialog('static/components/chat-dialog/chat-dialog.html'),
     marketConfig('static/components/market-config/market-config.html')
   ])
@@ -50,8 +51,10 @@ const market = async () => {
         },
 
         merchants: [],
+        shoppingCarts: [],
 
         showMarketConfig: false,
+        showShoppingCartList: false,
         searchNostr: false,
         drawer: true,
         pubkeys: new Set(),
@@ -457,6 +460,8 @@ const market = async () => {
         } else {
           this.activeStall = null
           this.activeProduct = null
+          this.showMarketConfig = false
+          this.showShoppingCartList = false
           url.searchParams.delete('merchant_pubkey')
           url.searchParams.delete('stall_id')
           url.searchParams.delete('product_id')
