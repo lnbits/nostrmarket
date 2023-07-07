@@ -32,11 +32,10 @@
                         <strong>Subtotal:</strong>
                     </div>
                     <div class="col-xs-12 col-sm-12 col-md-4">
-                        
+                        <strong>{{formatCurrency(cartTotal, stall.currency)}}</strong>
                     </div>
                     <div class="col-xs-12 col-sm-12 col-md-4">
-                        <strong>{{formatCurrency(cartTotal,
-                            cart.products[0]?.currency)}}</strong>
+
                     </div>
                 </div>
                 <div class="row q-mt-md">
@@ -44,11 +43,21 @@
                         <strong>Shipping:</strong>
                     </div>
                     <div class="col-xs-12 col-sm-12 col-md-4">
-                        
+                        <strong v-if="shippingZone">{{formatCurrency(shippingZone.cost, stall.currency)}}</strong>
                     </div>
                     <div class="col-xs-12 col-sm-12 col-md-4">
-                        <strong>00.00</strong>
+                        <q-btn-dropdown unelevated color="secondary" rounded :label="shippingZoneLabel">
+                            <q-item v-for="zone of stall.shipping" @click="selectShippingZone(zone)" :key="zone.id"
+                                clickable v-close-popup>
+                                <q-item-section>
+                                    <q-item-label><span v-text="zone.name"></span></q-item-label>
+                                    <q-item-label caption><span
+                                            v-text="zone.countries?.join(', ')"></span></q-item-label>
+                                </q-item-section>
+                            </q-item>
+                        </q-btn-dropdown>
                     </div>
+
                 </div>
                 <q-separator class="q-mt-sm" />
                 <div class="row q-mt-md">
@@ -56,51 +65,12 @@
                         <strong>Total:</strong>
                     </div>
                     <div class="col-xs-12 col-sm-12 col-md-4">
-                        
+                        <strong>{{formatCurrency(cartTotalWithShipping, stall.currency)}}</strong>
                     </div>
                     <div class="col-xs-12 col-sm-12 col-md-4">
-                        <strong>00.00</strong>
+
                     </div>
                 </div>
-                
-                <!-- <q-item>
-                    <q-item-section>
-                        <q-item-label>
-                            <strong>Subtotal:</strong>
-                        </q-item-label>
-                    </q-item-section>
-                    <q-item-section>
-                        <q-item-label> <strong>{{formatCurrency(cartTotal,
-                                cart.products[0]?.currency)}}</strong></q-item-label>
-                    </q-item-section>
-                    <q-item-section>
-                        <q-item-label> xx</q-item-label>
-                    </q-item-section>
-                </q-item>
-                <q-item>
-                    <q-item-section>
-                        <q-item-label>
-                            <strong>Shipping:</strong>
-                        </q-item-label>
-                    </q-item-section>
-                    <q-item-section>
-                        <q-item-label> 0.00</q-item-label>
-                    </q-item-section>
-                    <q-item-section>
-                        <q-item-label> xx</q-item-label>
-                    </q-item-section>
-                </q-item>
-                <q-separator />
-                <q-item>
-                    <q-item-section>
-                        <q-item-label>
-                            <strong>Total:</strong>
-                        </q-item-label>
-                    </q-item-section>
-                    <q-item-section>
-                        <q-item-label> </q-item-label>
-                    </q-item-section>
-                </q-item> -->
 
             </q-card-section>
 

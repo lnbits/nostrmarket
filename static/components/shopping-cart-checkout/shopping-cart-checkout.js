@@ -5,10 +5,11 @@ async function shoppingCartCheckout(path) {
     name: 'shopping-cart-checkout',
     template,
 
-    props: ['cart'],
+    props: ['cart', 'stall'],
     data: function () {
       return {
         paymentMethod: 'ln',
+        shippingZone: null,
         paymentOptions: [
           {
             label: 'Lightning Network',
@@ -30,17 +31,37 @@ async function shoppingCartCheckout(path) {
         if (!this.cart.products?.length) return 0
         return this.cart.products.reduce((t, p) => p.price + t, 0)
       },
+      cartTotalWithShipping() {
+        if (!this.shippingZone) return this.cartTotal
+        return this.cartTotal + this.shippingZone.cost
+      },
+      shippingZoneLabel() {
+        if (!this.shippingZone) {
+          return 'Shipping Zone'
+        }
+        const zoneName = this.shippingZone.name.substring(0, 10)
+        if (this.shippingZone?.name.length < 10) {
+          return zoneName
+        }
+        return zoneName + '...'
+      }
     },
     methods: {
       formatCurrency: function (value, unit) {
         return formatCurrency(value, unit)
+      },
+      selectShippingZone: function (zone) {
+        this.shippingZone = zone
       },
       requestInvoice: function () {
 
       }
     },
     created() {
-      console.log('### shoppingCartCheckout', this.cart)
+      console.log('### shoppingCartCheckout', this.stall)
+      if (this.stall.shipping?.length === 1) {
+        this.shippingZone = this.stall.shipping[0]
+      }
     }
   })
 }

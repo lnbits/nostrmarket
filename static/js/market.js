@@ -53,7 +53,8 @@ const market = async () => {
 
         merchants: [],
         shoppingCarts: [],
-        shoppingCartCheckout: null,
+        checkoutCart: null,
+        checkoutStall: null,
 
         activePage: 'market',
 
@@ -611,8 +612,9 @@ const market = async () => {
         this.$q.localStorage.set('nostrmarket.shoppingCarts', this.shoppingCarts)
       },
 
-      checkoutCart(cart) {
-        this.shoppingCartCheckout = cart
+      checkoutStallCart(cart) {
+        this.checkoutCart = cart
+        this.checkoutStall = this.stalls.find(s => s.id === cart.id)
         this.setActivePage('shopping-cart-checkout')
       }
 
