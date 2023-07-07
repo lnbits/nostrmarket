@@ -22,8 +22,14 @@ async function shoppingCartList(path) {
       removeProduct: function (stallId, productId) {
         this.$emit('remove-from-cart', { stallId, productId })
       },
+      removeCart: function (stallId) {
+        this.$emit('remove-cart', stallId)
+      },
       quantityChanged: function (product) {
         this.$emit('add-to-cart', product)
+      },
+      proceedToCheckout: function(cart){
+        this.$emit('checkout-cart', cart)
       }
     },
     created() { }

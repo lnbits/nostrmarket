@@ -1,0 +1,125 @@
+<div>
+    <q-card v-if="cart" bordered class="q-mb-md">
+        <q-item>
+            <q-item-section avatar>
+                <q-avatar>
+                    <img v-if="cart.merchant?.profile?.picture" :src="cart.merchant?.profile?.picture">
+                    <img v-else src="/nostrmarket/static/images/blank-avatar.webp">
+                </q-avatar>
+            </q-item-section>
+
+            <q-item-section>
+                <q-item-label>
+                    <strong>
+                        <span v-text="cart.products[0]?.stallName"></span>
+                    </strong>
+                </q-item-label>
+                <q-item-label caption>
+                    By <span v-text="cart.merchant?.profile?.name || cart.merchant?.publicKey"></span>
+                </q-item-label>
+            </q-item-section>
+            <q-item-section side>
+
+            </q-item-section>
+        </q-item>
+
+        <q-separator />
+
+        <q-card-section horizontal>
+            <q-card-section class="col-7">
+                <div class="row q-mt-md">
+                    <div class="col-xs-12 col-sm-12 col-md-4">
+                        <strong>Subtotal:</strong>
+                    </div>
+                    <div class="col-xs-12 col-sm-12 col-md-4">
+                        
+                    </div>
+                    <div class="col-xs-12 col-sm-12 col-md-4">
+                        <strong>{{formatCurrency(cartTotal,
+                            cart.products[0]?.currency)}}</strong>
+                    </div>
+                </div>
+                <div class="row q-mt-md">
+                    <div class="col-xs-12 col-sm-12 col-md-4">
+                        <strong>Shipping:</strong>
+                    </div>
+                    <div class="col-xs-12 col-sm-12 col-md-4">
+                        
+                    </div>
+                    <div class="col-xs-12 col-sm-12 col-md-4">
+                        <strong>00.00</strong>
+                    </div>
+                </div>
+                <q-separator class="q-mt-sm" />
+                <div class="row q-mt-md">
+                    <div class="col-xs-12 col-sm-12 col-md-4">
+                        <strong>Total:</strong>
+                    </div>
+                    <div class="col-xs-12 col-sm-12 col-md-4">
+                        
+                    </div>
+                    <div class="col-xs-12 col-sm-12 col-md-4">
+                        <strong>00.00</strong>
+                    </div>
+                </div>
+                
+                <!-- <q-item>
+                    <q-item-section>
+                        <q-item-label>
+                            <strong>Subtotal:</strong>
+                        </q-item-label>
+                    </q-item-section>
+                    <q-item-section>
+                        <q-item-label> <strong>{{formatCurrency(cartTotal,
+                                cart.products[0]?.currency)}}</strong></q-item-label>
+                    </q-item-section>
+                    <q-item-section>
+                        <q-item-label> xx</q-item-label>
+                    </q-item-section>
+                </q-item>
+                <q-item>
+                    <q-item-section>
+                        <q-item-label>
+                            <strong>Shipping:</strong>
+                        </q-item-label>
+                    </q-item-section>
+                    <q-item-section>
+                        <q-item-label> 0.00</q-item-label>
+                    </q-item-section>
+                    <q-item-section>
+                        <q-item-label> xx</q-item-label>
+                    </q-item-section>
+                </q-item>
+                <q-separator />
+                <q-item>
+                    <q-item-section>
+                        <q-item-label>
+                            <strong>Total:</strong>
+                        </q-item-label>
+                    </q-item-section>
+                    <q-item-section>
+                        <q-item-label> </q-item-label>
+                    </q-item-section>
+                </q-item> -->
+
+            </q-card-section>
+
+            <q-separator vertical />
+
+            <q-card-section>
+                <strong>Payment Method</strong>
+                <q-option-group v-model="paymentMethod" :options="paymentOptions" color="green" disable />
+            </q-card-section>
+        </q-card-section>
+        <q-separator />
+
+        <q-card-actions align="right">
+
+            <q-btn @click="requestInvoice(cart)" flat color="primary">
+                Request Invoice
+            </q-btn>
+        </q-card-actions>
+    </q-card>
+
+
+</div>

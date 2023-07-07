@@ -1,4 +1,9 @@
 <div>
+  <q-card v-if="!carts?.length" bordered class="q-mb-md">
+    <q-card-section>
+      <strong>No products in cart!</strong>
+    </q-card-section>
+  </q-card>
   <div v-for="cart in carts">
 
     <q-card bordered class="q-mb-md">
@@ -21,7 +26,11 @@
           </q-item-label>
         </q-item-section>
         <q-item-section side>
-        
+          <div>
+            <q-btn @click="removeCart(cart.id)" flat color="pink">
+              Clear Cart
+            </q-btn>
+          </div>
         </q-item-section>
       </q-item>
 
@@ -51,20 +60,19 @@
                 <q-item-label><strong>{{ formatCurrency(product.price, product.currency)}}</strong></q-item-label>
                 <q-item-label></q-item-label>
               </q-item-section>
-              <!-- " -->
+
               <q-item-section class="q-ma-sm">
-                <q-input v-model.number="product.orderedQuantity" @change="quantityChanged(product)" type="number" rounded outlined min="1"
-                  :max="product.quantity"></q-input>
+                <q-input v-model.number="product.orderedQuantity" @change="quantityChanged(product)" type="number"
+                  rounded outlined min="1" :max="product.quantity"></q-input>
               </q-item-section>
-   
+
               <q-item-section>
                 <q-item-label><strong>{{ formatCurrency(product.price * product.orderedQuantity, product.currency)}}
                   </strong></q-item-label>
               </q-item-section>
               <q-item-section side>
                 <div>
-                  <q-btn flat dense round icon="delete"
-                    @click="removeProduct(product.stall_id, product.id)" />
+                  <q-btn flat dense round icon="delete" @click="removeProduct(product.stall_id, product.id)" />
                 </div>
               </q-item-section>
 
@@ -75,9 +83,11 @@
       </q-card-section>
       <q-separator />
 
+
       <q-card-actions align="right">
+
         Total: <strong class="q-ma-md"> {{cartTotalFormatted(cart)}} </strong>
-        <q-btn flat color="primary">
+        <q-btn @click="proceedToCheckout(cart)" flat color="primary">
           Proceed to Checkout
         </q-btn>
       </q-card-actions>
