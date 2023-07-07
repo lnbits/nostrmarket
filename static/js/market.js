@@ -124,6 +124,10 @@ const market = async () => {
       },
       canEditConfig() {
         return this.account && this.account.pubkey == this.config?.pubkey
+      },
+
+      allCartsItemCount() {
+        return this.shoppingCarts.map(s => s.products).flat().reduce((t, p) => t + p.orderedQuantity, 0)
       }
     },
     async created() {
@@ -567,8 +571,6 @@ const market = async () => {
       },
 
       addProductToCart(item) {
-        console.log('### addProductToCart:', item)
-
         let stallCart = this.shoppingCarts.find(s => s.id === item.stall_id)
         if (!stallCart) {
           stallCart = {

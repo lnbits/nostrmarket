@@ -181,10 +181,16 @@
               <q-btn v-else @click="accountDialog.show = true" color="gray" icon="person_add" flat
                 size="lg"><q-tooltip>User
                   Config</q-tooltip></q-btn>
-              <q-btn color="gray" icon="shopping_cart" flat size="lg"
-                @click="setActivePage('shopping-cart-list')"><q-tooltip>Shopping
-                  Cart</q-tooltip></q-btn>
+              <q-btn color="gray" icon="shopping_cart" dense round flat  size="lg"
+                @click="setActivePage('shopping-cart-list')">
+                <q-tooltip>Shopping Cart</q-tooltip>
+                
+                <q-badge v-if="allCartsItemCount" color="secondary"  floating>
+                  <span v-text="allCartsItemCount"></span>
+                </q-badge>
+              </q-btn>
             </div>
+
           </q-toolbar>
 
         </div>
