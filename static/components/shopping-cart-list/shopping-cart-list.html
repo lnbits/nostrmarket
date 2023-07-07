@@ -20,16 +20,14 @@
             By <span v-text="cart.merchant?.profile?.name || cart.merchant?.publicKey"></span>
           </q-item-label>
         </q-item-section>
+        <q-item-section side>
+        
+        </q-item-section>
       </q-item>
 
       <q-separator />
 
       <q-card-section horizontal>
-        <!-- <q-card-section >
-          xxx
-        </q-card-section>
-
-        <q-separator vertical /> -->
 
         <q-card-section class="col-12">
           <q-list class="q-mt-md">
@@ -53,9 +51,9 @@
                 <q-item-label><strong>{{ formatCurrency(product.price, product.currency)}}</strong></q-item-label>
                 <q-item-label></q-item-label>
               </q-item-section>
-              <!-- @change="addQty(p.id, p.quantity)" -->
+              <!-- " -->
               <q-item-section class="q-ma-sm">
-                <q-input v-model.number="product.orderedQuantity" type="number" rounded outlined min="1"
+                <q-input v-model.number="product.orderedQuantity" @change="quantityChanged(product)" type="number" rounded outlined min="1"
                   :max="product.quantity"></q-input>
               </q-item-section>
    
@@ -78,10 +76,7 @@
       <q-separator />
 
       <q-card-actions align="right">
-        <q-btn flat round icon="event" />
-        <q-btn flat>
-          7:30PM
-        </q-btn>
+        Total: <strong class="q-ma-md"> {{cartTotalFormatted(cart)}} </strong>
         <q-btn flat color="primary">
           Proceed to Checkout
         </q-btn>

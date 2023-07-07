@@ -14,9 +14,16 @@ async function shoppingCartList(path) {
       formatCurrency: function (value, unit) {
         return formatCurrency(value, unit)
       },
+      cartTotalFormatted(cart) {
+        if (!cart.products?.length) return ""
+        const total = cart.products.reduce((t, p) => p.price + t, 0)
+        return formatCurrency(total, cart.products[0].currency)
+      },
       removeProduct: function (stallId, productId) {
-        console.log('### stallId, productId', stallId, productId)
         this.$emit('remove-from-cart', { stallId, productId })
+      },
+      quantityChanged: function (product) {
+        this.$emit('add-to-cart', product)
       }
     },
     created() { }
