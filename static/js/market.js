@@ -31,6 +31,7 @@ const market = async () => {
     productDetail('static/components/product-detail/product-detail.html'),
     shoppingCart('static/components/shopping-cart/shopping-cart.html'),
     shoppingCartList('static/components/shopping-cart-list/shopping-cart-list.html'),
+    shoppingCartCheckout('static/components/shopping-cart-checkout/shopping-cart-checkout.html'),
     chatDialog('static/components/chat-dialog/chat-dialog.html'),
     marketConfig('static/components/market-config/market-config.html')
   ])
@@ -52,6 +53,7 @@ const market = async () => {
 
         merchants: [],
         shoppingCarts: [],
+        shoppingCartCheckout: null,
 
         activePage: 'market',
 
@@ -592,7 +594,6 @@ const market = async () => {
         product.orderedQuantity = Math.min(product.quantity, item.orderedQuantity || (product.orderedQuantity + 1))
 
         this.$q.localStorage.set('nostrmarket.shoppingCarts', this.shoppingCarts)
-        console.log('### this.shoppingCarts', this.shoppingCarts)
       },
 
       removeProductFromCart(item) {
@@ -604,6 +605,15 @@ const market = async () => {
           }
           this.$q.localStorage.set('nostrmarket.shoppingCarts', this.shoppingCarts)
         }
+      },
+      removeCart(stallId) {
+        this.shoppingCarts = this.shoppingCarts.filter(s => s.id !== stallId)
+        this.$q.localStorage.set('nostrmarket.shoppingCarts', this.shoppingCarts)
+      },
+
+      checkoutCart(cart) {
+        this.shoppingCartCheckout = cart
+        this.setActivePage('shopping-cart-checkout')
       }
 
     }
