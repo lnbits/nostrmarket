@@ -581,12 +581,13 @@ const market = async () => {
         }
         stallCart.merchant = this.merchants.find(m => m.publicKey === item.pubkey)
 
-        const product = stallCart.products.find(p => p.id === item.id)
-        if (product) {
-          product.orderedQuantity = item.orderedQuantity || (product.orderedQuantity + 1)
-        } else {
-          stallCart.products.push({ ...item, orderedQuantity: 1 })
+        let product = stallCart.products.find(p => p.id === item.id)
+        if (!product) {
+          product = { ...item, orderedQuantity: 1 }
+          stallCart.products.push(product)
+         
         }
+        product.orderedQuantity = Math.min(product.quantity, item.orderedQuantity || (product.orderedQuantity + 1))
 
         this.$q.localStorage.set('nostrmarket.shoppingCarts', this.shoppingCarts)
         console.log('### this.shoppingCarts', this.shoppingCarts)
@@ -596,6 +597,9 @@ const market = async () => {
         const stallCart = this.shoppingCarts.find(c => c.id === item.stallId)
         if (stallCart) {
           stallCart.products = stallCart.products.filter(p => p.id !== item.productId)
+          if (!stallCart.products.length){
+            this.shoppingCarts =  this.shoppingCarts.filter(s => s.id !== item.stallId)
+          }
           this.$q.localStorage.set('nostrmarket.shoppingCarts', this.shoppingCarts)
         }
       }
