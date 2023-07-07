@@ -224,44 +224,28 @@
   </q-page-container>
 
   <!-- ACCOUNT DIALOG -->
-  <q-dialog v-model="accountDialog.show" persistent>
-    <q-card style="min-width: 350px">
-      <q-card-section class="row items-center q-pb-none">
+  <q-dialog v-model="accountDialog.show" position="top">
+    <q-card >
+      <q-card-section class="row">
         <div class="text-h6">Account Setup</div>
         <q-space></q-space>
-        <q-btn icon="close" flat round dense v-close-popup></q-btn>
       </q-card-section>
       <q-card-section>
-        <p>Type your Nostr private key or generate a new one.</p>
-        <small> You can also use a Nostr-capable extension. </small>
+        <p>Enter your Nostr private key or generate a new one.</p>
       </q-card-section>
 
       <q-card-section class="q-pt-none">
-        <q-input dense label="nsec/npub/hex" v-model="accountDialog.data.key" autofocus @keyup.enter="createAccount"
+        <q-input dense label="Nsec/Hex" v-model="accountDialog.data.key" autofocus @keyup.enter="createAccount"
           :error="accountDialog.data.key && !isValidAccountKey"
-          hint="Enter you private key (recommended) or public key"></q-input>
-
-        <q-item tag="label">
-          <q-item-section avatar top>
-            <q-checkbox v-model="accountDialog.data.watchOnly"></q-checkbox>
-          </q-item-section>
-          <q-item-section>
-            <q-item-label>Is this a Public Key?</q-item-label>
-            <q-item-label caption>
-              If not using an Nostr capable extension, you'll have to sign
-              events manually! Better to use a Private Key that you can delete
-              later, or just generate an ephemeral key pair to use in the
-              Marketplace!
-            </q-item-label>
-          </q-item-section>
-        </q-item>
+          hint="Enter you private key"></q-input>
       </q-card-section>
 
       <q-card-actions align="right" class="text-primary">
-        <q-btn v-if="hasExtension" flat label="Use Public Key from Extension"
-          @click="() => createAccount(true)"></q-btn>
-        <q-btn v-if="isValidAccountKey" label="Add key" color="primary" @click="() => createAccount()"></q-btn>
+        <q-btn v-if="isValidAccountKey" label="Login" color="primary" @click="() => createAccount()"></q-btn>
         <q-btn v-else flat label="Generate" @click="generateKeyPair"></q-btn>
+        <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+        >Close</q-btn
+      >
       </q-card-actions>
     </q-card>
   </q-dialog>
