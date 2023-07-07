@@ -585,7 +585,7 @@ const market = async () => {
 
         let product = stallCart.products.find(p => p.id === item.id)
         if (!product) {
-          product = { ...item, orderedQuantity: 1 }
+          product = { ...item, orderedQuantity: 0 }
           stallCart.products.push(product)
 
         }
