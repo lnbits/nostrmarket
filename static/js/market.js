@@ -135,7 +135,7 @@ const market = async () => {
       this.shoppingCarts = this.$q.localStorage.getItem('nostrmarket.shoppingCarts') || []
 
       // Check for user stored
-      this.account = this.$q.localStorage.getItem('diagonAlley.account') || null
+      this.account = this.$q.localStorage.getItem('nostrmarket.account') || null
       //console.log("UUID", crypto.randomUUID())
 
       // Check for stored merchants and relays on localStorage
@@ -209,23 +209,24 @@ const market = async () => {
             `This will delete all stored data. If you didn't backup the Key Pair (Private and Public Keys), you will lose it. Continue?`
           )
           .onOk(() => {
-            window.localStorage.removeItem('diagonAlley.account')
+            window.localStorage.removeItem('nostrmarket.account')
             this.account = null
           })
       },
       async createAccount(useExtension = false) {
+        console.log('### createAccount',)
         let nip07
         if (useExtension) {
           await this.getFromExtension()
           nip07 = true
         }
-        if (this.isValidKey) {
+        if (isValidKey(this.accountDialog.data.key, 'nsec')) {
           let { key, watchOnly } = this.accountDialog.data
           if (key.startsWith('n')) {
             let { type, data } = NostrTools.nip19.decode(key)
             key = data
           }
-          this.$q.localStorage.set('diagonAlley.account', {
+          this.$q.localStorage.set('nostrmarket.account', {
             privkey: watchOnly ? null : key,
             pubkey: watchOnly ? key : NostrTools.getPublicKey(key),
             useExtension: nip07 ?? false
@@ -235,8 +236,9 @@ const market = async () => {
             key: null
           }
           this.accountDialog.show = false
-          this.account = this.$q.localStorage.getItem('diagonAlley.account')
+          this.account = this.$q.localStorage.getItem('nostrmarket.account')
         }
+        this.accountDialog.show = false
       },
       generateKeyPair() {
         this.accountDialog.data.key = NostrTools.generatePrivateKey()
@@ -585,7 +587,7 @@ const market = async () => {
         if (!product) {
           product = { ...item, orderedQuantity: 1 }
           stallCart.products.push(product)
-         
+
         }
         product.orderedQuantity = Math.min(product.quantity, item.orderedQuantity || (product.orderedQuantity + 1))
 
@@ -597,8 +599,8 @@ const market = async () => {
         const stallCart = this.shoppingCarts.find(c => c.id === item.stallId)
         if (stallCart) {
           stallCart.products = stallCart.products.filter(p => p.id !== item.productId)
-          if (!stallCart.products.length){
-            this.shoppingCarts =  this.shoppingCarts.filter(s => s.id !== item.stallId)
+          if (!stallCart.products.length) {
+            this.shoppingCarts = this.shoppingCarts.filter(s => s.id !== item.stallId)
           }
           this.$q.localStorage.set('nostrmarket.shoppingCarts', this.shoppingCarts)
         }
