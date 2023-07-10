@@ -650,6 +650,7 @@ const market = async () => {
         event.sig = await NostrTools.signEvent(event, this.account.privkey)
 
         this.sendOrderEvent(event)
+        this.persistOrderUpdate(this.checkoutStall.pubkey, order)
       },
 
       sendOrderEvent(event) {
@@ -715,8 +716,10 @@ const market = async () => {
           const jsonData = JSON.parse(plainText)
           if (jsonData.type === 1) {
             this.handlePaymentRequest(jsonData)
+            this.persistOrderUpdate(event.pubkey, jsonData)
           } else if (jsonData.type === 2) {
             this.handleOrderStatusUpdate(jsonData)
+            this.persistOrderUpdate(event.pubkey, jsonData)
           }
         } catch (e) {
           console.warn('Unable to handle incomming DM', e)
@@ -724,13 +727,10 @@ const market = async () => {
       },
 
       handlePaymentRequest(json) {
-        console.log('### handlePaymentRequest', json, this.activeOrderId)
-
         if (!json.payment_options?.length) {
           this.qrCodeDialog.data.message = json.message || 'Unexpected error'
           return
         }
-        console.log('### ')
         if (json.id && (json.id !== this.activeOrderId)) {
           // not for active order, store somewehre else
           return
@@ -751,15 +751,19 @@ const market = async () => {
           this.qrCodeDialog.dismissMsg()
           this.qrCodeDialog.show = false
         }
-        const message = jsonData.shipped ? 'Order shipped' : jsonData.paid ? 'Order paid' : 'Order updated'
+        const message = jsonData.shipped ? 'Order shipped' : jsonData.paid ? 'Order paid' : 'Order notification'
         this.$q.notify({
           type: 'positive',
-          message: message
+          message: message,
+          caption: jsonData.message || ''
         })
       },
 
       persistDMEvent(event) {
         const dms = this.$q.localStorage.getItem(`nostrmarket.dm.${event.pubkey}`) || { events: [], lastCreatedAt: 0 }
+        const existingEvent = dms.events.find(e => e.id === event.id)
+        if (existingEvent) return
+
         dms.events.push(event)
         dms.events.sort((a, b) => a - b)
         dms.lastCreatedAt = dms.events[dms.events.length - 1].created_at
@@ -771,6 +775,32 @@ const market = async () => {
         const dms = this.$q.localStorage.getItem(`nostrmarket.dm.${pubkey}`)
         if (!dms) return 0
         return dms.lastCreatedAt
+      },
+
+      persistOrderUpdate(pubkey, orderUpdate) {
+        console.log('### persistOrderUpdate', pubkey, orderUpdate)
+        const orders = this.$q.localStorage.getItem(`nostrmarket.orders.${pubkey}`) || []
+        let order = orders.find(o => o.id === orderUpdate.id)
+        if (!order) {
+          orders.push({ ...orderUpdate, messages: orderUpdate.message ? [orderUpdate.message] : [] })
+          this.$q.localStorage.set(`nostrmarket.orders.${pubkey}`, orders)
+          return
+        }
+
+        if (orderUpdate.message) {
+          order.messages.push(orderUpdate.message)
+        }
+
+        if (orderUpdate.type === 0 || orderUpdate.type === 1) {
+          order = { ...orderUpdate, ...order }
+        } else if (orderUpdate.type === 2) {
+          order.paid = orderUpdate.paid
+          order.shipped = orderUpdate.shipped
+        }
+
+        orders.filter(o => o.id !== order.id).unshift(order)
+
+        this.$q.localStorage.set(`nostrmarket.orders.${pubkey}`, orders)
       }
 
     }
