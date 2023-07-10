@@ -57,7 +57,8 @@ const market = async () => {
         checkoutStall: null,
 
         activePage: 'market',
-        activeOrderId: null, 
+        activeOrderId: null,
+        dmSubscriptions: {},
 
         qrCodeDialog: {
           data: {
@@ -218,7 +219,7 @@ const market = async () => {
       this.$q.loading.hide()
 
 
-      await this.listenForIncommingDms(this.merchants.map(m => m.publicKey))
+      await this.listenForIncommingDms(this.merchants.map(m => ({ publicKey: m.publicKey, since: this.lastDmForPubkey(m.publicKey) })))
     },
     methods: {
       async deleteAccount() {
@@ -653,12 +654,12 @@ const market = async () => {
 
       sendOrderEvent(event) {
         const pub = this.pool.publish(Array.from(this.relays), event)
+        this.$q.notify({
+          type: 'positive',
+          message: 'The order has been placed!'
+        })
         pub.on('ok', () => {
           this.qrCodeDialog.show = true
-          this.$q.notify({
-            type: 'positive',
-            message: 'The order has been placed!'
-          })
         })
         pub.on('failed', (error) => {
           // do not show to user. It is possible that only one relay has failed
@@ -666,7 +667,8 @@ const market = async () => {
         })
       },
 
-      async listenForIncommingDms(publicKeys) {
+      async listenForIncommingDms(from) {
+        console.log('### from', from)
         if (!this.account?.privkey) {
           this.$q.notify({
             message: 'Cannot listen for direct messages. You need to login first!',
@@ -674,15 +676,17 @@ const market = async () => {
           })
           return
         }
-        try {
-          const filters = [
-            {
-              kinds: [4],
-              authors: publicKeys,
-              '#p': [this.account.pubkey]
-            }
-          ]
 
+        try {
+          const filters = from.map(f =>
+          ({
+            kinds: [4],
+            authors: [f.publicKey],
+            '#p': [this.account.pubkey],
+            since: f.since
+          }))
+
+          console.log('### filters', filters)
           const subs = this.pool.sub(Array.from(this.relays), filters)
           subs.on('event', async event => {
             const receiverPubkey = event.tags.find(([k, v]) => k === 'p' && v && v !== '')[1]
@@ -692,11 +696,13 @@ const market = async () => {
             }
             await this.handleIncommingDm(event)
           })
+          return subs
         } catch (err) {
           console.error(`Error: ${err}`)
         }
       },
       async handleIncommingDm(event) {
+        this.persistDMEvent(event)
         try {
           const plainText = await NostrTools.nip04.decrypt(
             this.account.privkey,
@@ -710,19 +716,9 @@ const market = async () => {
           if (jsonData.type === 1) {
             this.handlePaymentRequest(jsonData)
           } else if (jsonData.type === 2) {
-            console.log('### this.qrCodeDialog.dismissMsg', this.qrCodeDialog.dismissMs)
-            console.log('### jsonData', jsonData)
-            if (this.qrCodeDialog.dismissMsg) {
-              this.qrCodeDialog.dismissMsg()
-              this.qrCodeDialog.show = false
-            }
-            const message = jsonData.shipped ? 'Order shipped' : jsonData.paid ? 'Order paid' : 'Order updated'
-            this.$q.notify({
-              type: 'positive',
-              message: message
-            })
+            this.handleOrderStatusUpdate(jsonData)
           }
-        } catch (e){
+        } catch (e) {
           console.warn('Unable to handle incomming DM', e)
         }
       },
@@ -748,20 +744,34 @@ const market = async () => {
           message: 'Waiting for payment...'
         })
 
-      }
+      },
 
-      // else if (json.paid) {
-      //   this.closeQrCodeDialog()
-      //   this.$q.notify({
-      //     type: 'positive',
-      //     message: 'Sats received, thanks!',
-      //     icon: 'thumb_up'
-      //   })
-      //   this.activeOrder = null
-      //   return cb()
-      // } else {
-      //   return
-      // }
+      handleOrderStatusUpdate(jsonData) {
+        if (this.qrCodeDialog.dismissMsg) {
+          this.qrCodeDialog.dismissMsg()
+          this.qrCodeDialog.show = false
+        }
+        const message = jsonData.shipped ? 'Order shipped' : jsonData.paid ? 'Order paid' : 'Order updated'
+        this.$q.notify({
+          type: 'positive',
+          message: message
+        })
+      },
+
+      persistDMEvent(event) {
+        const dms = this.$q.localStorage.getItem(`nostrmarket.dm.${event.pubkey}`) || { events: [], lastCreatedAt: 0 }
+        dms.events.push(event)
+        dms.events.sort((a, b) => a - b)
+        dms.lastCreatedAt = dms.events[dms.events.length - 1].created_at
+        console.log('### dms', dms)
+        this.$q.localStorage.set(`nostrmarket.dm.${event.pubkey}`, dms)
+      },
+
+      lastDmForPubkey(pubkey) {
+        const dms = this.$q.localStorage.getItem(`nostrmarket.dm.${pubkey}`)
+        if (!dms) return 0
+        return dms.lastCreatedAt
+      }
 
     }
   })
