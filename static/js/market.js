@@ -57,6 +57,15 @@ const market = async () => {
         checkoutStall: null,
 
         activePage: 'market',
+        activeOrderId: null, 
+
+        qrCodeDialog: {
+          data: {
+            payment_request: null
+          },
+          dismissMsg: null,
+          show: false
+        },
 
         searchNostr: false,
         drawer: true,
@@ -87,6 +96,7 @@ const market = async () => {
           }
         },
         naddr: null,
+        loading: false
       }
     },
     computed: {
@@ -137,8 +147,10 @@ const market = async () => {
       this.merchants = this.$q.localStorage.getItem('nostrmarket.merchants') || []
       this.shoppingCarts = this.$q.localStorage.getItem('nostrmarket.shoppingCarts') || []
 
-      // Check for user stored
       this.account = this.$q.localStorage.getItem('nostrmarket.account') || null
+
+
+
       //console.log("UUID", crypto.randomUUID())
 
       // Check for stored merchants and relays on localStorage
@@ -204,6 +216,9 @@ const market = async () => {
       await this.initNostr()
 
       this.$q.loading.hide()
+
+
+      await this.listenForIncommingDms(this.merchants.map(m => m.publicKey))
     },
     methods: {
       async deleteAccount() {
@@ -616,7 +631,137 @@ const market = async () => {
         this.checkoutCart = cart
         this.checkoutStall = this.stalls.find(s => s.id === cart.id)
         this.setActivePage('shopping-cart-checkout')
+      },
+
+      async placeOrder({ event, order }) {
+        if (!this.account.privkey) {
+          this.openAccountDialog()
+          return
+        }
+        this.activeOrderId = order.id
+        event.content = await NostrTools.nip04.encrypt(
+          this.account.privkey,
+          this.checkoutStall.pubkey,
+          JSON.stringify(order)
+        )
+
+        event.id = NostrTools.getEventHash(event)
+        event.sig = await NostrTools.signEvent(event, this.account.privkey)
+
+        this.sendOrderEvent(event)
+      },
+
+      sendOrderEvent(event) {
+        const pub = this.pool.publish(Array.from(this.relays), event)
+        pub.on('ok', () => {
+          this.qrCodeDialog.show = true
+          this.$q.notify({
+            type: 'positive',
+            message: 'The order has been placed!'
+          })
+        })
+        pub.on('failed', (error) => {
+          // do not show to user. It is possible that only one relay has failed
+          console.error(error)
+        })
+      },
+
+      async listenForIncommingDms(publicKeys) {
+        if (!this.account?.privkey) {
+          this.$q.notify({
+            message: 'Cannot listen for direct messages. You need to login first!',
+            icon: 'warning'
+          })
+          return
+        }
+        try {
+          const filters = [
+            {
+              kinds: [4],
+              authors: publicKeys,
+              '#p': [this.account.pubkey]
+            }
+          ]
+
+          const subs = this.pool.sub(Array.from(this.relays), filters)
+          subs.on('event', async event => {
+            const receiverPubkey = event.tags.find(([k, v]) => k === 'p' && v && v !== '')[1]
+            if (receiverPubkey !== this.account.pubkey) {
+              console.log('Unexpected DM. Dropped!')
+              return
+            }
+            await this.handleIncommingDm(event)
+          })
+        } catch (err) {
+          console.error(`Error: ${err}`)
+        }
+      },
+      async handleIncommingDm(event) {
+        try {
+          const plainText = await NostrTools.nip04.decrypt(
+            this.account.privkey,
+            event.pubkey,
+            event.content
+          )
+          console.log('### plainText', plainText)
+          if (!isJson(plainText)) return
+
+          const jsonData = JSON.parse(plainText)
+          if (jsonData.type === 1) {
+            this.handlePaymentRequest(jsonData)
+          } else if (jsonData.type === 2) {
+            console.log('### this.qrCodeDialog.dismissMsg', this.qrCodeDialog.dismissMs)
+            console.log('### jsonData', jsonData)
+            if (this.qrCodeDialog.dismissMsg) {
+              this.qrCodeDialog.dismissMsg()
+              this.qrCodeDialog.show = false
+            }
+            const message = jsonData.shipped ? 'Order shipped' : jsonData.paid ? 'Order paid' : 'Order updated'
+            this.$q.notify({
+              type: 'positive',
+              message: message
+            })
+          }
+        } catch (e){
+          console.warn('Unable to handle incomming DM', e)
+        }
+      },
+
+      handlePaymentRequest(json) {
+        console.log('### handlePaymentRequest', json, this.activeOrderId)
+
+        if (!json.payment_options?.length) {
+          this.qrCodeDialog.data.message = json.message || 'Unexpected error'
+          return
+        }
+        console.log('### ')
+        if (json.id && (json.id !== this.activeOrderId)) {
+          // not for active order, store somewehre else
+          return
+        }
+        let paymentRequest = json.payment_options.find(o => o.type == 'ln')
+          .link
+        if (!paymentRequest) return
+        this.qrCodeDialog.data.payment_request = paymentRequest
+        this.qrCodeDialog.dismissMsg = this.$q.notify({
+          timeout: 0,
+          message: 'Waiting for payment...'
+        })
+
       }
+
+      // else if (json.paid) {
+      //   this.closeQrCodeDialog()
+      //   this.$q.notify({
+      //     type: 'positive',
+      //     message: 'Sats received, thanks!',
+      //     icon: 'thumb_up'
+      //   })
+      //   this.activeOrder = null
+      //   return cb()
+      // } else {
+      //   return
+      // }
 
     }
   })

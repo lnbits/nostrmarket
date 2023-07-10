@@ -213,8 +213,9 @@
         <shopping-cart-list v-else-if="activePage === 'shopping-cart-list'" :carts="shoppingCarts"
           @add-to-cart="addProductToCart" @remove-from-cart="removeProductFromCart" @remove-cart="removeCart"
           @checkout-cart="checkoutStallCart"></shopping-cart-list>
-        <shopping-cart-checkout v-else-if="activePage === 'shopping-cart-checkout'"
-          :cart="checkoutCart"  :stall="checkoutStall"></shopping-cart-checkout>
+        <shopping-cart-checkout v-else-if="activePage === 'shopping-cart-checkout'" :cart="checkoutCart"
+          :stall="checkoutStall" :customer-pubkey="account?.pubkey" @login-required="openAccountDialog"
+          @place-order="placeOrder"></shopping-cart-checkout>
         <customer-stall v-else-if="!isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
           :products="filterProducts" :stall-products="products.filter(p => p.stall_id == activeStall)"
           :product-detail="activeProduct" :relays="relays" :account="account" :pool="pool" :styles="config?.opts ?? {}"
@@ -279,6 +280,31 @@
             <q-btn v-close-popup flat color="grey" class="q-ml-auto">Cancel</q-btn>
           </div>
         </q-form>
+    </q-card>
+  </q-dialog>
+  <!-- END CHECKOUT DIALOG -->
+  <!-- INVOICE DIALOG -->
+  <q-dialog v-model="qrCodeDialog.show" position="top">
+    <q-card class="q-pa-lg q-pt-xl lnbits__dialog-card">
+      <div class="text-center q-mb-lg">
+        <div class="q-my-lg" v-if="qrCodeDialog.data.message">
+          <p><span v-text="qrCodeDialog.data.message"></span> </p>
+        </div>
+        <a v-else :href="'lightning:' + qrCodeDialog.data.payment_request">
+          <q-responsive :ratio="1" class="q-mx-xl">
+            <qrcode v-if="qrCodeDialog.data.payment_request" :value="qrCodeDialog.data.payment_request"
+              :options="{width: 340}" class="rounded-borders"></qrcode>
+          </q-responsive>
+        </a>
+        <q-inner-loading :showing="loading">
+          <q-spinner-puff size="50px" color="primary" />
+        </q-inner-loading>
+      </div>
+      <div class="row q-mt-lg">
+        <q-btn v-if="qrCodeDialog.data.payment_request" outline color="grey"
+          @click="copyText(qrCodeDialog.data.payment_request)">Copy invoice</q-btn>
+        <q-btn flat color="grey" class="q-ml-auto">Close</q-btn>
+      </div>
     </q-card>
   </q-dialog>
 </q-layout>

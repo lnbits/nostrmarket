@@ -5,7 +5,7 @@ async function shoppingCartCheckout(path) {
     name: 'shopping-cart-checkout',
     template,
 
-    props: ['cart', 'stall'],
+    props: ['cart', 'stall', 'customer-pubkey'],
     data: function () {
       return {
         paymentMethod: 'ln',
@@ -58,9 +58,53 @@ async function shoppingCartCheckout(path) {
       selectShippingZone: function (zone) {
         this.shippingZone = zone
       },
-      requestInvoice: function () {
 
-      }
+      async placeOrder() {
+        console.log('### placeOrder cart', this.cart)
+        console.log('### placeOrder stal', this.stall)
+        if (!this.shippingZone) {
+          this.$q.notify({
+            timeout: 5000,
+            type: 'warning',
+            message: 'Please select a shipping zone!',
+          })
+          return
+        }
+        if (!this.customerPubkey) {
+          this.$emit('login-required')
+          return
+        }
+        const order = {
+          address: this.contactData.address,
+          message: this.contactData.message,
+          contact: {
+            nostr: this.customerPubkey,
+            email: this.contactData.email
+          },
+          items: Array.from(this.cart.products, p => {
+            return { product_id: p.id, quantity: p.orderedQuantity }
+          }),
+          shipping_id: this.shippingZone.id,
+          type: 0
+        }
+        const created_at = Math.floor(Date.now() / 1000)
+        order.id = await hash(
+          [this.customerPubkey, created_at, JSON.stringify(order)].join(':')
+        )
+
+        const event = {
+          ...(await NostrTools.getBlankEvent()),
+          kind: 4,
+          created_at,
+          tags: [['p', this.stall.pubkey]],
+          pubkey: this.customerPubkey
+        }
+
+        this.$emit('place-order', { event, order })
+
+
+
+      },
     },
     created() {
       console.log('### shoppingCartCheckout', this.stall)
