@@ -1,5 +1,5 @@
 <div>
-    <q-card v-if="cart" bordered class="q-mb-md">
+    <q-card v-if="cart && stall" bordered class="q-mb-md">
         <q-item>
             <q-item-section avatar>
                 <q-avatar>
@@ -47,8 +47,8 @@
                     </div>
                     <div class="col-xs-12 col-sm-12 col-md-4">
                         <q-btn-dropdown unelevated color="secondary" rounded :label="shippingZoneLabel">
-                            <q-item v-for="zone of stall.shipping" @click="selectShippingZone(zone)" :key="zone.id"
-                                clickable v-close-popup>
+                            <q-item v-for="zone of stall.shipping" @click="selectShippingZone(zone)"
+                                :key="zone.id" clickable v-close-popup>
                                 <q-item-section>
                                     <q-item-label><span v-text="zone.name"></span></q-item-label>
                                     <q-item-label caption><span
@@ -72,6 +72,7 @@
                     </div>
                 </div>
 
+
             </q-card-section>
 
             <q-separator vertical />
@@ -83,10 +84,49 @@
         </q-card-section>
         <q-separator />
 
+
+        <q-card-section>
+
+            <div class="row q-mt-md q-ml-md q-pr-md">
+                <div class="col-xs-12 col-sm-12 col-md-2 q-mt-md">
+                    <strong>Address:</strong>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-8">
+                    <q-input v-model.trim="contactData.address" outlined label="Required for physical shipping"></q-input>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-2">
+                </div>
+            </div>
+
+            <div class="row q-mt-md q-ml-md q-pr-md">
+                <div class="col-xs-12 col-sm-12 col-md-2 q-mt-md">
+                    <strong>Email:</strong>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-8">
+                    <q-input v-model.trim="contactData.address" outlined label="Email (optional)"></q-input>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-2">
+                </div>
+            </div>
+
+            <div class="row q-mt-md q-ml-md q-pr-md">
+                <div class="col-xs-12 col-sm-12 col-md-2 q-mt-md">
+                    <strong>Message:</strong>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-8">
+                    <q-input v-model.trim="contactData.address" outlined type="textarea" rows="3" label="Message to Merchant (optional)"></q-input>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-2">
+                </div>
+            </div>
+        </q-card-section>
+
+        <q-separator class="q-mt-md" />
+
         <q-card-actions align="right">
 
             <q-btn @click="requestInvoice(cart)" flat color="primary">
-                Request Invoice
+                Place Order
             </q-btn>
         </q-card-actions>
     </q-card>

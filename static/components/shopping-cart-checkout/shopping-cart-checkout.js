@@ -10,6 +10,11 @@ async function shoppingCartCheckout(path) {
       return {
         paymentMethod: 'ln',
         shippingZone: null,
+        contactData: {
+          email: null,
+          address: null,
+          message: null
+        },
         paymentOptions: [
           {
             label: 'Lightning Network',
