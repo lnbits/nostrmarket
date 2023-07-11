@@ -695,7 +695,7 @@ const market = async () => {
         event.sig = await NostrTools.signEvent(event, this.account.privkey)
 
         this.sendOrderEvent(event)
-        this.persistOrderUpdate(this.checkoutStall.pubkey, order)
+        this.persistOrderUpdate(this.checkoutStall.pubkey, event.created_at, order)
       },
 
       sendOrderEvent(event) {
@@ -768,10 +768,10 @@ const market = async () => {
           const jsonData = JSON.parse(plainText)
           if (jsonData.type === 1) {
             this.handlePaymentRequest(jsonData)
-            this.persistOrderUpdate(event.pubkey, jsonData)
+            this.persistOrderUpdate(event.pubkey, event.created_at, jsonData)
           } else if (jsonData.type === 2) {
             this.handleOrderStatusUpdate(jsonData)
-            this.persistOrderUpdate(event.pubkey, jsonData)
+            this.persistOrderUpdate(event.pubkey, event.created_at, jsonData)
           }
         } catch (e) {
           console.warn('Unable to handle incomming DM', e)
@@ -829,12 +829,11 @@ const market = async () => {
         return dms.lastCreatedAt
       },
 
-      persistOrderUpdate(pubkey, orderUpdate) {
-        console.log('### persistOrderUpdate', pubkey, orderUpdate)
+      persistOrderUpdate(pubkey, createdAt, orderUpdate) {
         let orders = this.$q.localStorage.getItem(`nostrmarket.orders.${pubkey}`) || []
         let order = orders.find(o => o.id === orderUpdate.id)
         if (!order) {
-          orders.unshift({ ...orderUpdate, messages: orderUpdate.message ? [orderUpdate.message] : [] })
+          orders.unshift({ ...orderUpdate, createdAt, messages: orderUpdate.message ? [orderUpdate.message] : [] })
           this.orders[pubkey] = orders
           this.$q.localStorage.set(`nostrmarket.orders.${pubkey}`, orders)
           return
@@ -855,6 +854,17 @@ const market = async () => {
         orders = [order].concat(orders.filter(o => o.id !== order.id))
         this.orders[pubkey] = orders
         this.$q.localStorage.set(`nostrmarket.orders.${pubkey}`, orders)
+      },
+
+      showInvoiceQr(invoice){
+        if (!invoice) return
+        this.qrCodeDialog = {
+          data: {
+            payment_request: invoice
+          },
+          dismissMsg: null,
+          show: true
+        }
       }
 
     }
