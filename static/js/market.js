@@ -32,6 +32,7 @@ const market = async () => {
     shoppingCart('static/components/shopping-cart/shopping-cart.html'),
     shoppingCartList('static/components/shopping-cart-list/shopping-cart-list.html'),
     shoppingCartCheckout('static/components/shopping-cart-checkout/shopping-cart-checkout.html'),
+    customerOrders('static/components/customer-orders/customer-orders.html'),
     chatDialog('static/components/chat-dialog/chat-dialog.html'),
     marketConfig('static/components/market-config/market-config.html')
   ])
