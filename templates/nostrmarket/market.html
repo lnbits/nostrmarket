@@ -218,7 +218,7 @@
         <shopping-cart-checkout v-else-if="activePage === 'shopping-cart-checkout'" :cart="checkoutCart"
           :stall="checkoutStall" :customer-pubkey="account?.pubkey" @login-required="openAccountDialog"
           @place-order="placeOrder"></shopping-cart-checkout>
-        <customer-orders v-else-if="activePage === 'customer-orders'"></customer-orders>
+        <customer-orders v-else-if="activePage === 'customer-orders'" :orders="allOrders"></customer-orders>
         <customer-stall v-else-if=" !isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
           :products="filterProducts" :stall-products="products.filter(p => p.stall_id == activeStall)"
           :product-detail="activeProduct" :relays="relays" :account="account" :pool="pool" :styles="config?.opts ?? {}"

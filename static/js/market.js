@@ -102,6 +102,15 @@ const market = async () => {
       }
     },
     computed: {
+      allOrders() {
+        const prefix = 'nostrmarket.orders.'
+        const orderKeys = this.$q.localStorage.getAllKeys().filter(k => k.startsWith(prefix))
+
+        return orderKeys.map((key) => ({
+          pubkey: key.substring(prefix.length),
+          orders: this.$q.localStorage.getItem(key)
+        }), {})
+      },
       filterProducts() {
         let products = this.products
         console.log('### this.products', this.products)
