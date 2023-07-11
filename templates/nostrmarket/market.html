@@ -291,19 +291,19 @@
           <p><span v-text="qrCodeDialog.data.message"></span> </p>
         </div>
         <a v-else :href="'lightning:' + qrCodeDialog.data.payment_request">
-          <q-responsive :ratio="1" class="q-mx-xl">
-            <qrcode v-if="qrCodeDialog.data.payment_request" :value="qrCodeDialog.data.payment_request"
-              :options="{width: 340}" class="rounded-borders"></qrcode>
+          <q-responsive v-if="qrCodeDialog.data.payment_request" :ratio="1" class="q-mx-xl">
+            <qrcode :value="qrCodeDialog.data.payment_request" :options="{width: 340}" class="rounded-borders"></qrcode>
           </q-responsive>
+          <div v-else>
+            <q-spinner color="primary" size="2.55em"></q-spinner>
+          </div>
         </a>
-        <q-inner-loading :showing="loading">
-          <q-spinner-puff size="50px" color="primary" />
-        </q-inner-loading>
+
       </div>
       <div class="row q-mt-lg">
         <q-btn v-if="qrCodeDialog.data.payment_request" outline color="grey"
           @click="copyText(qrCodeDialog.data.payment_request)">Copy invoice</q-btn>
-        <q-btn flat color="grey" class="q-ml-auto">Close</q-btn>
+        <q-btn flat v-close-popup color="grey" class="q-ml-auto">Close</q-btn>
       </div>
     </q-card>
   </q-dialog>

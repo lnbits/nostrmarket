@@ -659,6 +659,13 @@ const market = async () => {
           type: 'positive',
           message: 'The order has been placed!'
         })
+        this.qrCodeDialog = {
+          data: {
+            payment_request: null
+          },
+          dismissMsg: null,
+          show: true
+        }
         pub.on('ok', () => {
           this.qrCodeDialog.show = true
         })
