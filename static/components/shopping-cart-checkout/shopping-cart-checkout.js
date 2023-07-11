@@ -8,6 +8,7 @@ async function shoppingCartCheckout(path) {
     props: ['cart', 'stall', 'customer-pubkey'],
     data: function () {
       return {
+        orderConfirmed: false,
         paymentMethod: 'ln',
         shippingZone: null,
         contactData: {
