@@ -181,6 +181,8 @@
               <q-btn v-else @click="accountDialog.show = true" color="gray" icon="person_add" flat
                 size="lg"><q-tooltip>User
                   Config</q-tooltip></q-btn>
+              <q-btn @click="setActivePage('customer-orders')" color="gray" icon="receipt_long" flat
+                size="lg"><q-tooltip>Orders</q-tooltip></q-btn>
               <q-btn color="gray" icon="shopping_cart" dense round flat size="lg"
                 @click="setActivePage('shopping-cart-list')">
                 <q-tooltip>Shopping Cart</q-tooltip>
@@ -216,7 +218,8 @@
         <shopping-cart-checkout v-else-if="activePage === 'shopping-cart-checkout'" :cart="checkoutCart"
           :stall="checkoutStall" :customer-pubkey="account?.pubkey" @login-required="openAccountDialog"
           @place-order="placeOrder"></shopping-cart-checkout>
-        <customer-stall v-else-if="!isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
+        <customer-orders v-else-if="activePage === 'customer-orders'"></customer-orders>
+        <customer-stall v-else-if=" !isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
           :products="filterProducts" :stall-products="products.filter(p => p.stall_id == activeStall)"
           :product-detail="activeProduct" :relays="relays" :account="account" :pool="pool" :styles="config?.opts ?? {}"
           @login-dialog="openAccountDialog" @change-page="navigateTo" @add-to-cart="addProductToCart"></customer-stall>
@@ -320,6 +323,7 @@
 <script src="{{ url_for('nostrmarket_static', path='components/shopping-cart-list/shopping-cart-list.js') }}"></script>
 <script
   src="{{ url_for('nostrmarket_static', path='components/shopping-cart-checkout/shopping-cart-checkout.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/customer-orders/customer-orders.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/chat-dialog/chat-dialog.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/market-config/market-config.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/market.js') }}"></script>
