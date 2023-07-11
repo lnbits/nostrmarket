@@ -1,1 +1,68 @@
-<div>xxxx</div>
+<div>
+  <q-card v-if="!orders?.length" bordered class="q-mb-md">
+    <q-card-section>
+      <strong>No products in cart!</strong>
+    </q-card-section>
+  </q-card>
+  <div v-for="merchant in orders">
+
+    <q-card bordered class="q-mb-md">
+      <q-item>
+        <q-item-section avatar>
+          <q-avatar>
+            <img v-if="merchant?.profile?.picture" :src="merchant?.profile?.picture">
+            <img v-else src="/nostrmarket/static/images/blank-avatar.webp">
+          </q-avatar>
+        </q-item-section>
+
+        <q-item-section>
+          <q-item-label>
+            <strong>
+              <!-- <span v-text="cart.products[0]?.stallName"></span> -->
+              Todo: stall name
+            </strong>
+          </q-item-label>
+          <q-item-label caption>
+            By 
+            <!-- <span v-text="cart.merchant?.profile?.name || cart.merchant?.publicKey"></span> -->
+            <span v-text="merchant.pubkey"></span>
+          </q-item-label>
+        </q-item-section>
+
+      </q-item>
+
+      <q-separator />
+
+      <q-card-section horizontal>
+
+        <q-card-section class="col-12">
+          <q-list class="q-mt-md">
+            <q-item v-for="order in merchant.orders" :key="order.id">
+
+  
+              <q-item-section class="q-mt-sm">
+                <q-item-label>products</q-item-label>
+                <q-item-label>
+                  <div class="text-caption text-grey ellipsis-2-lines">
+                    <p>xxxx</p>
+                  </div>
+                </q-item-label>
+              </q-item-section>
+         
+              <q-item-section side>
+                <div>
+                  <q-btn flat dense round icon="delete" />
+                </div>
+              </q-item-section>
+
+            </q-item>
+
+          </q-list>
+        </q-card-section>
+      </q-card-section>
+
+    </q-card>
+
+  </div>
+
+</div>

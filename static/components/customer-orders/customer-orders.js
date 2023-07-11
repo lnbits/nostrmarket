@@ -2,7 +2,7 @@ async function customerOrders(path) {
   const template = await loadTemplateAsync(path)
 
   Vue.component('customer-orders', {
-    name: 'customer-orders',
+    name: 'orders',
     template,
 
     props: ['orders'],
@@ -13,6 +13,8 @@ async function customerOrders(path) {
     methods: {
     
     },
-    created() { }
+    created() { 
+      console.log('### orders', this.orders)
+    }
   })
 }
