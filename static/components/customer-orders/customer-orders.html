@@ -6,8 +6,6 @@
   </q-card>
   <div v-for="merchant in merchantOrders">
 
-
-
     <q-card bordered class="q-mb-md">
       <q-item>
         <q-item-section avatar>
@@ -20,13 +18,10 @@
         <q-item-section>
           <q-item-label>
             <strong>
-              <!-- <span v-text="cart.products[0]?.stallName"></span> -->
-              Todo: merchant name
+
             </strong>
           </q-item-label>
           <q-item-label caption>
-            By
-            <!-- <span v-text="cart.merchant?.profile?.name || cart.merchant?.publicKey"></span> -->
             <span v-text="merchant.pubkey"></span>
           </q-item-label>
         </q-item-section>
@@ -40,30 +35,44 @@
         <q-card-section class="col-12">
           <q-list class="q-mt-md">
             <div v-for="order in merchant.orders" :key="order.id" class="q-mb-md">
-              <q-expansion-item>
+              <q-expansion-item dense expand-separator>
 
                 <template v-slot:header>
                   <q-item-section class="q-mt-sm">
-                    <q-item-label><strong> <span v-text="stallNameForOrder(order)"></span> </strong></q-item-label>
+                    <q-item-label><strong> <span v-text="order.stallName"></span> </strong> 
+                      <q-badge @click="showInvoice(order)"
+                        v-if="order.invoice?.human_readable_part?.amount" color="orange" class="q-ml-lg">
+                        <span v-text="formatCurrency(order.invoice?.human_readable_part?.amount / 1000, 'sat')"></span>
+                      </q-badge></q-item-label>
+
                     <q-item-label>
                       <div class="text-caption text-grey ellipsis-2-lines">
-                        <p>xxxx</p>
+                        <p v-if="order.createdAt"><span v-text="fromNow(order.createdAt)"></span></p>
                       </div>
                     </q-item-label>
                   </q-item-section>
 
                   <q-item-section side>
-                    <div>
+                    <q-item-label>
+
                       <q-badge :color="order.paid ? 'green' : 'gray'"><span
                           v-text="order.paid ? 'Paid' : 'Not Paid'"></span></q-badge>
                       <q-badge :color="order.shipped ? 'green' : 'gray'"><span
-                          v-text="order.paid ? 'Shipped' : 'Not Shipped'"></span></q-badge>
-                    </div>
+                          v-text="order.shipped ? 'Shipped' : 'Not Shipped'"></span></q-badge>
+                    </q-item-label>
+                    <q-item-label>
+                      <div class="text-caption text-grey ellipsis-2-lines">
+                        <p>
+                          <span v-text="order.items.length"></span>
+                          <span v-text="order.items.length  === 1 ? 'product': 'products'"></span>
+                        </p>
+                      </div>
+                    </q-item-label>
                   </q-item-section>
                 </template>
                 <q-card-section class="q-pa-none">
                   <q-separator></q-separator>
-                  xxxx
+                  <span v-text="order.invoice?.human_readable_part?.amount"></span>
                 </q-card-section>
 
 

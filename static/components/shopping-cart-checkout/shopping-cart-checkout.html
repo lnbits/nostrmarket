@@ -118,7 +118,9 @@
 
         <q-card-actions align="right">
             <div v-if="orderConfirmed">
-                <q-btn @click="orderConfirmed = false" flat round icon="arrow_back" />
+                <q-btn @click="orderConfirmed = false" flat color="gray">
+                    Back
+                </q-btn>
                 <q-btn @click="placeOrder()" flat color="primary">
                     Place Order
                 </q-btn>
