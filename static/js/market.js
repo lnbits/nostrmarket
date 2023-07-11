@@ -805,9 +805,7 @@ const market = async () => {
           order.shipped = orderUpdate.shipped
         }
 
-        orders.filter(o => o.id !== order.id).unshift(order)
-
-        this.$q.localStorage.set(`nostrmarket.orders.${pubkey}`, orders)
+        this.$q.localStorage.set(`nostrmarket.orders.${pubkey}`, [order].concat(orders.filter(o => o.id !== order.id)))
       }
 
     }
