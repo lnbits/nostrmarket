@@ -76,6 +76,8 @@ const market = async () => {
         events: [],
         stalls: [],
         products: [],
+        orders: {},
+
         profiles: new Map(),
         searchText: null,
         inputPubkey: null,
@@ -102,14 +104,38 @@ const market = async () => {
       }
     },
     computed: {
-      allOrders() {
-        const prefix = 'nostrmarket.orders.'
-        const orderKeys = this.$q.localStorage.getAllKeys().filter(k => k.startsWith(prefix))
+      // allOrders() {
+      //   console.log('### allOrders compute')
+      //   const prefix = 'nostrmarket.orders.'
 
-        return orderKeys.map((key) => ({
-          pubkey: key.substring(prefix.length),
-          orders: this.$q.localStorage.getItem(key)
-        }), {})
+      //   return Object.keys(this.orders).map((key) => ({
+      //     pubkey: key.substring(prefix.length),
+      //     orders: this.orders[key]
+      //   }), {})
+      // },
+      orderedProducts: function () {
+        const allItems = Object.keys(this.orders)
+          .map(pubkey => this.orders[pubkey]
+            .map(o => o.items)
+            .flat()
+            .map(i => i.product_id)
+            .flat())
+          .flat()
+        const uniqueProductIds = [...new Set(allItems)];
+        return this.products.filter(p => uniqueProductIds.indexOf(p.id) !== -1)
+      },
+      orderedStalls: function () {
+        const allItems = Object.keys(this.orders)
+          .map(pubkey => this.orders[pubkey]
+            .map(o => o.items)
+            .flat()
+            .map(i => i.product_id)
+            .flat())
+          .flat()
+        const uniqueProductIds = [...new Set(allItems)];
+        const uniqueStallIds = this.products.filter(p => uniqueProductIds.indexOf(p.id) !== -1).map(p => p.stall_id)
+
+        return this.stalls.filter(s => uniqueStallIds.indexOf(s.id) !== -1)
       },
       filterProducts() {
         let products = this.products
@@ -159,6 +185,14 @@ const market = async () => {
       this.shoppingCarts = this.$q.localStorage.getItem('nostrmarket.shoppingCarts') || []
 
       this.account = this.$q.localStorage.getItem('nostrmarket.account') || null
+
+      const prefix = 'nostrmarket.orders.'
+      const orderKeys = this.$q.localStorage.getAllKeys().filter(k => k.startsWith(prefix))
+      orderKeys.forEach(k => {
+        const pubkey = k.substring(prefix.length)
+        this.orders[pubkey] = this.$q.localStorage.getItem(k)
+      })
+
 
 
 
@@ -405,6 +439,7 @@ const market = async () => {
             return obj
           })
           .filter(f => f)
+        console.log('### products', this.products)
       },
       async initNostr() {
         this.$q.loading.show()
@@ -796,10 +831,11 @@ const market = async () => {
 
       persistOrderUpdate(pubkey, orderUpdate) {
         console.log('### persistOrderUpdate', pubkey, orderUpdate)
-        const orders = this.$q.localStorage.getItem(`nostrmarket.orders.${pubkey}`) || []
+        let orders = this.$q.localStorage.getItem(`nostrmarket.orders.${pubkey}`) || []
         let order = orders.find(o => o.id === orderUpdate.id)
         if (!order) {
-          orders.push({ ...orderUpdate, messages: orderUpdate.message ? [orderUpdate.message] : [] })
+          orders.unshift({ ...orderUpdate, messages: orderUpdate.message ? [orderUpdate.message] : [] })
+          this.orders[pubkey] = orders
           this.$q.localStorage.set(`nostrmarket.orders.${pubkey}`, orders)
           return
         }
@@ -815,7 +851,10 @@ const market = async () => {
           order.shipped = orderUpdate.shipped
         }
 
-        this.$q.localStorage.set(`nostrmarket.orders.${pubkey}`, [order].concat(orders.filter(o => o.id !== order.id)))
+
+        orders = [order].concat(orders.filter(o => o.id !== order.id))
+        this.orders[pubkey] = orders
+        this.$q.localStorage.set(`nostrmarket.orders.${pubkey}`, orders)
       }
 
     }
