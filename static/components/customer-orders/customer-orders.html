@@ -79,7 +79,7 @@
                   <q-item v-for="product in order.products" :key="product.id">
                     <q-item-section avatar>
                       <q-avatar>
-                        <img v-if="product.images[0] || product.image" :src="product.images[0] || product.image" />
+                        <img v-if="product.images && product.images[0] || product.image" :src="product.images[0] || product.image" />
                         <img v-else src="/nostrmarket/static/images/placeholder.png" />
                       </q-avatar>
                     </q-item-section>

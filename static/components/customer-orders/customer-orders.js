@@ -26,7 +26,7 @@ async function customerOrders(path) {
         return {
           ...order,
           stallName: stall?.name || 'Stall',
-          shippingZone: stall?.shipping?.find(s => s.id === order.shipping_id),
+          shippingZone: stall?.shipping?.find(s => s.id === order.shipping_id) || { id: order.shipping_id, name: order.shipping_id },
           invoice: this.invoiceForOrder(order),
           products: this.getProductsForOrder(order)
         }
@@ -62,10 +62,14 @@ async function customerOrders(path) {
 
       getProductsForOrder: function (order) {
         if (!order?.items?.length) return []
-        const productsIds = order.items.map(i => i.product_id)
-        return this.products
-          .filter(p => productsIds.indexOf(p.id) !== -1)
-          .map(p => ({ ...p, orderedQuantity: order.items.find(i => i.product_id === p.id).quantity }))
+
+        return order.items.map(i => {
+          const product = this.products.find(p => p.id === i.product_id) || { id: i.product_id, name: i.product_id }
+          return {
+            ...product,
+            orderedQuantity: i.quantity
+          }
+        })
       },
 
       showInvoice: function (order) {

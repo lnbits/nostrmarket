@@ -725,55 +725,57 @@ const market = async () => {
       async listenForIncommingDms(from) {
         console.log('### from', from)
         if (!this.account?.privkey) {
-          this.$q.notify({
-            message: 'Cannot listen for direct messages. You need to login first!',
-            icon: 'warning'
-          })
           return
         }
 
         try {
-          const filters = from.map(f =>
-          ({
+          const filters = [{
             kinds: [4],
-            authors: [f.publicKey],
             '#p': [this.account.pubkey],
-            since: f.since
-          }))
+          }, {
+            kinds: [4],
+            authors: [this.account.pubkey],
+          }]
 
           console.log('### filters', filters)
           const subs = this.pool.sub(Array.from(this.relays), filters)
           subs.on('event', async event => {
             const receiverPubkey = event.tags.find(([k, v]) => k === 'p' && v && v !== '')[1]
-            if (receiverPubkey !== this.account.pubkey) {
+            const isSentByMe = event.pubkey === this.account.pubkey
+            if (receiverPubkey !== this.account.pubkey && !isSentByMe) {
               console.log('Unexpected DM. Dropped!')
               return
             }
-            await this.handleIncommingDm(event)
+            this.persistDMEvent(event)
+            const peerPubkey = isSentByMe ? receiverPubkey : event.pubkey
+            await this.handleIncommingDm(event, peerPubkey)
           })
           return subs
         } catch (err) {
           console.error(`Error: ${err}`)
         }
       },
-      async handleIncommingDm(event) {
-        this.persistDMEvent(event)
+      async handleIncommingDm(event, peerPubkey) {
         try {
+
           const plainText = await NostrTools.nip04.decrypt(
             this.account.privkey,
-            event.pubkey,
+            peerPubkey,
             event.content
           )
           console.log('### plainText', plainText)
           if (!isJson(plainText)) return
 
           const jsonData = JSON.parse(plainText)
+          console.log('###### type: ', jsonData.type)
+          if ([0, 1, 2].indexOf(jsonData.type) !== -1) {
+            this.persistOrderUpdate(peerPubkey, event.created_at, jsonData)
+          }
           if (jsonData.type === 1) {
             this.handlePaymentRequest(jsonData)
-            this.persistOrderUpdate(event.pubkey, event.created_at, jsonData)
+
           } else if (jsonData.type === 2) {
             this.handleOrderStatusUpdate(jsonData)
-            this.persistOrderUpdate(event.pubkey, event.created_at, jsonData)
           }
         } catch (e) {
           console.warn('Unable to handle incomming DM', e)
@@ -832,11 +834,17 @@ const market = async () => {
         return dms.lastCreatedAt
       },
 
-      persistOrderUpdate(pubkey, createdAt, orderUpdate) {
+      persistOrderUpdate(pubkey, eventCreatedAt, orderUpdate) {
+        console.log(('### persistOrderUpdate', pubkey, eventCreatedAt, orderUpdate))
         let orders = this.$q.localStorage.getItem(`nostrmarket.orders.${pubkey}`) || []
         let order = orders.find(o => o.id === orderUpdate.id)
         if (!order) {
-          orders.unshift({ ...orderUpdate, createdAt, messages: orderUpdate.message ? [orderUpdate.message] : [] })
+          orders.unshift({
+            ...orderUpdate,
+            eventCreatedAt,
+            createdAt: eventCreatedAt,
+            messages: orderUpdate.message ? [orderUpdate.message] : []
+          })
           this.orders[pubkey] = orders
           this.$q.localStorage.set(`nostrmarket.orders.${pubkey}`, orders)
           return
@@ -846,8 +854,11 @@ const market = async () => {
           order.messages.push(orderUpdate.message)
         }
 
-        if (orderUpdate.type === 0 || orderUpdate.type === 1) {
-          order = { ...orderUpdate, ...order }
+        if (orderUpdate.type === 0) {
+          order.createdAt = eventCreatedAt
+          order = { ...order, ...orderUpdate }
+        } else if (orderUpdate.type === 1) {
+          order = order.eventCreatedAt < eventCreatedAt ? { ...order, ...orderUpdate } : { ...orderUpdate, ...order }
         } else if (orderUpdate.type === 2) {
           order.paid = orderUpdate.paid
           order.shipped = orderUpdate.shipped
@@ -859,7 +870,7 @@ const market = async () => {
         this.$q.localStorage.set(`nostrmarket.orders.${pubkey}`, orders)
       },
 
-      showInvoiceQr(invoice){
+      showInvoiceQr(invoice) {
         if (!invoice) return
         this.qrCodeDialog = {
           data: {

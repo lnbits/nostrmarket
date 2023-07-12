@@ -914,7 +914,7 @@ async def api_reissue_order_invoice(
         )
 
         return order
-    except AssertionError as ex:
+    except (AssertionError, ValueError) as ex:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
