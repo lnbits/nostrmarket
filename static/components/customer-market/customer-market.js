@@ -20,7 +20,7 @@ async function customerMarket(path) {
         search: null,
         partialProducts: [],
         filteredProducts: [],
-        productsPerPage: 24,
+        productsPerPage: 12,
         startIndex: 0,
         lastProductIndex: 0,
         showProducts: true,
@@ -41,7 +41,7 @@ async function customerMarket(path) {
         this.partialProducts = []
         if (searchText.length < 3) {
           this.filteredProducts = [...this.products]
-          this.lastProductIndex = Math.min(this.filteredProducts.length, 24)
+          this.lastProductIndex = Math.min(this.filteredProducts.length, this.productsPerPage)
           this.partialProducts.push(...this.filteredProducts.slice(0, this.lastProductIndex))
           setTimeout(() => this.showProducts = true, 0)
           return
@@ -58,7 +58,7 @@ async function customerMarket(path) {
           )
         })
         this.startIndex = 0
-        this.lastProductIndex = Math.min(this.filteredProducts.length, 24)
+        this.lastProductIndex = Math.min(this.filteredProducts.length, this.productsPerPage)
         this.partialProducts.push(...this.filteredProducts.slice(0, this.lastProductIndex))
 
         setTimeout(() => { this.showProducts = true }, 0)
