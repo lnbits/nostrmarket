@@ -5,12 +5,11 @@
     </q-card-section>
   </q-card>
   <div v-for="merchant in merchantOrders">
-
     <q-card bordered class="q-mb-md">
       <q-item>
         <q-item-section avatar>
           <q-avatar>
-            <img v-if="merchant?.profile?.picture" :src="merchant?.profile?.picture">
+            <img v-if="merchant.profile?.picture" :src="merchant.profile?.picture">
             <img v-else src="/nostrmarket/static/images/blank-avatar.webp">
           </q-avatar>
         </q-item-section>
@@ -18,7 +17,7 @@
         <q-item-section>
           <q-item-label>
             <strong>
-
+              <span v-text="merchant.profile?.name"></span>
             </strong>
           </q-item-label>
           <q-item-label caption>
