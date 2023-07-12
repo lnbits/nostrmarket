@@ -11,18 +11,59 @@ async function customerMarket(path) {
       'relays',
       'update-products',
       'update-stalls',
-      'styles'
+      'styles',
+
+      'search-text'
     ],
     data: function () {
       return {
         search: null,
         partialProducts: [],
+        filteredProducts: [],
         productsPerPage: 24,
         startIndex: 0,
-        lastProductIndex: 0
+        lastProductIndex: 0,
+        showProducts: true,
+      }
+    },
+    watch: {
+      searchText: function () {
+        this.refreshProducts()
+      },
+      products: function () {
+        this.refreshProducts()
       }
     },
     methods: {
+      refreshProducts: function() {
+        this.showProducts = false
+        const searchText = this.searchText?.toLowerCase() || ''
+        this.partialProducts = []
+        if (searchText.length < 3) {
+          this.filteredProducts = [...this.products]
+          this.lastProductIndex = Math.min(this.filteredProducts.length, 24)
+          this.partialProducts.push(...this.filteredProducts.slice(0, this.lastProductIndex))
+          setTimeout(() => this.showProducts = true, 0)
+          return
+        }
+
+        
+        this.filteredProducts = this.products.filter(p => {
+          return (
+            p.name.toLowerCase().includes(searchText) ||
+            (p.description &&
+              p.description.toLowerCase().includes(searchText)) ||
+            (p.categories &&
+              p.categories.toString().toLowerCase().includes(searchText))
+          )
+        })
+        this.startIndex = 0
+        this.lastProductIndex = Math.min(this.filteredProducts.length, 24)
+        this.partialProducts.push(...this.filteredProducts.slice(0, this.lastProductIndex))
+
+        setTimeout(() => { this.showProducts = true }, 0)
+        console.log('### xxx this.filteredProducts', this.lastProductIndex, this.filteredProducts)
+      },
       changePageM(page, opts) {
         this.$emit('change-page', page, opts)
       },
@@ -55,20 +96,22 @@ async function customerMarket(path) {
       },
       onLoad(_, done) {
         setTimeout(() => {
-          if (this.startIndex >= this.products.length) {
+          if (this.startIndex >= this.filteredProducts.length) {
             done()
             return
           }
           this.startIndex = this.lastProductIndex
-          this.lastProductIndex = Math.min(this.products.length, this.lastProductIndex + this.productsPerPage)
-          this.partialProducts.push(...this.products.slice(this.startIndex, this.lastProductIndex))
+          this.lastProductIndex = Math.min(this.filteredProducts.length, this.lastProductIndex + this.productsPerPage)
+          this.partialProducts.push(...this.filteredProducts.slice(this.startIndex, this.lastProductIndex))
           done()
         }, 100)
       }
     },
     created() {
-      this.lastProductIndex = Math.min(this.products.length, 24)
-      this.partialProducts.push(...this.products.slice(0, this.lastProductIndex))
+      this.filteredProducts = [...this.products]
+      console.log('#### created  this.filteredProducts',  this.filteredProducts)
+      this.lastProductIndex = Math.min(this.filteredProducts.length, 24)
+      this.partialProducts.push(...this.filteredProducts.slice(0, this.lastProductIndex))
     }
   })
 }
