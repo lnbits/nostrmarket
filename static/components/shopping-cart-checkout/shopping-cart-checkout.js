@@ -111,7 +111,7 @@ async function shoppingCartCheckout(path) {
           pubkey: this.customerPubkey
         }
 
-        this.$emit('place-order', { event, order })
+        this.$emit('place-order', { event, order, cartId: this.cart.id })
 
       },
       goToShoppingCart: function () {

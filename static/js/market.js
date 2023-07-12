@@ -105,39 +105,6 @@ const market = async () => {
       }
     },
     computed: {
-      // allOrders() {
-      //   console.log('### allOrders compute')
-      //   const prefix = 'nostrmarket.orders.'
-
-      //   return Object.keys(this.orders).map((key) => ({
-      //     pubkey: key.substring(prefix.length),
-      //     orders: this.orders[key]
-      //   }), {})
-      // },
-      orderedProducts: function () {
-        const allItems = Object.keys(this.orders)
-          .map(pubkey => this.orders[pubkey]
-            .map(o => o.items)
-            .flat()
-            .map(i => i.product_id)
-            .flat())
-          .flat()
-        const uniqueProductIds = [...new Set(allItems)];
-        return this.products.filter(p => uniqueProductIds.indexOf(p.id) !== -1)
-      },
-      orderedStalls: function () {
-        const allItems = Object.keys(this.orders)
-          .map(pubkey => this.orders[pubkey]
-            .map(o => o.items)
-            .flat()
-            .map(i => i.product_id)
-            .flat())
-          .flat()
-        const uniqueProductIds = [...new Set(allItems)];
-        const uniqueStallIds = this.products.filter(p => uniqueProductIds.indexOf(p.id) !== -1).map(p => p.stall_id)
-
-        return this.stalls.filter(s => uniqueStallIds.indexOf(s.id) !== -1)
-      },
       filterProducts() {
         let products = this.products
         console.log('### this.products', this.products)
@@ -669,8 +636,8 @@ const market = async () => {
           this.$q.localStorage.set('nostrmarket.shoppingCarts', this.shoppingCarts)
         }
       },
-      removeCart(stallId) {
-        this.shoppingCarts = this.shoppingCarts.filter(s => s.id !== stallId)
+      removeCart(cartId) {
+        this.shoppingCarts = this.shoppingCarts.filter(s => s.id !== cartId)
         this.$q.localStorage.set('nostrmarket.shoppingCarts', this.shoppingCarts)
       },
 
@@ -680,23 +647,33 @@ const market = async () => {
         this.setActivePage('shopping-cart-checkout')
       },
 
-      async placeOrder({ event, order }) {
+      async placeOrder({ event, order, cartId }) {
         if (!this.account.privkey) {
           this.openAccountDialog()
           return
         }
-        this.activeOrderId = order.id
-        event.content = await NostrTools.nip04.encrypt(
-          this.account.privkey,
-          this.checkoutStall.pubkey,
-          JSON.stringify(order)
-        )
+        try {
+          this.activeOrderId = order.id
+          event.content = await NostrTools.nip04.encrypt(
+            this.account.privkey,
+            this.checkoutStall.pubkey,
+            JSON.stringify(order)
+          )
 
-        event.id = NostrTools.getEventHash(event)
-        event.sig = await NostrTools.signEvent(event, this.account.privkey)
+          event.id = NostrTools.getEventHash(event)
+          event.sig = await NostrTools.signEvent(event, this.account.privkey)
 
-        this.sendOrderEvent(event)
-        this.persistOrderUpdate(this.checkoutStall.pubkey, event.created_at, order)
+          this.sendOrderEvent(event)
+          this.persistOrderUpdate(this.checkoutStall.pubkey, event.created_at, order)
+          this.removeCart(cartId)
+          this.setActivePage('shopping-cart-list')
+        } catch (error) {
+          console.warn(error)
+          this.$q.notify({
+            type: 'warning',
+            message: 'Failed to place order!'
+          })
+        }
       },
 
       sendOrderEvent(event) {
