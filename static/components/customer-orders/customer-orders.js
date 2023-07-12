@@ -16,24 +16,26 @@ async function customerOrders(path) {
     },
     methods: {
       enrichOrder: function (order) {
+        const stall = this.stallForOrder(order)
         return {
           ...order,
-          stallName: this.stallNameForOrder(order),
-          invoice: this.invoiceForOrder(order)
+          stallName: stall.name,
+          shippingZone: stall.shipping.find(s => s.id === order.shipping_id),
+          invoice: this.invoiceForOrder(order),
+          products: this.getProductsForOrder(order)
         }
       },
-      stallNameForOrder: function (order) {
+      stallForOrder: function (order) {
         try {
-          console.log('### stallNameForOrder', order)
           const productId = order.items[0]?.product_id
-          if (!productId) return 'Stall Name'
+          if (!productId) return
           const product = this.products.find(p => p.id === productId)
-          if (!product) return 'Stall Name'
+          if (!product) return
           const stall = this.stalls.find(s => s.id === product.stall_id)
-          if (!stall) return 'Stall Name'
-          return stall.name
+          if (!stall) return
+          return stall
         } catch (error) {
-          return 'Stall Name'
+          console.log(error)
         }
 
       },
@@ -50,6 +52,14 @@ async function customerOrders(path) {
       merchantProfile: function (pubkey) {
         const merchant = this.merchants.find(m => m.publicKey === pubkey)
         return merchant?.profile
+      },
+
+      getProductsForOrder: function (order) {
+        if (!order?.items?.length) return []
+        const productsIds = order.items.map(i => i.product_id)
+        return this.products
+          .filter(p => productsIds.indexOf(p.id) !== -1)
+          .map(p => ({ ...p, orderedQuantity: order.items.find(i => i.product_id === p.id).quantity }))
       },
 
       showInvoice: function (order) {
