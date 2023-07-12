@@ -69,6 +69,14 @@
                 </q-item-section>
               </template>
               <q-separator></q-separator>
+              <q-card-section class="col-12">
+                <q-item-section>
+                  <q-item-label> <strong>Order ID: </strong> <span v-text="order.id"></span>
+                  </q-item-label>
+                </q-item-section>
+                
+              </q-card-section>
+              <q-separator></q-separator>
               <q-card-section horizontal>
 
                 <q-card-section class="col-7">
@@ -120,35 +128,8 @@
                   </q-item-section>
                 </q-card-section>
               </q-card-section>
-              <q-separator></q-separator>
-              <q-card-section class="col-12">
-                <q-item-section class="q-mt-sm q-ml-sm">
-                  <q-item-label> <strong>Order ID: </strong>
-                  </q-item-label>
-                </q-item-section>
-                <q-item-section class="q-mt-sm">
-                  <q-item-label>
-                    <span v-text="order.id"></span>
-                  </q-item-label>
-                </q-item-section>
-              </q-card-section>
-              <q-card-section v-if="order.messages" class="col-12">
-                <q-item-section class="q-mt-sm q-ml-sm">
-                  <q-item-label> <strong>Messages: </strong>
-                  </q-item-label>
-                </q-item-section>
-                <q-item-section class="q-mt-sm">
-                  <q-item-label>
-                    <ul>
-                      <li v-for="(message, i) in order.messages" :key="i">
-                        <span v-text="message"></span>
-                      </li>
-                    </ul>
-
-                  </q-item-label>
-                </q-item-section>
-              </q-card-section>
-
+            
+              <q-separator class="q-mb-xl"></q-separator>
             </q-expansion-item>
             <q-separator></q-separator>
           </div>
