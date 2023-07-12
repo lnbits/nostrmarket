@@ -217,7 +217,7 @@
           @checkout-cart="checkoutStallCart"></shopping-cart-list>
         <shopping-cart-checkout v-else-if="activePage === 'shopping-cart-checkout'" :cart="checkoutCart"
           :stall="checkoutStall" :customer-pubkey="account?.pubkey" @login-required="openAccountDialog"
-          @place-order="placeOrder"></shopping-cart-checkout>
+          @place-order="placeOrder" @change-page="navigateTo"></shopping-cart-checkout>
         <customer-orders v-else-if="activePage === 'customer-orders'" :orders="orders" :products="products"
           :stalls="stalls" :merchants="merchants" @show-invoice="showInvoiceQr"></customer-orders>
         <customer-stall v-else-if=" !isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
@@ -291,10 +291,10 @@
   <q-dialog v-model="qrCodeDialog.show" position="top">
     <q-card class="q-pa-lg q-pt-xl lnbits__dialog-card">
       <div class="text-center q-mb-lg">
-        <div class="q-my-lg" v-if="qrCodeDialog.data.message">
-          <p><span v-text="qrCodeDialog.data.message"></span> </p>
+        <div v-if="qrCodeDialog.data.message" class="q-my-lg">
+          <strong><span v-text="qrCodeDialog.data.message"></span> </strong>
         </div>
-        <a v-else :href="'lightning:' + qrCodeDialog.data.payment_request">
+        <a v-else :href="'lightning:' + qrCodeDialog.data?.payment_request">
           <q-responsive v-if="qrCodeDialog.data.payment_request" :ratio="1" class="q-mx-xl">
             <qrcode :value="qrCodeDialog.data.payment_request" :options="{width: 340}" class="rounded-borders"></qrcode>
           </q-responsive>
