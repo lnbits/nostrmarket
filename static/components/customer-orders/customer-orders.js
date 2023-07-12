@@ -11,7 +11,13 @@ async function customerOrders(path) {
     },
     computed: {
       merchantOrders: function () {
-        return Object.keys(this.orders).map(pubkey => ({ pubkey, orders: this.orders[pubkey].map(this.enrichOrder) }))
+        return Object.keys(this.orders)
+          .map(pubkey => ({
+            pubkey,
+            profile: this.merchantProfile(pubkey),
+            orders: this.orders[pubkey].map(this.enrichOrder)
+          }
+          ))
       }
     },
     methods: {
