@@ -806,8 +806,8 @@ const market = async () => {
       handleOrderStatusUpdate(jsonData) {
         if (this.qrCodeDialog.dismissMsg) {
           this.qrCodeDialog.dismissMsg()
-          this.qrCodeDialog.show = false
         }
+        this.qrCodeDialog.show = false
         const message = jsonData.shipped ? 'Order shipped' : jsonData.paid ? 'Order paid' : 'Order notification'
         this.$q.notify({
           type: 'positive',
