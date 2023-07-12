@@ -13,6 +13,7 @@ async function shoppingCartCheckout(path) {
         shippingZone: null,
         contactData: {
           email: null,
+          npub: null,
           address: null,
           message: null
         },
@@ -61,8 +62,6 @@ async function shoppingCartCheckout(path) {
       },
 
       async placeOrder() {
-        console.log('### placeOrder cart', this.cart)
-        console.log('### placeOrder stal', this.stall)
         if (!this.shippingZone) {
           this.$q.notify({
             timeout: 5000,
@@ -79,7 +78,7 @@ async function shoppingCartCheckout(path) {
           address: this.contactData.address,
           message: this.contactData.message,
           contact: {
-            nostr: this.customerPubkey,
+            nostr: this.contactData.npub,
             email: this.contactData.email
           },
           items: Array.from(this.cart.products, p => {
@@ -103,12 +102,12 @@ async function shoppingCartCheckout(path) {
 
         this.$emit('place-order', { event, order })
 
-
-
       },
+      goToShoppingCart: function(){
+        this.$emit('change-page', 'shopping-cart-list')
+      }
     },
     created() {
-      console.log('### shoppingCartCheckout', this.stall)
       if (this.stall.shipping?.length === 1) {
         this.shippingZone = this.stall.shipping[0]
       }

@@ -25,14 +25,24 @@
 
         <q-separator />
         <q-card-section v-if="orderConfirmed">
+            <div class="row q-mt-md q-ml-md q-pr-md">
+                <div class="col-xs-12 col-sm-12 col-md-2 q-mt-md">
+                    <strong>Message:</strong>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-10">
+                    <q-input v-model.trim="contactData.message" outlined type="textarea" rows="3"
+                        label="Message (optional)" hint="Message merchant about additional order needs"></q-input>
+                </div>
+            </div>
 
             <div class="row q-mt-md q-ml-md q-pr-md">
                 <div class="col-xs-12 col-sm-12 col-md-2 q-mt-md">
                     <strong>Address:</strong>
                 </div>
                 <div class="col-xs-12 col-sm-12 col-md-10">
-                    <q-input v-model.trim="contactData.address" outlined
-                        label="Address (required for physical shipping)"></q-input>
+                    <q-input v-model.trim="contactData.address" outlined type="textarea" rows="3"
+                        label="Address (optional)" hint="Must provide for physical shipping">
+                    </q-input>
                 </div>
             </div>
 
@@ -48,13 +58,15 @@
 
             <div class="row q-mt-md q-ml-md q-pr-md">
                 <div class="col-xs-12 col-sm-12 col-md-2 q-mt-md">
-                    <strong>Message:</strong>
+                    <strong>Npub:</strong>
                 </div>
                 <div class="col-xs-12 col-sm-12 col-md-10">
-                    <q-input v-model.trim="contactData.message" outlined type="textarea" rows="3"
-                        label="Message to Merchant (optional)"></q-input>
+                    <q-input v-model.trim="contactData.npub" outlined label="Alternative Npub (optional)"
+                        hint="Use a different Npub to communicate with the merchant"></q-input>
                 </div>
             </div>
+
+
         </q-card-section>
 
         <q-card-section v-else horizontal>
@@ -126,6 +138,9 @@
                 </q-btn>
             </div>
             <div v-else>
+                <q-btn @click="goToShoppingCart" flat color="gray">
+                    Back
+                </q-btn>
                 <q-btn @click="orderConfirmed = true" flat color="primary">
                     Confirm
                 </q-btn>

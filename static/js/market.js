@@ -63,7 +63,8 @@ const market = async () => {
 
         qrCodeDialog: {
           data: {
-            payment_request: null
+            payment_request: null,
+            message: null,
           },
           dismissMsg: null,
           show: false
@@ -706,7 +707,8 @@ const market = async () => {
         })
         this.qrCodeDialog = {
           data: {
-            payment_request: null
+            payment_request: null,
+            message: null,
           },
           dismissMsg: null,
           show: true
@@ -781,13 +783,14 @@ const market = async () => {
       handlePaymentRequest(json) {
         if (!json.payment_options?.length) {
           this.qrCodeDialog.data.message = json.message || 'Unexpected error'
+          console.log('### qrCodeDialog.data.message', this.qrCodeDialog.data.message)
           return
         }
         if (json.id && (json.id !== this.activeOrderId)) {
           // not for active order, store somewehre else
           return
         }
-        let paymentRequest = json.payment_options.find(o => o.type == 'ln')
+        const paymentRequest = json.payment_options.find(o => o.type == 'ln')
           .link
         if (!paymentRequest) return
         this.qrCodeDialog.data.payment_request = paymentRequest
