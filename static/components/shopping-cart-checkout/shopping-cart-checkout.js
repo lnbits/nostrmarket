@@ -61,6 +61,17 @@ async function shoppingCartCheckout(path) {
         this.shippingZone = zone
       },
 
+      confirmOrder: function () {
+        if (!this.shippingZone) {
+          this.$q.notify({
+            timeout: 5000,
+            type: 'warning',
+            message: 'Please select a shipping zone!',
+          })
+          return
+        }
+        this.orderConfirmed = true
+      },
       async placeOrder() {
         if (!this.shippingZone) {
           this.$q.notify({
@@ -103,7 +114,7 @@ async function shoppingCartCheckout(path) {
         this.$emit('place-order', { event, order })
 
       },
-      goToShoppingCart: function(){
+      goToShoppingCart: function () {
         this.$emit('change-page', 'shopping-cart-list')
       }
     },
