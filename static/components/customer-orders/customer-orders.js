@@ -25,15 +25,15 @@ async function customerOrders(path) {
         const stall = this.stallForOrder(order)
         return {
           ...order,
-          stallName: stall.name,
-          shippingZone: stall.shipping.find(s => s.id === order.shipping_id),
+          stallName: stall?.name || 'Stall',
+          shippingZone: stall?.shipping?.find(s => s.id === order.shipping_id),
           invoice: this.invoiceForOrder(order),
           products: this.getProductsForOrder(order)
         }
       },
       stallForOrder: function (order) {
         try {
-          const productId = order.items[0]?.product_id
+          const productId = order.items && order.items[0]?.product_id
           if (!productId) return
           const product = this.products.find(p => p.id === productId)
           if (!product) return
