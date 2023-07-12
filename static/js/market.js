@@ -842,28 +842,19 @@ const market = async () => {
           orders.unshift({
             ...orderUpdate,
             eventCreatedAt,
-            createdAt: eventCreatedAt,
-            messages: orderUpdate.message ? [orderUpdate.message] : []
+            createdAt: eventCreatedAt
           })
           this.orders[pubkey] = orders
           this.$q.localStorage.set(`nostrmarket.orders.${pubkey}`, orders)
           return
         }
 
-        if (orderUpdate.message) {
-          order.messages.push(orderUpdate.message)
-        }
-
         if (orderUpdate.type === 0) {
           order.createdAt = eventCreatedAt
-          order = { ...order, ...orderUpdate }
-        } else if (orderUpdate.type === 1) {
+          order = { ...order, ...orderUpdate, message: order.message || orderUpdate.message }
+        } else {
           order = order.eventCreatedAt < eventCreatedAt ? { ...order, ...orderUpdate } : { ...orderUpdate, ...order }
-        } else if (orderUpdate.type === 2) {
-          order.paid = orderUpdate.paid
-          order.shipped = orderUpdate.shipped
         }
-
 
         orders = [order].concat(orders.filter(o => o.id !== order.id))
         this.orders[pubkey] = orders

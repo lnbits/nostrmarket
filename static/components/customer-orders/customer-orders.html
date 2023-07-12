@@ -1,7 +1,7 @@
 <div>
   <q-card v-if="!merchantOrders?.length" bordered class="q-mb-md">
     <q-card-section>
-      <strong>No products in cart!</strong>
+      <strong>No orders!</strong>
     </q-card-section>
   </q-card>
   <div v-for="merchant in merchantOrders">
@@ -99,9 +99,14 @@
                 </q-card-section>
                 <q-separator vertical />
                 <q-card-section>
-                  <q-item-section class="q-mt-sm q-ml-sm">
+                  <q-item-section class="q-mt-md q-ml-sm">
                     <q-item-label> <strong>Shipping Zone: </strong>
                       <span v-text="order.shippingZone?.name || ''"></span>
+                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section v-if="order.message" class="q-mt-md q-ml-sm">
+                    <q-item-label> <strong>Message: </strong>
+                      <span v-text="order.message"></span>
                     </q-item-label>
                   </q-item-section>
                   <q-item-section class="q-mt-md  q-ml-sm">
@@ -116,6 +121,17 @@
                 </q-card-section>
               </q-card-section>
               <q-separator></q-separator>
+              <q-card-section class="col-12">
+                <q-item-section class="q-mt-sm q-ml-sm">
+                  <q-item-label> <strong>Order ID: </strong>
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section class="q-mt-sm">
+                  <q-item-label>
+                    <span v-text="order.id"></span>
+                  </q-item-label>
+                </q-item-section>
+              </q-card-section>
               <q-card-section v-if="order.messages" class="col-12">
                 <q-item-section class="q-mt-sm q-ml-sm">
                   <q-item-label> <strong>Messages: </strong>
@@ -132,6 +148,7 @@
                   </q-item-label>
                 </q-item-section>
               </q-card-section>
+
             </q-expansion-item>
             <q-separator></q-separator>
           </div>
