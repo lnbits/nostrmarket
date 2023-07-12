@@ -29,10 +29,9 @@
 
       <q-separator />
 
-      <q-card-section>
-
+      
         <q-card-section class="col-12">
-          <q-list class="q-mt-md">
+          <q-list>
             <div v-for="order in merchant.orders" :key="order.id" class="q-mb-md">
               <q-expansion-item dense expand-separator>
 
@@ -120,7 +119,7 @@
             </div>
           </q-list>
         </q-card-section>
-      </q-card-section>
+      
 
     </q-card>
 
