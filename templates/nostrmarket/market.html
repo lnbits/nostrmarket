@@ -156,12 +156,18 @@
   </q-drawer> -->
   <!-- <q-drawer v-model="drawer" side="right"></q-drawer> -->
   <q-page-container class="q-mr-md">
-    <div class="row q-mb-md">
+    <div class="row q-mb-sm">
       <div class="col-lg-2 col-md-1 col-sm-0"></div>
       <div class="col-lg-8 col-md-10 col-sm-12 auto-width">
 
-        <div class="row q-mb-md">
-          <q-toolbar class="col-lg-7 col-md-6 col-sm-12 auto-width">
+        <div class="row q-mb-md q-pa-none">
+          <q-toolbar class="col-lg-1 col-md-1 col-sm-0">
+            <q-avatar rounded size="64px" class="q-ma-none q-pa-none gt-sm">
+              <img
+                src="https://raw.githubusercontent.com/nostr-resources/nostr-resources.github.io/master/assets/images/highres/avatar.png">
+            </q-avatar>
+          </q-toolbar>
+          <q-toolbar class="col-lg-6 col-md-5 col-sm-12 auto-width">
             <q-input class="rounded-pill" style="width:100%;" rounded outlined clearable v-model.trim="searchText"
               label="Filter products">
               <template v-slot:append>
@@ -199,7 +205,12 @@
           </q-toolbar>
 
         </div>
-        <div class="q-mt-xl">
+        <q-banner class="row q-pa-none q-mb-lg gt-sm">
+          <q-img
+            src="https://raw.githubusercontent.com/nostr-resources/nostr-resources.github.io/master/assets/images/cover.png"
+            class="rounded-borders" style="width: 100%; height: 250px" cover></q-img>
+        </q-banner>
+        <div >
           <q-breadcrumbs class="cursor">
             <q-breadcrumbs-el :label="'Market'" icon="home" @click="navigateTo('market')"
               class="cursor-pointer"></q-breadcrumbs-el>
@@ -218,8 +229,14 @@
             <q-breadcrumbs-el v-if="activePage === 'user-chat'" label="User Chat" icon="chat"></q-breadcrumbs-el>
           </q-breadcrumbs>
         </div>
+      </div>
+      <div class="col-lg-2 col-md-1 col-sm-0 auto-width"></div>
+    </div>
 
-        <q-separator class="q-mt-md q-mb-md"></q-separator>
+    <div class="row q-mb-md">
+      <div class="col-lg-2 col-md-1 col-sm-0"></div>
+      <div class="col-lg-8 col-md-10 col-sm-12 auto-width">
+        <q-separator class="q-mt-sm q-mb-md"></q-separator>
 
         <market-config v-if="activePage === 'market-config'" :merchants="merchants" @add-merchant="addMerchant"
           @remove-merchant="removeMerchant"></market-config>
