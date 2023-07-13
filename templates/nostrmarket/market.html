@@ -161,7 +161,7 @@
       <div class="col-lg-8 col-md-10 col-sm-12 auto-width">
 
         <div class="row q-mb-md">
-          <q-toolbar class="col-lg-8 col-md-7 col-sm-6 auto-width">
+          <q-toolbar class="col-lg-7 col-md-6 col-sm-12 auto-width">
             <q-input class="rounded-pill" style="width:100%;" rounded outlined clearable v-model.trim="searchText"
               label="Filter products">
               <template v-slot:append>
@@ -169,7 +169,7 @@
               </template>
             </q-input>
           </q-toolbar>
-          <q-toolbar class="col-lg-4 col-md-5 col-sm-6">
+          <q-toolbar class="col-lg-5 col-md-6 col-sm-12 q-ma-none">
             <div class="float-right">
               <q-btn color="gray" icon="travel_explore" flat size="lg"
                 @click="setActivePage('search-nostr')"><q-tooltip>Search
@@ -181,7 +181,9 @@
               <q-btn v-else @click="accountDialog.show = true" color="gray" icon="person_add" flat
                 size="lg"><q-tooltip>User
                   Config</q-tooltip></q-btn>
-              <q-btn @click="setActivePage('customer-orders')" color="gray" icon="receipt_long" flat
+              <q-btn  color="gray" icon="chat" flat
+                size="lg"><q-tooltip>Chat</q-tooltip></q-btn>
+                <q-btn @click="setActivePage('customer-orders')" color="gray" icon="receipt_long" flat
                 size="lg"><q-tooltip>Orders</q-tooltip></q-btn>
               <q-btn color="gray" icon="shopping_cart" dense round flat size="lg"
                 @click="setActivePage('shopping-cart-list')">

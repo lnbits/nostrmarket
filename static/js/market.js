@@ -7,7 +7,8 @@ const market = async () => {
     'wss://relay.damus.io',
     'wss://relay.snort.social',
     'wss://nostr-pub.wellorder.net',
-    'wss://nostr.zebedee.cloud'
+    'wss://nostr.zebedee.cloud',
+    'wss://nostr.walletofsatoshi.com'
   ]
   const eventToObj = event => {
     event.content = JSON.parse(event.content) || null
@@ -764,15 +765,15 @@ const market = async () => {
       },
 
       handlePaymentRequest(json) {
-        if (!json.payment_options?.length) {
-          this.qrCodeDialog.data.message = json.message || 'Unexpected error'
-          console.log('### qrCodeDialog.data.message', this.qrCodeDialog.data.message)
-          return
-        }
         if (json.id && (json.id !== this.activeOrderId)) {
           // not for active order, store somewehre else
           return
         }
+        if (!json.payment_options?.length) {
+          this.qrCodeDialog.data.message = json.message || 'Unexpected error'
+          return
+        }
+
         const paymentRequest = json.payment_options.find(o => o.type == 'ln')
           .link
         if (!paymentRequest) return
@@ -785,6 +786,10 @@ const market = async () => {
       },
 
       handleOrderStatusUpdate(jsonData) {
+        if (jsonData.id && (jsonData.id !== this.activeOrderId)) {
+          // not for active order, store somewehre else
+          return
+        }
         if (this.qrCodeDialog.dismissMsg) {
           this.qrCodeDialog.dismissMsg()
         }
@@ -819,7 +824,7 @@ const market = async () => {
         console.log('### persistOrderUpdate', pubkey, eventCreatedAt, orderUpdate)
         let orders = this.$q.localStorage.getItem(`nostrmarket.orders.${pubkey}`) || []
         const orderIndex = orders.findIndex(o => o.id === orderUpdate.id)
-        
+
         if (orderIndex === -1) {
           orders.unshift({
             ...orderUpdate,
@@ -827,7 +832,7 @@ const market = async () => {
             createdAt: eventCreatedAt
           })
           this.orders[pubkey] = orders
-          this.orders = {...this.orders}
+          this.orders = { ...this.orders }
           this.$q.localStorage.set(`nostrmarket.orders.${pubkey}`, orders)
           return
         }
@@ -844,7 +849,7 @@ const market = async () => {
         // orders = [order].concat(orders.filter(o => o.id !== order.id))
         orders.splice(orderIndex, 1, order)
         this.orders[pubkey] = orders
-        this.orders = {...this.orders}
+        this.orders = { ...this.orders }
         this.$q.localStorage.set(`nostrmarket.orders.${pubkey}`, orders)
       },
 
