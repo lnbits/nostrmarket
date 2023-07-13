@@ -46,10 +46,26 @@
           </div>
         </q-tab-panel>
         <q-tab-panel name="marketplace">
-          <div>
-            Marketplace
+          <strong>Information</strong>
+          <q-input outlined v-model="inputPubkey" type="text" label="Marketplace Name" class="q-mb-md">
+          </q-input>
+
+          <q-input outlined v-model="inputPubkey" type="textarea" rows="3" label="Marketplace Description"
+            class="q-mb-lg"></q-input>
+          <strong class="q-mb-md">UI Configurations</strong>
+          <q-input outlined v-model="inputPubkey" type="text" label="Theme" class="q-mb-md">
+          </q-input>
+          <q-input outlined v-model="inputPubkey" type="text" label="Logo" class="q-mb-md">
+          </q-input>
+          <q-input outlined v-model="inputPubkey" type="text" label="Banner" class="q-mb-md">
+          </q-input>
+          <div class="float-right">
+            <q-btn flat label="Copy Naddr" color="gray"></q-btn>
+            <q-btn flat label="Update" color="primary"></q-btn>
           </div>
+
         </q-tab-panel>
+
       </q-tab-panels>
     </div>
   </div>
