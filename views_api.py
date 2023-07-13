@@ -219,7 +219,7 @@ async def api_republish_merchant(
 
 
 @nostrmarket_ext.put("/api/v1/merchant/{merchant_id}/toggle")
-async def api_republish_merchant(
+async def api_toggle_merchant(
     merchant_id: str,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Merchant:
