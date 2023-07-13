@@ -62,7 +62,9 @@ async function customerMarket(path) {
         this.partialProducts.push(...this.filteredProducts.slice(0, this.lastProductIndex))
 
         setTimeout(() => { this.showProducts = true }, 0)
-        console.log('### xxx this.filteredProducts', this.lastProductIndex, this.filteredProducts)
+      },
+      addToCart(item) {
+        this.$emit('add-to-cart', item)
       },
       changePageM(page, opts) {
         this.$emit('change-page', page, opts)
@@ -109,7 +111,6 @@ async function customerMarket(path) {
     },
     created() {
       this.filteredProducts = [...this.products]
-      console.log('#### created  this.filteredProducts',  this.filteredProducts)
       this.lastProductIndex = Math.min(this.filteredProducts.length, 24)
       this.partialProducts.push(...this.filteredProducts.slice(0, this.lastProductIndex))
     }

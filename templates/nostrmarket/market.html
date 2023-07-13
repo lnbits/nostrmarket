@@ -224,8 +224,9 @@
           :products="filterProducts" :stall-products="products.filter(p => p.stall_id == activeStall)"
           :product-detail="activeProduct" :relays="relays" :account="account" :pool="pool" :styles="config?.opts ?? {}"
           @login-dialog="openAccountDialog" @change-page="navigateTo" @add-to-cart="addProductToCart"></customer-stall>
-        <customer-market v-else :search-nostr="searchNostr" :relays="relays" :products="products" :search-text="searchText"
-          :styles="config?.opts ?? {}" @change-page="navigateTo" @update-data="updateData"></customer-market>
+        <customer-market v-else :search-nostr="searchNostr" :relays="relays" :products="products"
+          :search-text="searchText" :styles="config?.opts ?? {}" @change-page="navigateTo" @update-data="updateData"
+          @add-to-cart="addProductToCart"></customer-market>
       </div>
       <div class="col-lg-2 col-md-1 col-sm-0 auto-width"></div>
     </div>
