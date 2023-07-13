@@ -181,9 +181,8 @@
               <q-btn v-else @click="accountDialog.show = true" color="gray" icon="person_add" flat
                 size="lg"><q-tooltip>User
                   Config</q-tooltip></q-btn>
-              <q-btn  color="gray" icon="chat" flat
-                size="lg"><q-tooltip>Chat</q-tooltip></q-btn>
-                <q-btn @click="setActivePage('customer-orders')" color="gray" icon="receipt_long" flat
+              <q-btn color="gray" icon="chat" flat size="lg"><q-tooltip>Chat</q-tooltip></q-btn>
+              <q-btn @click="setActivePage('customer-orders')" color="gray" icon="receipt_long" flat
                 size="lg"><q-tooltip>Orders</q-tooltip></q-btn>
               <q-btn color="gray" icon="shopping_cart" dense round flat size="lg"
                 @click="setActivePage('shopping-cart-list')">
@@ -207,6 +206,12 @@
             <q-breadcrumbs-el v-if="activeProduct" :label="productName"
               @click="navigateTo('product', {stall: activeStall, product: activeProduct})" class="cursor-pointer"
               icon="widgets"></q-breadcrumbs-el>
+            <q-breadcrumbs-el v-if="activePage === 'shopping-cart-list'" label="Shoping Cart"
+              icon="shopping_cart"></q-breadcrumbs-el>
+            <q-breadcrumbs-el v-if="activePage === 'customer-orders'" label="Orders"
+              icon="receipt_long"></q-breadcrumbs-el>
+              <q-breadcrumbs-el v-if="activePage === 'market-config'" label="Settings"
+              icon="settings"></q-breadcrumbs-el>
           </q-breadcrumbs>
         </div>
 
