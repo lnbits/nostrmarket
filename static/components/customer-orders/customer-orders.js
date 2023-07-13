@@ -89,10 +89,6 @@ async function customerOrders(path) {
       }
     },
     created() {
-      console.log('### orders', this.orders)
-      console.log('### products', this.products)
-      console.log('### stall', this.stalls)
-      console.log('### merchants', this.merchants)
     }
   })
 }
