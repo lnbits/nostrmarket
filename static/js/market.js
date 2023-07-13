@@ -107,7 +107,6 @@ const market = async () => {
     computed: {
       filterProducts() {
         let products = this.products
-        console.log('### this.products', this.products)
         if (this.activeStall) {
           products = products.filter(p => p.stall_id == this.activeStall)
         }
@@ -379,7 +378,6 @@ const market = async () => {
               this.accountMetadata = this.profiles.get(this.account.pubkey)
             }
             this.merchants.filter(m => m.publicKey === e.pubkey).forEach(m => m.profile = e.content)
-            console.log('### this.merchants', this.merchants)
             return
           } else if (e.kind == 30018) {
             //it's a product `d` is the prod. id
