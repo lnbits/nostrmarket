@@ -605,6 +605,7 @@ const market = async () => {
       },
 
       addProductToCart(item) {
+        console.log('### addProductToCart', item)
         let stallCart = this.shoppingCarts.find(s => s.id === item.stall_id)
         if (!stallCart) {
           stallCart = {
@@ -624,6 +625,11 @@ const market = async () => {
         product.orderedQuantity = Math.min(product.quantity, item.orderedQuantity || (product.orderedQuantity + 1))
 
         this.$q.localStorage.set('nostrmarket.shoppingCarts', this.shoppingCarts)
+
+        this.$q.notify({
+          type: 'positive',
+          message: 'Product added to cart!'
+        })
       },
 
       removeProductFromCart(item) {

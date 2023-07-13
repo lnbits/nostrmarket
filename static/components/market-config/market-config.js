@@ -15,7 +15,6 @@ async function marketConfig(path) {
         },
         methods: {
             addMerchant: async function () {
-                console.log('### market config', this.merchants)
                 if (!isValidKey(this.inputPubkey, 'npub')) {
                     this.$q.notify({
                         message: 'Invalid Public Key!',
