@@ -176,11 +176,12 @@
                   for products on Nostr</q-tooltip></q-btn>
               <q-btn color="gray" icon="settings" flat size="lg" @click="setActivePage('market-config')"><q-tooltip>
                   Settings</q-tooltip></q-btn>
-              <q-btn v-if="account" color="gray" icon="perm_identity" flat size="lg"><q-tooltip>User
-                  Login</q-tooltip></q-btn>
+              <q-btn v-if="account" @click="setActivePage('user-config')" color="gray" icon="perm_identity" flat
+                size="lg"><q-tooltip>User
+                  User Config</q-tooltip></q-btn>
               <q-btn v-else @click="accountDialog.show = true" color="gray" icon="person_add" flat
                 size="lg"><q-tooltip>User
-                  Config</q-tooltip></q-btn>
+                  Login</q-tooltip></q-btn>
               <q-btn color="gray" icon="chat" flat size="lg"><q-tooltip>Chat</q-tooltip></q-btn>
               <q-btn @click="setActivePage('customer-orders')" color="gray" icon="receipt_long" flat
                 size="lg"><q-tooltip>Orders</q-tooltip></q-btn>
@@ -210,8 +211,9 @@
               icon="shopping_cart"></q-breadcrumbs-el>
             <q-breadcrumbs-el v-if="activePage === 'customer-orders'" label="Orders"
               icon="receipt_long"></q-breadcrumbs-el>
-              <q-breadcrumbs-el v-if="activePage === 'market-config'" label="Settings"
-              icon="settings"></q-breadcrumbs-el>
+            <q-breadcrumbs-el v-if="activePage === 'market-config'" label="Settings" icon="settings"></q-breadcrumbs-el>
+            <q-breadcrumbs-el v-if="activePage === 'user-config'" label="User Config"
+              icon="perm_identity"></q-breadcrumbs-el>
           </q-breadcrumbs>
         </div>
 
@@ -219,6 +221,7 @@
 
         <market-config v-if="activePage === 'market-config'" :merchants="merchants" @add-merchant="addMerchant"
           @remove-merchant="removeMerchant"></market-config>
+        <user-config v-if="activePage === 'user-config'"></user-config>
         <shopping-cart-list v-else-if="activePage === 'shopping-cart-list'" :carts="shoppingCarts"
           @add-to-cart="addProductToCart" @remove-from-cart="removeProductFromCart" @remove-cart="removeCart"
           @checkout-cart="checkoutStallCart"></shopping-cart-list>
@@ -335,6 +338,7 @@
 <script src="{{ url_for('nostrmarket_static', path='components/customer-orders/customer-orders.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/chat-dialog/chat-dialog.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/market-config/market-config.js') }}"></script>
+<script src="{{ url_for('nostrmarket_static', path='components/user-config/user-config.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/market.js') }}"></script>
 <style scoped>
   .q-field__native span {
