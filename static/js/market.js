@@ -36,7 +36,8 @@ const market = async () => {
     customerOrders('static/components/customer-orders/customer-orders.html'),
     chatDialog('static/components/chat-dialog/chat-dialog.html'),
     marketConfig('static/components/market-config/market-config.html'),
-    userConfig('static/components/user-config/user-config.html')
+    userConfig('static/components/user-config/user-config.html'),
+    userChat('static/components/user-chat/user-chat.html')
   ])
 
   new Vue({
