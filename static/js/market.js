@@ -812,19 +812,23 @@ const market = async () => {
       },
 
       persistOrderUpdate(pubkey, eventCreatedAt, orderUpdate) {
-        console.log(('### persistOrderUpdate', pubkey, eventCreatedAt, orderUpdate))
+        console.log('### persistOrderUpdate', pubkey, eventCreatedAt, orderUpdate)
         let orders = this.$q.localStorage.getItem(`nostrmarket.orders.${pubkey}`) || []
-        let order = orders.find(o => o.id === orderUpdate.id)
-        if (!order) {
+        const orderIndex = orders.findIndex(o => o.id === orderUpdate.id)
+        
+        if (orderIndex === -1) {
           orders.unshift({
             ...orderUpdate,
             eventCreatedAt,
             createdAt: eventCreatedAt
           })
           this.orders[pubkey] = orders
+          this.orders = {...this.orders}
           this.$q.localStorage.set(`nostrmarket.orders.${pubkey}`, orders)
           return
         }
+
+        let order = orders[orderIndex]
 
         if (orderUpdate.type === 0) {
           order.createdAt = eventCreatedAt
@@ -833,8 +837,10 @@ const market = async () => {
           order = order.eventCreatedAt < eventCreatedAt ? { ...order, ...orderUpdate } : { ...orderUpdate, ...order }
         }
 
-        orders = [order].concat(orders.filter(o => o.id !== order.id))
+        // orders = [order].concat(orders.filter(o => o.id !== order.id))
+        orders.splice(orderIndex, 1, order)
         this.orders[pubkey] = orders
+        this.orders = {...this.orders}
         this.$q.localStorage.set(`nostrmarket.orders.${pubkey}`, orders)
       },
 
