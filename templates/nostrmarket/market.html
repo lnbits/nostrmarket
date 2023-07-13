@@ -159,7 +159,6 @@
     <div class="row q-mb-sm">
       <div class="col-lg-2 col-md-1 col-sm-0"></div>
       <div class="col-lg-8 col-md-10 col-sm-12 auto-width">
-
         <div class="row q-mb-md q-pa-none">
           <q-toolbar class="col-lg-1 col-md-1 col-sm-0 q-pl-none">
             <q-avatar rounded size="64px" class="q-ma-none q-pa-none gt-sm">
@@ -204,7 +203,30 @@
 
           </q-toolbar>
         </div>
+      </div>
+      <div class="col-lg-2 col-md-1 col-sm-0"></div>
+    </div>
+    <div class="row q-mb-sm">
+      <div class="col-lg-2 col-md-1 col-sm-0"></div>
+      <div class="col-lg-8 col-md-10 col-sm-12">
 
+        <div v-if="products?.length" class="gt-sm">
+          <q-virtual-scroll :items="allCategories" virtual-scroll-horizontal>
+            <template v-slot="{ item, index }">
+              <q-chip :key="index" class="cursor-pointer q-mb-md">
+                <span v-text="item.category"></span>
+                <q-badge rounded class="q-ml-sm" color="secondary"> <span v-text="item.count"></span></q-badge>
+              </q-chip>
+            </template>
+          </q-virtual-scroll>
+        </div>
+      </div>
+      <div class="col-lg-2 col-md-1 col-sm-0"></div>
+    </div>
+
+    <div class="row q-mb-sm">
+      <div class="col-lg-2 col-md-1 col-sm-0"></div>
+      <div class="col-lg-8 col-md-10 col-sm-12 auto-width">
         <q-banner class="row q-pa-none q-mb-lg gt-sm shadow-2">
           <q-img
             src="https://raw.githubusercontent.com/nostr-resources/nostr-resources.github.io/master/assets/images/cover.png"

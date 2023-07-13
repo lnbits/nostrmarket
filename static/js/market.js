@@ -148,6 +148,19 @@ const market = async () => {
 
       allCartsItemCount() {
         return this.shoppingCarts.map(s => s.products).flat().reduce((t, p) => t + p.orderedQuantity, 0)
+      },
+
+      allCategories() {
+        const categories = this.products.map(p => p.categories).flat().filter(c => !!c)
+        const countedCategories = categories.reduce((all, c) => {
+          all[c] = (all[c] || 0) + 1
+          return all
+        }, {})
+        const x = Object.keys(countedCategories)
+          .map(category => ({ category, count: countedCategories[category] }))
+          .sort((a,b) => b.count - a.count)
+        console.log('### x', x)
+        return x
       }
     },
     async created() {
