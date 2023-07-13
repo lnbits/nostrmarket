@@ -318,6 +318,12 @@ async function stallDetails(path) {
         pendingProduct.pending = true
         await this.showNewProductDialog(pendingProduct)
       },
+      restoreAllPendingProducts: async function () {
+        for (const p of this.pendingProducts){
+          p.pending = false
+          await this.updateProduct(p)
+        }
+      },
       customerSelectedForOrder: function (customerPubkey) {
         this.$emit('customer-selected-for-order', customerPubkey)
       }
