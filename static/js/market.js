@@ -74,6 +74,8 @@ const market = async () => {
         },
 
         searchNostr: false,
+        filterCategories: [],
+
         drawer: true,
         pubkeys: new Set(),
         relays: new Set(),
@@ -157,8 +159,12 @@ const market = async () => {
           return all
         }, {})
         const x = Object.keys(countedCategories)
-          .map(category => ({ category, count: countedCategories[category] }))
-          .sort((a,b) => b.count - a.count)
+          .map(category => ({
+            category,
+            count: countedCategories[category],
+            selected: this.filterCategories.indexOf(category) !== -1
+          }))
+          .sort((a, b) => b.count - a.count)
         console.log('### x', x)
         return x
       }
@@ -861,7 +867,6 @@ const market = async () => {
           order = order.eventCreatedAt < eventCreatedAt ? { ...order, ...orderUpdate } : { ...orderUpdate, ...order }
         }
 
-        // orders = [order].concat(orders.filter(o => o.id !== order.id))
         orders.splice(orderIndex, 1, order)
         this.orders[pubkey] = orders
         this.orders = { ...this.orders }
@@ -876,6 +881,15 @@ const market = async () => {
           },
           dismissMsg: null,
           show: true
+        }
+      },
+
+      toggleCategoryFilter(category) {
+        const index = this.filterCategories.indexOf(category)
+        if (index === -1) {
+          this.filterCategories.push(category)
+        } else {
+          this.filterCategories.splice(index, 1)
         }
       }
 
