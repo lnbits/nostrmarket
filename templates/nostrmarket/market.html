@@ -213,9 +213,10 @@
         <div v-if="products?.length" class="gt-sm">
           <q-virtual-scroll :items="allCategories" virtual-scroll-horizontal>
             <template v-slot="{ item, index }">
-              <q-chip :key="index" class="cursor-pointer q-mb-md">
-                <span v-text="item.category"></span>
-                <q-badge rounded class="q-ml-sm" color="secondary"> <span v-text="item.count"></span></q-badge>
+              <q-chip :key="index" :color="item.selected ? 'grey': ''" class="cursor-pointer q-mb-md">
+                <span v-text="item.category" @click="toggleCategoryFilter(item.category)"></span>
+                <q-badge @click="toggleCategoryFilter(item.category)" rounded class="q-ml-sm" color="secondary"> <span
+                    v-text="item.count"></span></q-badge>
               </q-chip>
             </template>
           </q-virtual-scroll>
