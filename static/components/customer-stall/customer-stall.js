@@ -76,6 +76,9 @@ async function customerStall(path) {
     },
     methods: {
       changePageS(page, opts) {
+        if (page === 'stall' && opts?.product) {
+          document.getElementById('product-focus-area')?.scrollIntoView()
+        }
         this.$emit('change-page', page, opts)
       },
       makeLogin() {

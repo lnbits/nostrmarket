@@ -1,14 +1,5 @@
 <div>
-  <!-- <q-toolbar>
-
-    <q-toolbar-title></q-toolbar-title>
-    <chat-dialog v-if="this.customerPrivkey || this.customerUseExtension" :account="account ? account : dropIn"
-      :merchant="stall.pubkey" :relays="relays" :pool="pool" />
-    <shopping-cart :cart="cart" :cart-menu="cartMenu" :products="stallProducts" @add-to-cart="addToCart"
-      @remove-from-cart="removeFromCart" @update-qty="updateQty" @reset-cart="resetCart"
-      @open-checkout="openCheckout"></shopping-cart>
-  </q-toolbar>
-   -->
+  <div id="product-focus-area"></div>
   <div v-if="productDetail && product" class="row">
     <div class="col-12 auto-width">
       <product-detail :product="product" @add-to-cart="addToCart"></product-detail>
