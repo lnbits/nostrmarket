@@ -40,15 +40,7 @@ async function customerMarket(path) {
     methods: {
       refreshProducts: function () {
         this.showProducts = false
-        const searchText = this.searchText?.toLowerCase() || ''
         this.partialProducts = []
-
-        if (searchText.length < 3) {
-          this.lastProductIndex = Math.min(this.filteredProducts.length, this.productsPerPage)
-          this.partialProducts.push(...this.filteredProducts.slice(0, this.lastProductIndex))
-          setTimeout(() => this.showProducts = true, 0)
-          return
-        }
 
         this.startIndex = 0
         this.lastProductIndex = Math.min(this.filteredProducts.length, this.productsPerPage)

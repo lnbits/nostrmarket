@@ -7,7 +7,15 @@ async function customerStallList(path) {
 
     props: ['stalls'],
     data: function () {
-      return {}
+      return {
+        showStalls: true
+      }
+    },
+    watch: {
+      stalls() {
+        this.showProducts = false
+        setTimeout(() => { this.showProducts = true }, 0)
+      }
     },
     computed: {},
     methods: {

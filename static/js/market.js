@@ -119,15 +119,36 @@ const market = async () => {
         }
         if (!this.searchText || this.searchText.length < 2) return products
         const searchText = this.searchText.toLowerCase()
-        return products.filter(p => {
-          return (
-            p.name.toLowerCase().includes(searchText) ||
-            (p.description &&
-              p.description.toLowerCase().includes(searchText)) ||
-            (p.categories &&
-              p.categories.toString().toLowerCase().includes(searchText))
-          )
-        })
+        return products.filter(p => (
+          p.name.toLowerCase().includes(searchText) ||
+          (p.description &&
+            p.description.toLowerCase().includes(searchText)) ||
+          (p.categories &&
+            p.categories.toString().toLowerCase().includes(searchText))
+        )
+        )
+      },
+      filterStalls() {
+        const stalls = this.stalls
+          .map(s => (
+            {
+              ...s,
+              categories: this.allStallCatgories(s.id),
+              images: this.allStallImages(s.id).slice(0, 8),
+              productCount: this.products.filter(p => p.stall_id === s.id).length
+            }))
+          .filter(p => this.hasCategory(p.categories))
+
+        if (!this.searchText || this.searchText.length < 2) return stalls
+
+        const searchText = this.searchText.toLowerCase()
+        return this.stalls.filter(s => (
+          s.name.toLowerCase().includes(searchText) ||
+          (s.description &&
+            s.description.toLowerCase().includes(searchText)) ||
+          (s.categories &&
+            s.categories.toString().toLowerCase().includes(searchText))
+        ))
       },
       stallName() {
         return this.stalls.find(s => s.id == this.activeStall)?.name || 'Stall'
@@ -902,6 +923,14 @@ const market = async () => {
         }
         return false
       },
+      allStallCatgories(stallId) {
+        const categories = this.products.filter(p => p.stall_id === stallId).map(p => p.categories).flat().filter(c => !!c)
+        return Array.from(new Set(categories))
+      },
+      allStallImages(stallId) {
+        const images = this.products.filter(p => p.stall_id === stallId).map(p => p.images && p.images[0]).filter(i => !!i)
+        return Array.from(new Set(images))
+      }
 
     }
   })
