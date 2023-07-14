@@ -1,9 +1,14 @@
-<div class="row q-col-gutter-md">
+<div v-if="showStalls" class="row q-col-gutter-md">
   <div v-for="stall of stalls" :key="stall.id" class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
     <q-card class="card--product">
-      <!-- <q-img
-    :src="(product.images && product.images.length > 0 && product.images[0]) ? product.images[0] : '/nostrmarket/static/images/placeholder.png'"
-    alt="Product Image" loading="lazy" spinner-color="white" fit="contain" height="300px"></q-img> -->
+      <q-card-section class="q-pb-xs q-pt-md">
+        <div class="q-pa-md q-gutter-sm" style="height: 80px">
+          <q-avatar v-for="(image, i) of stall.images" :key="i" size="40px" class="overlapping"
+            :style="`left: ${i * 25}px; border: 2px solid white; position: absolute`">
+            <img :src="image">
+          </q-avatar>
+        </div>
+      </q-card-section>
 
       <q-card-section class="q-pb-xs q-pt-md">
         <div class="row no-wrap items-center">
@@ -11,21 +16,21 @@
         </div>
 
       </q-card-section>
+      <q-separator />
 
-      <q-card-section class="q-py-sm">
+      <q-card-section class="q-pl-sm">
         <div>
-          <span v-if="stall.currency == 'sat'">
-            <!-- <span class="text-h6">{{ product.price }} sats</span><q-tooltip> BTC {{ (product.price /
-          1e8).toFixed(8) }}</q-tooltip> -->
-            currency sat
-          </span>
-          <span v-else>
-            <span class="text-h6">currency fiat</span>
-          </span>
-          <span class="q-ml-md text-caption text-green-8 text-weight-bolder q-mt-md">product count</span>
+          <span class="text-caption text-green-8 text-weight-bolder q-mt-md"><span v-text="stall.productCount"></span>
+            products</span>
+          <span v-text="stall.currency" class="float-right"></span>
         </div>
+      </q-card-section>
+      <!-- <q-card-section class="q-pl-sm">
+      
+      </q-card-section> -->
+      <q-card-section class="q-pl-sm">
         <div v-if="stall.categories" class="text-subtitle1">
-          <q-virtual-scroll :items="product.categories || []" virtual-scroll-horizontal>
+          <q-virtual-scroll :items="stall.categories || []" virtual-scroll-horizontal>
             <template v-slot="{ item, index }">
               <q-chip :key="index" dense><span v-text="item"></span></q-chip>
             </template>

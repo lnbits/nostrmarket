@@ -289,7 +289,8 @@
           @login-dialog="openAccountDialog" @change-page="navigateTo" @add-to-cart="addProductToCart"></customer-stall>
 
         <div v-else>
-          <customer-stall-list v-if="groupByStall" :stalls="stalls"></customer-stall-list>
+          <customer-stall-list v-if="groupByStall" :stalls="filterStalls"
+            @change-page="navigateTo"></customer-stall-list>
 
           <customer-market v-else :search-nostr="searchNostr" :relays="relays" :filtered-products="filterProducts"
             :search-text="searchText" :filter-categories="filterCategories" :styles="config?.opts ?? {}"
@@ -445,4 +446,5 @@
     text-overflow: ellipsis;
   }
 </style>
+
 {% endblock %}
