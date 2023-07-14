@@ -29,6 +29,7 @@ const market = async () => {
     productCard('static/components/product-card/product-card.html'),
     customerMarket('static/components/customer-market/customer-market.html'),
     customerStall('static/components/customer-stall/customer-stall.html'),
+    customerStallList('static/components/customer-stall-list/customer-stall-list.html'),
     productDetail('static/components/product-detail/product-detail.html'),
     shoppingCart('static/components/shopping-cart/shopping-cart.html'),
     shoppingCartList('static/components/shopping-cart-list/shopping-cart-list.html'),
@@ -75,6 +76,7 @@ const market = async () => {
 
         searchNostr: false,
         filterCategories: [],
+        groupByStall: false,
 
         drawer: true,
         pubkeys: new Set(),
@@ -233,7 +235,6 @@ const market = async () => {
         if (product_id) {
           this.activeProduct = product_id
         }
-        this.activePage = 'stall'
         this.activeStall = stall_id
       }
       if (merchant_pubkey && !this.pubkeys.has(merchant_pubkey)) {
