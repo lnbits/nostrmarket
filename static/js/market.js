@@ -509,6 +509,7 @@ const market = async () => {
         if (page === 'stall' || page === 'product') {
           if (stall) {
             this.activeStall = stall
+            this.setActivePage('customer-stall')
             url.searchParams.set('stall_id', stall)
 
             this.activeProduct = product
@@ -528,7 +529,7 @@ const market = async () => {
         }
 
         window.history.pushState({}, '', url)
-        this.activePage = page
+        // this.activePage = page
       },
       copyText: function (text) {
         var notify = this.$q.notify

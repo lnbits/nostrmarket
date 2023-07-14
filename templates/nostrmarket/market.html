@@ -237,11 +237,11 @@
           <q-breadcrumbs class="cursor">
             <q-breadcrumbs-el :label="'Market'" icon="home" @click="navigateTo('market')"
               class="cursor-pointer"></q-breadcrumbs-el>
-            <q-breadcrumbs-el v-if="activeStall" :label="stallName" @click="navigateTo('stall', {stall: activeStall})"
-              icon="storefront" class="cursor-pointer"></q-breadcrumbs-el>
-            <q-breadcrumbs-el v-if="activeProduct" :label="productName"
-              @click="navigateTo('product', {stall: activeStall, product: activeProduct})" class="cursor-pointer"
-              icon="widgets"></q-breadcrumbs-el>
+            <q-breadcrumbs-el v-if="activePage === 'customer-stall'" :label="stallName"
+              @click="navigateTo('stall', {stall: activeStall})" icon="storefront"
+              class="cursor-pointer"></q-breadcrumbs-el>
+            <q-breadcrumbs-el v-if="activePage === 'customer-stall' && activeProduct" :label="productName"
+              class="cursor-pointer" icon="widgets"></q-breadcrumbs-el>
             <q-breadcrumbs-el v-if="activePage === 'shopping-cart-list'" label="Shoping Cart"
               icon="shopping_cart"></q-breadcrumbs-el>
             <q-breadcrumbs-el v-if="activePage === 'customer-orders'" label="Orders"
@@ -263,20 +263,28 @@
 
         <market-config v-if="activePage === 'market-config'" :merchants="merchants" @add-merchant="addMerchant"
           @remove-merchant="removeMerchant"></market-config>
+
         <user-config v-else-if="activePage === 'user-config'"></user-config>
+
         <user-chat v-else-if="activePage === 'user-chat'"></user-chat>
+
         <shopping-cart-list v-else-if="activePage === 'shopping-cart-list'" :carts="shoppingCarts"
           @add-to-cart="addProductToCart" @remove-from-cart="removeProductFromCart" @remove-cart="removeCart"
           @checkout-cart="checkoutStallCart"></shopping-cart-list>
+
         <shopping-cart-checkout v-else-if="activePage === 'shopping-cart-checkout'" :cart="checkoutCart"
           :stall="checkoutStall" :customer-pubkey="account?.pubkey" @login-required="openAccountDialog"
           @place-order="placeOrder" @change-page="navigateTo"></shopping-cart-checkout>
+
         <customer-orders v-else-if="activePage === 'customer-orders'" :orders="orders" :products="products"
           :stalls="stalls" :merchants="merchants" @show-invoice="showInvoiceQr"></customer-orders>
-        <customer-stall v-else-if=" !isLoading && activeStall" :stall="stalls.find(stall => stall.id == activeStall)"
-          :products="filterProducts" :stall-products="products.filter(p => p.stall_id == activeStall)"
-          :product-detail="activeProduct" :relays="relays" :account="account" :pool="pool" :styles="config?.opts ?? {}"
+
+        <customer-stall v-else-if="activePage === 'customer-stall'"
+          :stall="stalls.find(stall => stall.id == activeStall)" :products="filterProducts"
+          :stall-products="products.filter(p => p.stall_id == activeStall)" :product-detail="activeProduct"
+          :relays="relays" :account="account" :pool="pool" :styles="config?.opts ?? {}"
           @login-dialog="openAccountDialog" @change-page="navigateTo" @add-to-cart="addProductToCart"></customer-stall>
+
         <customer-market v-else :search-nostr="searchNostr" :relays="relays" :filtered-products="filterProducts"
           :search-text="searchText" :filter-categories="filterCategories" :styles="config?.opts ?? {}"
           @change-page="navigateTo" @update-data="updateData" @add-to-cart="addProductToCart"></customer-market>
