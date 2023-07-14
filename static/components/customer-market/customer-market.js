@@ -13,7 +13,8 @@ async function customerMarket(path) {
       'update-stalls',
       'styles',
 
-      'search-text'
+      'search-text',
+      'filter-categories'
     ],
     data: function () {
       return {
@@ -32,22 +33,26 @@ async function customerMarket(path) {
       },
       products: function () {
         this.refreshProducts()
+      },
+      filterCategories: function () {
+        console.log('### watch filterCategories')
+        this.refreshProducts()
       }
     },
     methods: {
-      refreshProducts: function() {
+      refreshProducts: function () {
         this.showProducts = false
         const searchText = this.searchText?.toLowerCase() || ''
         this.partialProducts = []
+        this.filteredProducts = this.products.filter(p => this.hasCategory(p.categories))
         if (searchText.length < 3) {
-          this.filteredProducts = [...this.products]
           this.lastProductIndex = Math.min(this.filteredProducts.length, this.productsPerPage)
           this.partialProducts.push(...this.filteredProducts.slice(0, this.lastProductIndex))
           setTimeout(() => this.showProducts = true, 0)
           return
         }
 
-        
+
         this.filteredProducts = this.products.filter(p => {
           return (
             p.name.toLowerCase().includes(searchText) ||
@@ -62,6 +67,13 @@ async function customerMarket(path) {
         this.partialProducts.push(...this.filteredProducts.slice(0, this.lastProductIndex))
 
         setTimeout(() => { this.showProducts = true }, 0)
+      },
+      hasCategory(categories = []) {
+        if (!this.filterCategories?.length) return true
+        for (const cat of categories) {
+          if (this.filterCategories.indexOf(cat) !== -1) return true
+        }
+        return false
       },
       addToCart(item) {
         this.$emit('add-to-cart', item)
