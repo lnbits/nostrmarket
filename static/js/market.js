@@ -111,7 +111,7 @@ const market = async () => {
     },
     computed: {
       filterProducts() {
-        let products = this.products
+        let products = this.products.filter(p => this.hasCategory(p.categories))
         if (this.activeStall) {
           products = products.filter(p => p.stall_id == this.activeStall)
         }
@@ -891,7 +891,15 @@ const market = async () => {
         } else {
           this.filterCategories.splice(index, 1)
         }
-      }
+      },
+
+      hasCategory(categories = []) {
+        if (!this.filterCategories?.length) return true
+        for (const cat of categories) {
+          if (this.filterCategories.indexOf(cat) !== -1) return true
+        }
+        return false
+      },
 
     }
   })

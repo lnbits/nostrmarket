@@ -5,7 +5,7 @@ async function customerMarket(path) {
     template,
 
     props: [
-      'products',
+      'filtered-products',
       'change-page',
       'search-nostr',
       'relays',
@@ -20,7 +20,6 @@ async function customerMarket(path) {
       return {
         search: null,
         partialProducts: [],
-        filteredProducts: [],
         productsPerPage: 12,
         startIndex: 0,
         lastProductIndex: 0,
@@ -31,11 +30,10 @@ async function customerMarket(path) {
       searchText: function () {
         this.refreshProducts()
       },
-      products: function () {
+      filteredProducts: function () {
         this.refreshProducts()
       },
       filterCategories: function () {
-        console.log('### watch filterCategories')
         this.refreshProducts()
       }
     },
@@ -44,7 +42,7 @@ async function customerMarket(path) {
         this.showProducts = false
         const searchText = this.searchText?.toLowerCase() || ''
         this.partialProducts = []
-        this.filteredProducts = this.products.filter(p => this.hasCategory(p.categories))
+
         if (searchText.length < 3) {
           this.lastProductIndex = Math.min(this.filteredProducts.length, this.productsPerPage)
           this.partialProducts.push(...this.filteredProducts.slice(0, this.lastProductIndex))
@@ -52,29 +50,13 @@ async function customerMarket(path) {
           return
         }
 
-
-        this.filteredProducts = this.products.filter(p => {
-          return (
-            p.name.toLowerCase().includes(searchText) ||
-            (p.description &&
-              p.description.toLowerCase().includes(searchText)) ||
-            (p.categories &&
-              p.categories.toString().toLowerCase().includes(searchText))
-          )
-        })
         this.startIndex = 0
         this.lastProductIndex = Math.min(this.filteredProducts.length, this.productsPerPage)
         this.partialProducts.push(...this.filteredProducts.slice(0, this.lastProductIndex))
 
         setTimeout(() => { this.showProducts = true }, 0)
       },
-      hasCategory(categories = []) {
-        if (!this.filterCategories?.length) return true
-        for (const cat of categories) {
-          if (this.filterCategories.indexOf(cat) !== -1) return true
-        }
-        return false
-      },
+
       addToCart(item) {
         this.$emit('add-to-cart', item)
       },
@@ -122,7 +104,6 @@ async function customerMarket(path) {
       }
     },
     created() {
-      this.filteredProducts = [...this.products]
       this.lastProductIndex = Math.min(this.filteredProducts.length, 24)
       this.partialProducts.push(...this.filteredProducts.slice(0, this.lastProductIndex))
     }
