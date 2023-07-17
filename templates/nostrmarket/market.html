@@ -7,7 +7,7 @@
         <div class="row q-mb-md q-pa-none">
           <q-toolbar class="col-lg-1 col-md-1 col-sm-0 q-pl-none">
             <q-avatar rounded size="64px" class="q-ma-none q-pa-none gt-sm">
-              <img src="/nostrmarket/static/images/nostr-avatar.png">
+              <img :src="logoImage">
             </q-avatar>
           </q-toolbar>
           <q-toolbar class="col-lg-6 col-md-5 col-sm-12 auto-width">
@@ -73,7 +73,7 @@
       <div class="col-lg-2 col-md-1 col-sm-0"></div>
       <div class="col-lg-8 col-md-10 col-sm-12 auto-width">
         <q-banner class="row q-pa-none q-mb-lg gt-sm shadow-2">
-          <q-img src="/nostrmarket/static/images/nostr-cover.png" class="rounded-borders"
+          <q-img v-if="bannerImage" :src="bannerImage" class="rounded-borders"
             style="width: 100%; height: 250px" cover></q-img>
         </q-banner>
         <div>

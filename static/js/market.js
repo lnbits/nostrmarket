@@ -86,6 +86,10 @@ const market = async () => {
         products: [],
         orders: {},
 
+        bannerImage: null,
+        logoImage: null,
+
+
         profiles: new Map(),
         searchText: null,
         inputPubkey: null,
@@ -111,7 +115,26 @@ const market = async () => {
         loading: false
       }
     },
+    watch: {
+      config(n, o) {
+        console.log('### config new', n)
+        if (n?.opts?.ui?.banner && (n?.opts?.ui?.banner !== o?.opts?.ui?.banner)) {
+          this.bannerImage = null
+          setTimeout(() => {
+            this.bannerImage = this.sanitizeImageSrc(n?.opts?.ui?.banner, '/nostrmarket/static/images/nostr-cover.png'), 1
+          })
+        }
+        if (n?.opts?.ui?.picture && (n?.opts?.ui?.picture !== o?.opts?.ui?.picture)) {
+          this.logoImage = null
+          setTimeout(() => {
+            this.logoImage = this.sanitizeImageSrc(n?.opts?.ui?.picture, '/nostrmarket/static/images/nostr-cover.png'), 1
+          })
+        }
+
+      }
+    },
     computed: {
+
       filterProducts() {
         let products = this.products.filter(p => this.hasCategory(p.categories))
         if (this.activeStall) {
@@ -238,6 +261,7 @@ const market = async () => {
       if (naddr) {
         try {
           let { type, data } = NostrTools.nip19.decode(naddr)
+          console.log('### naddr 1', type, data)
           if (type == 'naddr' && data.kind == '30019') { // just double check
             this.config = {
               d: data.identifier,
@@ -332,22 +356,13 @@ const market = async () => {
           this.configData.data = { name, about, ui }
           this.configData.data.identifier = this.config?.d
         }
-        this.openConfigDialog()
+
       },
-      openConfigDialog() {
-        if (!this.account) {
-          this.$q.notify({
-            message: `You need to be logged in first.`,
-            color: 'negative',
-            icon: 'warning'
-          })
-          return
-        }
-        this.configData.show = true
-      },
+
       updateUiConfig(configData) {
         console.log('### updateUiConfig', configData)
       },
+
       async sendConfig() {
         let { name, about, ui } = this.configData.data
         let merchants = Array.from(this.pubkeys)
@@ -460,23 +475,7 @@ const market = async () => {
 
         // If there is an naddr in the URL, get it and parse content
         if (this.config) {
-          // add relays to the set   
-          this.config.relays.forEach(r => this.relays.add(r))
-          await pool.get(this.config.relays, {
-            kinds: [30019],
-            limit: 1,
-            authors: [this.config.pubkey],
-            '#d': [this.config.d]
-          }).then(event => {
-            if (!event) return
-            let content = JSON.parse(event.content)
-            this.config = { ... this.config, opts: content }
-            // add merchants 
-            this.config.opts?.merchants.forEach(m => this.pubkeys.add(m))
-            // change theme
-            let { theme } = this.config.opts?.ui
-            theme && document.body.setAttribute('data-theme', theme)
-          }).catch(err => console.error(err))
+          await this.checkMarketplaceNaddr(pool)
         }
 
         let relays = Array.from(this.relays)
@@ -501,6 +500,38 @@ const market = async () => {
         this.pool = pool
         this.poolSubscribe()
         return
+      },
+
+      async checkMarketplaceNaddr(pool) {
+        try {
+          // add relays to the set   
+
+          this.config.relays.forEach(r => this.relays.add(r))
+          const event = await pool.get(this.config.relays, {
+            kinds: [30019],
+            limit: 1,
+            authors: [this.config.pubkey],
+            '#d': [this.config.d]
+          })
+          if (!event) return
+          let content = JSON.parse(event.content)
+          console.log('### event', event)
+          console.log('### naddr content', content)
+          this.config = { ... this.config, opts: content }
+          // add merchants 
+          const merchantsPubkeys = this.merchants.map(m => m.publicKey)
+          const extraMerchants = (this.config.opts?.merchants || [])
+            .filter(m => merchantsPubkeys.indexOf(m) === -1)
+            .map(m => ({ publicKey: m, profile: null }))
+          this.merchants.push(...extraMerchants)
+
+          // change theme
+          let { theme } = this.config.opts?.ui
+          theme && document.body.setAttribute('data-theme', theme)
+        } catch (error) {
+          console.warn(error)
+        }
+        console.log('### config', this.config)
       },
       async poolSubscribe() {
         const authors = Array.from(this.pubkeys).concat(this.merchants.map(m => m.publicKey))
@@ -929,6 +960,16 @@ const market = async () => {
       allStallImages(stallId) {
         const images = this.products.filter(p => p.stall_id === stallId).map(p => p.images && p.images[0]).filter(i => !!i)
         return Array.from(new Set(images))
+      },
+
+      sanitizeImageSrc(src, defaultValue) {
+        try {
+          if (src) {
+            new URL(src)
+            return src
+          }
+        } catch { }
+        return defaultValue
       }
 
     }
