@@ -95,12 +95,14 @@
               <strong>UI Configurations</strong>
             </div>
 
-            <q-input @change="updateUiConfig" outlined v-model="configData.ui.picture" type="text" label="Logo" class="q-mb-md">
+            <q-input @change="updateUiConfig" outlined v-model="configData.ui.picture" type="text" label="Logo"
+              class="q-mb-md">
             </q-input>
-            <q-input @change="updateUiConfig" outlined v-model="configData.ui.banner" type="text" label="Banner" class="q-mb-md">
+            <q-input @change="updateUiConfig" outlined v-model="configData.ui.banner" type="text" label="Banner"
+              class="q-mb-md">
             </q-input>
-            <q-select @change="updateUiConfig" filled v-model="configData.ui.theme" hint="Choose marketplace theme"
-              :options="themeOptions" label="Marketplace Theme"></q-select>
+            <q-select @input="updateUiConfig" filled v-model="configData.ui.theme"
+              hint="Choose marketplace theme" :options="themeOptions" label="Marketplace Theme"></q-select>
 
 
           </q-tab-panel>

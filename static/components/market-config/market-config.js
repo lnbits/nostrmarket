@@ -2,7 +2,7 @@ async function marketConfig(path) {
     const template = await loadTemplateAsync(path)
     Vue.component('market-config', {
         name: 'market-config',
-        props: ['merchants', 'relays', 'config'],
+        props: ['merchants', 'relays', 'config-ui'],
         template,
 
         data: function () {
@@ -82,12 +82,17 @@ async function marketConfig(path) {
                 this.$emit('remove-relay', relay)
             },
             updateUiConfig: function () {
-                console.log('### this.info', this.configData)
-                this.$emit('ui-config-update', this.configData)
+                const { name, about, ui } = this.configData
+                console.log('### this.info', { name, about, ui })
+                this.$emit('ui-config-update', { name, about, ui })
             }
         },
         created: async function () {
-            this.configData = { ...this.configData, ...this.config }
+            console.log('### this.configUi', this.configUi)
+            if (this.configUi) {
+                this.configData = { ...this.configData, ...this.configUi }
+            }
+
         }
     })
 }

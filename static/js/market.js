@@ -98,43 +98,34 @@ const market = async () => {
         activeStall: null,
         activeProduct: null,
         pool: null,
-        config: null,
-        configData: {
-          show: false,
-          data: {
-            name: null,
-            about: null,
-            ui: {
-              picture: null,
-              banner: null,
-              theme: null
-            }
-          }
+        config: {
+          opts: null
         },
+
         naddr: null,
-        loading: false
+        loading: false,
+
+        defaultBanner: '/nostrmarket/static/images/nostr-cover.png',
+        defaultLogo: '/nostrmarket/static/images/nostr-avatar.png'
       }
     },
     watch: {
       config(n, o) {
-        console.log('### config new', n)
-        const defaultBanner = '/nostrmarket/static/images/nostr-cover.png'
+        console.log('#### watch config', n)
         if (!n?.opts?.ui?.banner) {
-          this.bannerImage = defaultBanner
+          this.bannerImage = this.defaultBanner
         } else if (n?.opts?.ui?.banner !== o?.opts?.ui?.banner) {
           this.bannerImage = null
           setTimeout(() => {
-            this.bannerImage = this.sanitizeImageSrc(n?.opts?.ui?.banner, defaultBanner), 1
+            this.bannerImage = this.sanitizeImageSrc(n?.opts?.ui?.banner, this.defaultBanner), 1
           })
         }
-
-        const defaultLogo = '/nostrmarket/static/images/nostr-avatar.png'
-        if (n?.opts?.ui?.picture) {
-          this.logoImage = defaultLogo
+        if (!n?.opts?.ui?.picture) {
+          this.logoImage = this.defaultLogo
         } else if (n?.opts?.ui?.picture !== o?.opts?.ui?.picture) {
           this.logoImage = null
           setTimeout(() => {
-            this.logoImage = this.sanitizeImageSrc(n?.opts?.ui?.picture, defaultLogo), 1
+            this.logoImage = this.sanitizeImageSrc(n?.opts?.ui?.picture, this.defaultLogo), 1
           })
         }
 
@@ -223,10 +214,23 @@ const market = async () => {
       }
     },
     async created() {
+      this.bannerImage = this.defaultBanner
+      this.logoImage = this.defaultLogo
+
       this.merchants = this.$q.localStorage.getItem('nostrmarket.merchants') || []
       this.shoppingCarts = this.$q.localStorage.getItem('nostrmarket.shoppingCarts') || []
 
       this.account = this.$q.localStorage.getItem('nostrmarket.account') || null
+
+      const uiConfig = this.$q.localStorage.getItem('nostrmarket.marketplace-config') || {}
+      // trigger the `watch` logic
+      this.config = { ...this.config, opts: { ...this.config.opts, ...uiConfig } }
+      if (this.config?.opts?.ui?.theme) {
+        document.body.setAttribute('data-theme', this.config.opts.ui.theme)
+      }
+
+      console.log('### uiConfig', uiConfig)
+      console.log('### this.config', this.config)
 
       const prefix = 'nostrmarket.orders.'
       const orderKeys = this.$q.localStorage.getAllKeys().filter(k => k.startsWith(prefix))
@@ -234,6 +238,7 @@ const market = async () => {
         const pubkey = k.substring(prefix.length)
         this.orders[pubkey] = this.$q.localStorage.getItem(k)
       })
+
 
 
 
@@ -357,24 +362,25 @@ const market = async () => {
       openAccountDialog() {
         this.accountDialog.show = true
       },
-      editConfigDialog() {
-        if (this.canEditConfig && this.config?.opts) {
-          let { name, about, ui } = this.config.opts
-          this.configData.data = { name, about, ui }
-          this.configData.data.identifier = this.config?.d
+
+
+      async updateUiConfig(updateData) {
+        console.log('### updateUiConfig', updateData)
+        const { name, about, ui } = updateData
+        this.config.opts = { ...this.config.opts, name, about, ui }
+        if (ui.theme) {
+          document.body.setAttribute('data-theme', ui.theme)
         }
+        this.$q.localStorage.set('nostrmarket.marketplace-config', { name, about, ui })
 
-      },
 
-      updateUiConfig(configData) {
-        console.log('### updateUiConfig', configData)
-      },
 
-      async sendConfig() {
-        let { name, about, ui } = this.configData.data
-        let merchants = Array.from(this.pubkeys)
-        let identifier = this.configData.data.identifier ?? crypto.randomUUID()
-        let event = {
+
+        if (!this.account?.privkey) return
+
+        const merchants = Array.from(this.merchants.map(m => m.publicKey))
+        const identifier = this.config.identifier ?? crypto.randomUUID()
+        const event = {
           ...(await NostrTools.getBlankEvent()),
           kind: 30019,
           content: JSON.stringify({ name, about, ui, merchants }),
@@ -407,25 +413,9 @@ const market = async () => {
           identifier: identifier,
           relays: Array.from(this.relays)
         })
-        this.config = this.configData.data
-        this.resetConfig()
         return
       },
-      resetConfig() {
-        this.configData = {
-          show: false,
-          identifier: null,
-          data: {
-            name: null,
-            about: null,
-            ui: {
-              picture: null,
-              banner: null,
-              theme: null
-            }
-          }
-        }
-      },
+
       async updateData(events) {
         console.log('### updateData', events)
         if (events.length < 1) {
@@ -510,6 +500,7 @@ const market = async () => {
       },
 
       async checkMarketplaceNaddr(pool) {
+        if (!this.naddr) return
         try {
           // add relays to the set   
 
@@ -533,12 +524,11 @@ const market = async () => {
           this.merchants.push(...extraMerchants)
 
           // change theme
-          let { theme } = this.config.opts?.ui
+          const { theme } = this.config.opts?.ui
           theme && document.body.setAttribute('data-theme', theme)
         } catch (error) {
           console.warn(error)
         }
-        console.log('### config', this.config)
       },
       async poolSubscribe() {
         const authors = Array.from(this.pubkeys).concat(this.merchants.map(m => m.publicKey))
