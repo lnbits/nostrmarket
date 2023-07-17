@@ -118,16 +118,23 @@ const market = async () => {
     watch: {
       config(n, o) {
         console.log('### config new', n)
-        if (n?.opts?.ui?.banner && (n?.opts?.ui?.banner !== o?.opts?.ui?.banner)) {
+        const defaultBanner = '/nostrmarket/static/images/nostr-cover.png'
+        if (!n?.opts?.ui?.banner) {
+          this.bannerImage = defaultBanner
+        } else if (n?.opts?.ui?.banner !== o?.opts?.ui?.banner) {
           this.bannerImage = null
           setTimeout(() => {
-            this.bannerImage = this.sanitizeImageSrc(n?.opts?.ui?.banner, '/nostrmarket/static/images/nostr-cover.png'), 1
+            this.bannerImage = this.sanitizeImageSrc(n?.opts?.ui?.banner, defaultBanner), 1
           })
         }
-        if (n?.opts?.ui?.picture && (n?.opts?.ui?.picture !== o?.opts?.ui?.picture)) {
+
+        const defaultLogo = '/nostrmarket/static/images/nostr-avatar.png'
+        if (n?.opts?.ui?.picture) {
+          this.logoImage = defaultLogo
+        } else if (n?.opts?.ui?.picture !== o?.opts?.ui?.picture) {
           this.logoImage = null
           setTimeout(() => {
-            this.logoImage = this.sanitizeImageSrc(n?.opts?.ui?.picture, '/nostrmarket/static/images/nostr-cover.png'), 1
+            this.logoImage = this.sanitizeImageSrc(n?.opts?.ui?.picture, defaultLogo), 1
           })
         }
 
