@@ -345,6 +345,9 @@ const market = async () => {
         }
         this.configDialog.show = true
       },
+      updateUiConfig(configData) {
+        console.log('### updateUiConfig', configData)
+      },
       async sendConfig() {
         let { name, about, ui } = this.configDialog.data
         let merchants = Array.from(this.pubkeys)
