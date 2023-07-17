@@ -95,7 +95,7 @@ const market = async () => {
         activeProduct: null,
         pool: null,
         config: null,
-        configDialog: {
+        configData: {
           show: false,
           data: {
             name: null,
@@ -329,8 +329,8 @@ const market = async () => {
       editConfigDialog() {
         if (this.canEditConfig && this.config?.opts) {
           let { name, about, ui } = this.config.opts
-          this.configDialog.data = { name, about, ui }
-          this.configDialog.data.identifier = this.config?.d
+          this.configData.data = { name, about, ui }
+          this.configData.data.identifier = this.config?.d
         }
         this.openConfigDialog()
       },
@@ -343,15 +343,15 @@ const market = async () => {
           })
           return
         }
-        this.configDialog.show = true
+        this.configData.show = true
       },
       updateUiConfig(configData) {
         console.log('### updateUiConfig', configData)
       },
       async sendConfig() {
-        let { name, about, ui } = this.configDialog.data
+        let { name, about, ui } = this.configData.data
         let merchants = Array.from(this.pubkeys)
-        let identifier = this.configDialog.data.identifier ?? crypto.randomUUID()
+        let identifier = this.configData.data.identifier ?? crypto.randomUUID()
         let event = {
           ...(await NostrTools.getBlankEvent()),
           kind: 30019,
@@ -385,12 +385,12 @@ const market = async () => {
           identifier: identifier,
           relays: Array.from(this.relays)
         })
-        this.config = this.configDialog.data
+        this.config = this.configData.data
         this.resetConfig()
         return
       },
       resetConfig() {
-        this.configDialog = {
+        this.configData = {
           show: false,
           identifier: null,
           data: {
