@@ -1,6 +1,6 @@
 <q-card>
   <q-card-section>
-    <div class="q-pa-md">
+    <div class="q-pt-md">
       <div class="q-gutter-y-md">
         <q-tabs v-model="tab" active-color="primary" align="justify">
           <q-tab name="merchants" label="Merchants" @update="val => tab = val.name"></q-tab>
@@ -8,6 +8,14 @@
           <q-tab name="marketplace" label="Look And Feel" @update="val => tab = val.name"></q-tab>
 
         </q-tabs>
+      </div>
+    </div>
+  </q-card-section>
+  <q-separator />
+  <q-card-section>
+    <div class="q-pa-md">
+      <div class="q-gutter-y-md">
+      
         <q-tab-panels v-model="tab">
           <q-tab-panel name="merchants">
             <div>
@@ -100,6 +108,7 @@
       </div>
     </div>
   </q-card-section>
+  <q-separator />
   <q-card-section>
     <div class="float-right">
       <q-btn flat label="Copy Naddr" color="green"></q-btn>
