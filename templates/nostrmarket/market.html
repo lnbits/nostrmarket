@@ -74,11 +74,15 @@
       <div class="col-lg-8 col-md-10 col-sm-12 auto-width">
         <q-banner class="row q-pa-none q-mb-lg gt-sm shadow-2">
           <q-img v-if="bannerImage" :src="bannerImage" class="rounded-borders"
-            style="width: 100%; height: 250px" cover></q-img>
+            style="width: 100%; height: 250px" cover>
+            <div v-if="config?.opts?.about" class="absolute-bottom text-subtitle1 text-center">
+              <span v-text="config.opts.about"></span>
+            </div>
+          </q-img>
         </q-banner>
         <div>
           <q-breadcrumbs class="cursor">
-            <q-breadcrumbs-el :label="'Market'" icon="home" @click="navigateTo('market')" class="cursor-pointer">
+            <q-breadcrumbs-el :label="config?.opts?.name || 'Market'" icon="home" @click="navigateTo('market')" class="cursor-pointer">
               <q-checkbox v-model="groupByStall" v-if="activePage === 'market'" class="q-pl-md float-right" size="xs"
                 val="xs" label="Group by stalls"></q-checkbox>
 
@@ -109,7 +113,7 @@
 
         <market-config v-if="activePage === 'market-config'" :merchants="merchants" @add-merchant="addMerchant"
           @remove-merchant="removeMerchant" :relays="relays" @add-relay="addRelay" @remove-relay="removeRelay"
-          :config="configData" @ui-config-update="updateUiConfig"></market-config>
+          :config-ui="config?.opts" @ui-config-update="updateUiConfig"></market-config>
 
         <user-config v-else-if="activePage === 'user-config'"></user-config>
 
