@@ -11,7 +11,6 @@ async function customerMarket(path) {
       'relays',
       'update-products',
       'update-stalls',
-      'styles',
 
       'search-text',
       'filter-categories'
