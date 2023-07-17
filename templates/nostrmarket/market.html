@@ -265,8 +265,8 @@
         <q-separator class="q-mt-sm q-mb-md"></q-separator>
 
         <market-config v-if="activePage === 'market-config'" :merchants="merchants" @add-merchant="addMerchant"
-          @remove-merchant="removeMerchant" :relays="relays" @add-relay="addRelay"
-          @remove-relay="removeRelay"></market-config>
+          @remove-merchant="removeMerchant" :relays="relays" @add-relay="addRelay" @remove-relay="removeRelay"
+          :config="configDialog" @ui-config-update="updateUiConfig"></market-config>
 
         <user-config v-else-if="activePage === 'user-config'"></user-config>
 

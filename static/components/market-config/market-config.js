@@ -2,7 +2,7 @@ async function marketConfig(path) {
     const template = await loadTemplateAsync(path)
     Vue.component('market-config', {
         name: 'market-config',
-        props: ['merchants', 'relays'],
+        props: ['merchants', 'relays', 'config'],
         template,
 
         data: function () {
@@ -12,13 +12,27 @@ async function marketConfig(path) {
                 profiles: new Map(),
                 merchantPubkey: null,
                 relayUrl: null,
-                info: {
+                configData: {
+                    identifier: null,
                     name: null,
-                    description: null,
-                    theme: null,
-                    logo: null,
-                    banner: null
-                }
+                    about: null,
+                    ui: {
+                        picture: null,
+                        banner: null,
+                        theme: null
+                    }
+                },
+                themeOptions: [
+                    'classic',
+                    'bitcoin',
+                    'flamingo',
+                    'cyber',
+                    'freedom',
+                    'mint',
+                    'autumn',
+                    'monochrome',
+                    'salvador'
+                ]
             }
         },
         methods: {
@@ -67,9 +81,13 @@ async function marketConfig(path) {
             removeRelay: async function (relay) {
                 this.$emit('remove-relay', relay)
             },
+            updateUiConfig: function () {
+                console.log('### this.info', this.configData)
+                this.$emit('ui-config-update', this.configData)
+            }
         },
         created: async function () {
-
+            this.configData = { ...this.configData, ...this.config }
         }
     })
 }

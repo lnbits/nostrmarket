@@ -15,7 +15,7 @@
   <q-card-section>
     <div class="q-pa-md">
       <div class="q-gutter-y-md">
-      
+
         <q-tab-panels v-model="tab">
           <q-tab-panel name="merchants">
             <div>
@@ -85,20 +85,22 @@
           </q-tab-panel>
           <q-tab-panel name="marketplace">
             <div class="q-mb-md"> <strong>Information</strong></div>
-            <q-input outlined v-model="info.name" type="text" label="Marketplace Name" class="q-mb-md">
+            <q-input @change="updateUiConfig" outlined v-model="configData.name" type="text" label="Marketplace Name"
+              class="q-mb-md">
             </q-input>
+            <q-input @change="updateUiConfig" outlined v-model="configData.about" type="textarea" rows="3"
+              label="Marketplace Description" class="q-mb-lg"></q-input>
 
-            <q-input outlined v-model="info.description" type="textarea" rows="3" label="Marketplace Description"
-              class="q-mb-lg"></q-input>
             <div class="q-mb-md q-mt-lg">
               <strong>UI Configurations</strong>
             </div>
-            <q-input outlined v-model="info.theme" type="text" label="Theme" class="q-mb-md">
+
+            <q-input @change="updateUiConfig" outlined v-model="configData.ui.picture" type="text" label="Logo" class="q-mb-md">
             </q-input>
-            <q-input outlined v-model="info.logo" type="text" label="Logo" class="q-mb-md">
+            <q-input @change="updateUiConfig" outlined v-model="configData.ui.banner" type="text" label="Banner" class="q-mb-md">
             </q-input>
-            <q-input outlined v-model="info.banner" type="text" label="Banner" class="q-mb-md">
-            </q-input>
+            <q-select @change="updateUiConfig" filled v-model="configData.ui.theme" hint="Choose marketplace theme"
+              :options="themeOptions" label="Marketplace Theme"></q-select>
 
 
           </q-tab-panel>
@@ -111,8 +113,8 @@
   <q-separator />
   <q-card-section>
     <div class="float-right">
-      <q-btn flat label="Copy Naddr" color="green"></q-btn>
-      <q-btn flat label="Update" color="primary"></q-btn>
+      <q-btn rounded label="Copy Naddr" color="green"></q-btn>
+      <q-btn rounded label="Update" class="q-ml-lg" color="primary"></q-btn>
     </div>
   </q-card-section>
   <q-card-section></q-card-section>
