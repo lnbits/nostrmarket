@@ -213,7 +213,7 @@ const market = async () => {
       // Check for stored merchants and relays on localStorage
       try {
         let merchants = this.$q.localStorage.getItem(`diagonAlley.merchants`)
-        let relays = this.$q.localStorage.getItem(`diagonAlley.relays`)
+        let relays = this.$q.localStorage.getItem(`nostrmarket.relays`)
         if (merchants && merchants.length) {
           this.pubkeys = new Set(merchants)
         }
@@ -604,29 +604,25 @@ const market = async () => {
         )
         this.initNostr()
       },
-      async addRelay() {
-        let relay = String(this.inputRelay).trim()
-        if (!relay.startsWith('ws')) {
-          console.debug('invalid url')
-          return
-        }
-        this.relays.add(relay)
-        this.$q.localStorage.set(`diagonAlley.relays`, Array.from(this.relays))
-        this.inputRelay = null
-        this.initNostr()
-      },
-      removeRelay(relay) {
-        // Needs a hack for Vue reactivity
-        let relays = this.relays
-        relays.delete(relay)
-        this.relays = new Set(Array.from(relays))
-        this.$q.localStorage.set(`diagonAlley.relays`, Array.from(this.relays))
-        this.initNostr()
-      },
 
       setActivePage(page = 'market') {
         this.activePage = page
       },
+      async addRelay(relayUrl) {
+        let relay = String(relayUrl).trim()
+
+        this.relays.add(relay)
+        this.$q.localStorage.set(`nostrmarket.relays`, Array.from(this.relays))
+        this.initNostr() // todo: improve
+      },
+      removeRelay(relayUrl) {
+        this.relays.delete(relayUrl)
+        this.relays = new Set(Array.from(this.relays))
+        this.$q.localStorage.set(`nostrmarket.relays`, Array.from(this.relays))
+        this.initNostr()  // todo: improve
+      },
+
+
 
       addMerchant(publicKey) {
         console.log('### addMerchat', publicKey)
