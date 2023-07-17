@@ -21,9 +21,7 @@
       </q-card>
     </div>
   </div>
-  <q-banner v-if="styles?.ui?.banner" class="row q-pa-none q-mb-md">
-    <q-img :src="styles.ui.banner" style="width: 100%; height: 250px" cover></q-img>
-  </q-banner>
+
 
   <q-infinite-scroll v-if="showProducts" @load="onLoad" :offset="250">
     <div class="row q-col-gutter-md">
