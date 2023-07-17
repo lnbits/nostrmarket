@@ -11,7 +11,7 @@
         <q-tab-panels v-model="tab">
           <q-tab-panel name="merchants">
             <div>
-              <q-input outlined v-model="inputPubkey" @keydown.enter="addMerchant" type="text" label="Pubkey/Npub"
+              <q-input outlined v-model="merchantPubkey" @keydown.enter="addMerchant" type="text" label="Pubkey/Npub"
                 hint="Add merchants">
                 <q-btn @click="addMerchant" dense flat icon="add"></q-btn>
               </q-input>
@@ -43,24 +43,53 @@
           </q-tab-panel>
           <q-tab-panel name="relays">
             <div>
-              Relays
+              <div>
+                <q-input outlined v-model="relayUrl" @keydown.enter="addRelay" type="text" label="wss://"
+                  hint="Add realays">
+                  <q-btn @click="addRelay" dense flat icon="add"></q-btn>
+                </q-input>
+                <q-list class="q-mt-md">
+                  <q-item v-for="relay in relays" :key="relay">
+
+                    <q-item-section avatar>
+                      <!-- <q-avatar>
+                        <img v-if="profile?.picture" :src="profile.picture" />
+                        <img v-else src="/nostrmarket/static/images/blank-avatar.webp" />
+                      </q-avatar> -->
+                    </q-item-section>
+                    <q-item-section class="q-mt-sm">
+                      <q-item-label><strong>{{ relay}}</strong></q-item-label>
+                      <!-- <q-item-label>
+                        <div class="text-caption text-grey ellipsis-2-lines">
+                          <p>{{ publicKey }}</p>
+                        </div>
+                      </q-item-label> -->
+                      <!-- <q-tooltip>{{ publicKey }}</q-tooltip> -->
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-btn size="12px" flat dense round icon="delete" @click="removeRelay(relay)" />
+                    </q-item-section>
+
+                  </q-item>
+                </q-list>
+              </div>
             </div>
           </q-tab-panel>
           <q-tab-panel name="marketplace">
             <div class="q-mb-md"> <strong>Information</strong></div>
-            <q-input outlined v-model="inputPubkey" type="text" label="Marketplace Name" class="q-mb-md">
+            <q-input outlined v-model="info.name" type="text" label="Marketplace Name" class="q-mb-md">
             </q-input>
 
-            <q-input outlined v-model="inputPubkey" type="textarea" rows="3" label="Marketplace Description"
+            <q-input outlined v-model="info.description" type="textarea" rows="3" label="Marketplace Description"
               class="q-mb-lg"></q-input>
             <div class="q-mb-md q-mt-lg">
               <strong>UI Configurations</strong>
             </div>
-            <q-input outlined v-model="inputPubkey" type="text" label="Theme" class="q-mb-md">
+            <q-input outlined v-model="info.theme" type="text" label="Theme" class="q-mb-md">
             </q-input>
-            <q-input outlined v-model="inputPubkey" type="text" label="Logo" class="q-mb-md">
+            <q-input outlined v-model="info.logo" type="text" label="Logo" class="q-mb-md">
             </q-input>
-            <q-input outlined v-model="inputPubkey" type="text" label="Banner" class="q-mb-md">
+            <q-input outlined v-model="info.banner" type="text" label="Banner" class="q-mb-md">
             </q-input>
 
 
