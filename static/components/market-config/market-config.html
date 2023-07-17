@@ -1,73 +1,81 @@
 <q-card>
-  <div class="q-pa-md">
-    <div class="q-gutter-y-md">
-      <q-tabs v-model="tab" active-color="primary" align="justify">
-        <q-tab name="merchants" label="Merchants" @update="val => tab = val.name"></q-tab>
-        <q-tab name="relays" label="Relays" @update="val => tab = val.name"></q-tab>
-        <q-tab name="marketplace" label="Look And Feel" @update="val => tab = val.name"></q-tab>
+  <q-card-section>
+    <div class="q-pa-md">
+      <div class="q-gutter-y-md">
+        <q-tabs v-model="tab" active-color="primary" align="justify">
+          <q-tab name="merchants" label="Merchants" @update="val => tab = val.name"></q-tab>
+          <q-tab name="relays" label="Relays" @update="val => tab = val.name"></q-tab>
+          <q-tab name="marketplace" label="Look And Feel" @update="val => tab = val.name"></q-tab>
 
-      </q-tabs>
-      <q-tab-panels v-model="tab">
-        <q-tab-panel name="merchants">
-          <div>
-            <q-input outlined v-model="inputPubkey" @keydown.enter="addMerchant" type="text" label="Pubkey/Npub"
-              hint="Add merchants">
-              <q-btn @click="addMerchant" dense flat icon="add"></q-btn>
+        </q-tabs>
+        <q-tab-panels v-model="tab">
+          <q-tab-panel name="merchants">
+            <div>
+              <q-input outlined v-model="inputPubkey" @keydown.enter="addMerchant" type="text" label="Pubkey/Npub"
+                hint="Add merchants">
+                <q-btn @click="addMerchant" dense flat icon="add"></q-btn>
+              </q-input>
+              <q-list class="q-mt-md">
+                <q-item v-for="{publicKey, profile} in merchants" :key="publicKey">
+
+                  <q-item-section avatar>
+                    <q-avatar>
+                      <img v-if="profile?.picture" :src="profile.picture" />
+                      <img v-else src="/nostrmarket/static/images/blank-avatar.webp" />
+                    </q-avatar>
+                  </q-item-section>
+                  <q-item-section class="q-mt-sm">
+                    <q-item-label><strong>{{ profile?.name}}</strong></q-item-label>
+                    <q-item-label>
+                      <div class="text-caption text-grey ellipsis-2-lines">
+                        <p>{{ publicKey }}</p>
+                      </div>
+                    </q-item-label>
+                    <q-tooltip>{{ publicKey }}</q-tooltip>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-btn size="12px" flat dense round icon="delete" @click="removeMerchant(publicKey)" />
+                  </q-item-section>
+
+                </q-item>
+              </q-list>
+            </div>
+          </q-tab-panel>
+          <q-tab-panel name="relays">
+            <div>
+              Relays
+            </div>
+          </q-tab-panel>
+          <q-tab-panel name="marketplace">
+            <div class="q-mb-md"> <strong>Information</strong></div>
+            <q-input outlined v-model="inputPubkey" type="text" label="Marketplace Name" class="q-mb-md">
             </q-input>
-            <q-list class="q-mt-md">
-              <q-item v-for="{publicKey, profile} in merchants" :key="publicKey">
 
-                <q-item-section avatar>
-                  <q-avatar>
-                    <img v-if="profile?.picture" :src="profile.picture" />
-                    <img v-else src="/nostrmarket/static/images/blank-avatar.webp" />
-                  </q-avatar>
-                </q-item-section>
-                <q-item-section class="q-mt-sm">
-                  <q-item-label><strong>{{ profile?.name}}</strong></q-item-label>
-                  <q-item-label>
-                    <div class="text-caption text-grey ellipsis-2-lines">
-                      <p>{{ publicKey }}</p>
-                    </div>
-                  </q-item-label>
-                  <q-tooltip>{{ publicKey }}</q-tooltip>
-                </q-item-section>
-                <q-item-section side>
-                  <q-btn size="12px" flat dense round icon="delete" @click="removeMerchant(publicKey)" />
-                </q-item-section>
+            <q-input outlined v-model="inputPubkey" type="textarea" rows="3" label="Marketplace Description"
+              class="q-mb-lg"></q-input>
+            <div class="q-mb-md q-mt-lg">
+              <strong>UI Configurations</strong>
+            </div>
+            <q-input outlined v-model="inputPubkey" type="text" label="Theme" class="q-mb-md">
+            </q-input>
+            <q-input outlined v-model="inputPubkey" type="text" label="Logo" class="q-mb-md">
+            </q-input>
+            <q-input outlined v-model="inputPubkey" type="text" label="Banner" class="q-mb-md">
+            </q-input>
 
-              </q-item>
-            </q-list>
-          </div>
-        </q-tab-panel>
-        <q-tab-panel name="relays">
-          <div>
-            Relays
-          </div>
-        </q-tab-panel>
-        <q-tab-panel name="marketplace">
-          <strong>Information</strong>
-          <q-input outlined v-model="inputPubkey" type="text" label="Marketplace Name" class="q-mb-md">
-          </q-input>
 
-          <q-input outlined v-model="inputPubkey" type="textarea" rows="3" label="Marketplace Description"
-            class="q-mb-lg"></q-input>
-          <strong class="q-mb-md">UI Configurations</strong>
-          <q-input outlined v-model="inputPubkey" type="text" label="Theme" class="q-mb-md">
-          </q-input>
-          <q-input outlined v-model="inputPubkey" type="text" label="Logo" class="q-mb-md">
-          </q-input>
-          <q-input outlined v-model="inputPubkey" type="text" label="Banner" class="q-mb-md">
-          </q-input>
-          <div class="float-right">
-            <q-btn flat label="Copy Naddr" color="grey"></q-btn>
-            <q-btn flat label="Update" color="primary"></q-btn>
-          </div>
+          </q-tab-panel>
 
-        </q-tab-panel>
+        </q-tab-panels>
 
-      </q-tab-panels>
+      </div>
     </div>
-  </div>
-
+  </q-card-section>
+  <q-card-section>
+    <div class="float-right">
+      <q-btn flat label="Copy Naddr" color="green"></q-btn>
+      <q-btn flat label="Update" color="primary"></q-btn>
+    </div>
+  </q-card-section>
+  <q-card-section></q-card-section>
 </q-card>
