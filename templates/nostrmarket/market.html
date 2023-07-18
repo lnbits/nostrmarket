@@ -95,8 +95,8 @@
         <q-breadcrumbs class="cursor q-mt-sm q-mr-sm">
           <q-breadcrumbs-el :label="config?.opts?.name || 'Market'" icon="home" @click="navigateTo('market')"
             class="cursor-pointer auto-width">
-            <q-checkbox v-model="groupByStall" v-if="activePage === 'market'" class="q-pl-md float-right" size="xs"
-              val="xs" label="Group by stalls"></q-checkbox>
+            <q-checkbox v-model="groupByStall" v-if="activePage === 'market' && stalls?.length"
+              class="q-pl-md float-right" size="xs" val="xs" label="Group by stalls"></q-checkbox>
 
           </q-breadcrumbs-el>
           <q-breadcrumbs-el v-if="activePage === 'customer-stall'" :label="stallName"
@@ -151,6 +151,17 @@
         <customer-stall v-else-if="activePage === 'customer-stall'"
           :stall="stalls.find(stall => stall.id == activeStall)" :products="filterProducts"
           :product-detail="activeProduct" @change-page="navigateTo" @add-to-cart="addProductToCart"></customer-stall>
+
+        <div v-else-if="!merchants?.length" class="text-center">
+
+          <span class="text-subtitle1"> <strong>You can start by adding a merchant public key </strong></span>
+          <q-btn @click="setActivePage('market-config')" flat color="secondary" class="q-mb-xs">Here</q-btn>
+          <br>
+          <span class="text-subtitle1 q-pt-md"><strong>Or enter a nostr market profile ( <code>naddr</code>) in the
+              filter input.
+            </strong> </span>
+
+        </div>
 
         <div v-else>
           <customer-stall-list v-if="groupByStall" :stalls="filterStalls"
