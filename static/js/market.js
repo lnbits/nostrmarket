@@ -280,12 +280,8 @@ const market = async () => {
         const uiConfig = this.$q.localStorage.getItem('nostrmarket.marketplace-config') || {}
         // trigger the `watch` logic
         this.config = { ...this.config, opts: { ...this.config.opts, ...uiConfig } }
-        if (this.config?.opts?.ui?.theme) {
-          document.body.setAttribute('data-theme', this.config.opts.ui.theme)
-        }
+        this.applyUiConfigs(this.config)
 
-        console.log('### uiConfig', uiConfig)
-        console.log('### this.config', this.config)
 
         const prefix = 'nostrmarket.orders.'
         const orderKeys = this.$q.localStorage.getAllKeys().filter(k => k.startsWith(prefix))
@@ -296,8 +292,17 @@ const market = async () => {
 
         const relays = this.$q.localStorage.getItem('nostrmarket.relays')
         this.relays = new Set(relays?.length ? relays : defaultRelays)
-
+        console.log('#### relays', relays, this.relays)
       },
+      applyUiConfigs(config = {}) {
+        if (config.opts?.ui?.theme) {
+          document.body.setAttribute('data-theme', this.config.opts.ui.theme)
+        }
+        if (config.opts?.ui?.darkMode) {
+          // tood
+        }
+      },
+
       async deleteAccount() {
         await LNbits.utils
           .confirmDialog(
@@ -353,12 +358,8 @@ const market = async () => {
         console.log('### updateUiConfig', updateData)
         const { name, about, ui } = updateData
         this.config.opts = { ...this.config.opts, name, about, ui }
-        if (ui.theme) {
-          document.body.setAttribute('data-theme', ui.theme)
-        }
+        this.applyUiConfigs(this.config)
         this.$q.localStorage.set('nostrmarket.marketplace-config', { name, about, ui })
-
-
 
 
         if (!this.account?.privkey) return
@@ -508,9 +509,7 @@ const market = async () => {
             .map(m => ({ publicKey: m, profile: null }))
           this.merchants.push(...extraMerchants)
 
-          // change theme
-          const { theme } = this.config.opts?.ui
-          theme && document.body.setAttribute('data-theme', theme)
+          this.applyUiConfigs(this.config)
         } catch (error) {
           console.warn(error)
         }
