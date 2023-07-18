@@ -7,12 +7,12 @@
         <div class="row q-mb-md q-pa-none">
           <q-toolbar class="col-lg-1 col-md-1 col-sm-0 q-pl-none">
             <q-avatar rounded size="64px" class="q-ma-none q-pa-none gt-sm">
-              <img :src="logoImage">
+              <img v-if="logoImage" :src="logoImage">
             </q-avatar>
           </q-toolbar>
           <q-toolbar class="col-lg-6 col-md-5 col-sm-12 auto-width">
             <q-input class="rounded-pill" style="width:100%;" rounded outlined clearable v-model.trim="searchText"
-              label="Filter products">
+              label="Filter products, load market profile...">
               <template v-slot:append>
                 <q-icon v-if="!searchText" name="search" />
               </template>
