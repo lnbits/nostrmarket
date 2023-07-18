@@ -134,7 +134,8 @@
           @remove-merchant="removeMerchant" :relays="relays" @add-relay="addRelay" @remove-relay="removeRelay"
           :config-ui="config?.opts" @ui-config-update="updateUiConfig" @publish-naddr="publishNaddr"></market-config>
 
-        <user-config v-else-if="activePage === 'user-config'"></user-config>
+        <user-config v-else-if="activePage === 'user-config'" :account="account" @logout="logout"
+          @copy-text="copyText"></user-config>
 
         <user-chat v-else-if="activePage === 'user-chat'"></user-chat>
 
