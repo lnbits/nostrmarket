@@ -79,7 +79,6 @@ const market = async () => {
         groupByStall: false,
 
         drawer: true,
-        pubkeys: new Set(),
         relays: new Set(),
         events: [],
         stalls: [],
@@ -102,7 +101,6 @@ const market = async () => {
           opts: null
         },
 
-        naddr: null,
 
         defaultBanner: '/nostrmarket/static/images/nostr-cover.png',
         defaultLogo: '/nostrmarket/static/images/nostr-avatar.png'
@@ -110,7 +108,6 @@ const market = async () => {
     },
     watch: {
       config(n, o) {
-        console.log('#### watch config', n)
         if (!n?.opts?.ui?.banner) {
           this.bannerImage = this.defaultBanner
         } else if (n?.opts?.ui?.banner !== o?.opts?.ui?.banner) {
@@ -222,7 +219,6 @@ const market = async () => {
             selected: this.filterCategories.indexOf(category) !== -1
           }))
           .sort((a, b) => b.count - a.count)
-        console.log('### x', x)
         return x
       }
     },
@@ -279,10 +275,9 @@ const market = async () => {
         this.account = this.$q.localStorage.getItem('nostrmarket.account') || null
 
         const uiConfig = this.$q.localStorage.getItem('nostrmarket.marketplaceConfig') || { ui: { darkMode: false } }
-        console.log('### uiConfig storage: ', uiConfig)
+
         // trigger the `watch` logic
         this.config = { ...this.config, opts: { ...this.config.opts, ...uiConfig } }
-        console.log('#### restoreFromStorage  this.config', this.config)
         this.applyUiConfigs(this.config)
 
 
@@ -295,11 +290,9 @@ const market = async () => {
 
         const relays = this.$q.localStorage.getItem('nostrmarket.relays')
         this.relays = new Set(relays?.length ? relays : defaultRelays)
-        console.log('#### relays', relays, this.relays)
       },
       applyUiConfigs(config = {}) {
         const { name, about, ui } = config?.opts || {}
-        console.log('### applyUiConfigs', name, about, ui)
         this.$q.localStorage.set('nostrmarket.marketplaceConfig', { name, about, ui })
         if (config.opts?.ui?.theme) {
           document.body.setAttribute('data-theme', this.config.opts.ui.theme)
@@ -327,7 +320,6 @@ const market = async () => {
           })
       },
       async createAccount(useExtension = false) {
-        console.log('### createAccount',)
         let nip07
         if (useExtension) {
           await this.getFromExtension()
@@ -368,14 +360,12 @@ const market = async () => {
 
 
       async updateUiConfig(updateData) {
-        console.log('### updateUiConfig', updateData)
         const { name, about, ui } = updateData
         this.config = { ...this.config, opts: { ...this.config.opts, name, about, ui } }
         this.applyUiConfigs(this.config)
       },
 
       async updateData(events) {
-        console.log('### updateData', events)
         if (events.length < 1) {
           this.$q.notify({
             message: 'No matches were found!'
@@ -422,19 +412,14 @@ const market = async () => {
             return obj
           })
           .filter(f => f)
-        console.log('### products', this.products)
       },
       async initNostr() {
         this.$q.loading.show()
         const pool = new NostrTools.SimplePool()
 
-
-
         let relays = Array.from(this.relays)
 
-        const authors = Array.from(this.pubkeys).concat(this.merchants.map(m => m.publicKey))
-        console.log('### stupid', authors)
-        // Get metadata and market data from the pubkeys
+        const authors = this.merchants.map(m => m.publicKey)
         await pool
           .list(relays, [
             {
@@ -443,7 +428,6 @@ const market = async () => {
             }
           ])
           .then(async events => {
-            console.log('### stupid response', events)
             if (!events || events.length == 0) return
             await this.updateData(events)
           })
@@ -453,13 +437,29 @@ const market = async () => {
         this.poolSubscribe()
         return
       },
+      async poolSubscribe() {
+        const authors = this.merchants.map(m => m.publicKey)
+        this.poolSub = this.pool.sub(Array.from(this.relays), [
+          {
+            kinds: [0, 30017, 30018],
+            authors,
+            since: Date.now() / 1000
+          }
+        ])
+        this.poolSub.on(
+          'event',
+          event => {
+            this.updateData([event])
+          },
+          { id: 'masterSub' } //pass ID to cancel previous sub
+        )
+      },
 
       async checkMarketNaddr(naddr) {
         if (!naddr) return
 
         try {
           const { type, data } = NostrTools.nip19.decode(naddr)
-          console.log('### naddr {type, data}:', type, data)
           if (type !== 'naddr' || data.kind !== 30019) return // just double check
           this.config = {
             d: data.identifier,
@@ -482,7 +482,7 @@ const market = async () => {
             authors: [this.config.pubkey],
             '#d': [this.config.d]
           })
-          console.log('########### naddr event')
+
           if (!event) return
 
           this.config = { ... this.config, opts: JSON.parse(event.content) }
@@ -495,24 +495,7 @@ const market = async () => {
         }
       },
 
-      async poolSubscribe() {
-        const authors = Array.from(this.pubkeys).concat(this.merchants.map(m => m.publicKey))
-        console.log('### poolSubscribe.authors', authors)
-        this.poolSub = this.pool.sub(Array.from(this.relays), [
-          {
-            kinds: [0, 30017, 30018],
-            authors,
-            since: Date.now() / 1000
-          }
-        ])
-        this.poolSub.on(
-          'event',
-          event => {
-            this.updateData([event])
-          },
-          { id: 'masterSub' } //pass ID to cancel previous sub
-        )
-      },
+
       navigateTo(page, opts = { stall: null, product: null, pubkey: null }) {
         console.log("### navigateTo", page, opts)
 
@@ -564,45 +547,6 @@ const market = async () => {
       getAmountFormated(amount, unit = 'USD') {
         return LNbits.utils.formatCurrency(amount, unit)
       },
-      async addPubkey(pubkey) {
-        if (!pubkey) {
-          pubkey = String(this.inputPubkey).trim()
-        }
-        let regExp = /^#([0-9a-f]{3}){1,2}$/i
-        if (pubkey.startsWith('n')) {
-          try {
-            let { type, data } = NostrTools.nip19.decode(pubkey)
-            if (type === 'npub') pubkey = data
-            else if (type === 'nprofile') {
-              pubkey = data.pubkey
-              givenRelays = data.relays
-            }
-          } catch (err) {
-            console.error(err)
-          }
-        } else if (regExp.test(pubkey)) {
-          pubkey = pubkey
-        }
-        this.pubkeys.add(pubkey)
-        this.inputPubkey = null
-        this.$q.localStorage.set(
-          `diagonAlley.merchants`,
-          Array.from(this.pubkeys)
-        )
-        this.initNostr()
-      },
-      removePubkey(pubkey) {
-        // Needs a hack for Vue reactivity
-        let pubkeys = this.pubkeys
-        pubkeys.delete(pubkey)
-        this.profiles.delete(pubkey)
-        this.pubkeys = new Set(Array.from(pubkeys))
-        this.$q.localStorage.set(
-          `diagonAlley.merchants`,
-          Array.from(this.pubkeys)
-        )
-        this.initNostr()
-      },
 
       setActivePage(page = 'market') {
         this.activePage = page
@@ -624,8 +568,6 @@ const market = async () => {
 
 
       addMerchant(publicKey) {
-        console.log('### addMerchat', publicKey)
-
         this.merchants.unshift({
           publicKey,
           profile: null
@@ -634,7 +576,6 @@ const market = async () => {
         this.initNostr() // todo: improve
       },
       addMerchants(publicKeys = []) {
-        console.log('### addMerchats', publicKeys)
         const merchantsPubkeys = this.merchants.map(m => m.publicKey)
 
         const newMerchants = publicKeys
@@ -645,7 +586,6 @@ const market = async () => {
         this.initNostr() // todo: improve
       },
       removeMerchant(publicKey) {
-        console.log('### removeMerchat', publicKey)
         this.merchants = this.merchants.filter(m => m.publicKey !== publicKey)
         this.$q.localStorage.set('nostrmarket.merchants', this.merchants)
         this.products = this.products.filter(p => p.pubkey !== publicKey)
@@ -654,7 +594,6 @@ const market = async () => {
       },
 
       addProductToCart(item) {
-        console.log('### addProductToCart', item)
         let stallCart = this.shoppingCarts.find(s => s.id === item.stall_id)
         if (!stallCart) {
           stallCart = {
@@ -755,7 +694,6 @@ const market = async () => {
       },
 
       async listenForIncommingDms(from) {
-        console.log('### from', from)
         if (!this.account?.privkey) {
           return
         }
@@ -769,13 +707,12 @@ const market = async () => {
             authors: [this.account.pubkey],
           }]
 
-          console.log('### filters', filters)
           const subs = this.pool.sub(Array.from(this.relays), filters)
           subs.on('event', async event => {
             const receiverPubkey = event.tags.find(([k, v]) => k === 'p' && v && v !== '')[1]
             const isSentByMe = event.pubkey === this.account.pubkey
             if (receiverPubkey !== this.account.pubkey && !isSentByMe) {
-              console.log('Unexpected DM. Dropped!')
+              console.warn('Unexpected DM. Dropped!')
               return
             }
             this.persistDMEvent(event)
@@ -799,7 +736,6 @@ const market = async () => {
           if (!isJson(plainText)) return
 
           const jsonData = JSON.parse(plainText)
-          console.log('###### type: ', jsonData.type)
           if ([0, 1, 2].indexOf(jsonData.type) !== -1) {
             this.persistOrderUpdate(peerPubkey, event.created_at, jsonData)
           }
@@ -860,7 +796,6 @@ const market = async () => {
         dms.events.push(event)
         dms.events.sort((a, b) => a - b)
         dms.lastCreatedAt = dms.events[dms.events.length - 1].created_at
-        console.log('### dms', dms)
         this.$q.localStorage.set(`nostrmarket.dm.${event.pubkey}`, dms)
       },
 
@@ -871,7 +806,6 @@ const market = async () => {
       },
 
       persistOrderUpdate(pubkey, eventCreatedAt, orderUpdate) {
-        console.log('### persistOrderUpdate', pubkey, eventCreatedAt, orderUpdate)
         let orders = this.$q.localStorage.getItem(`nostrmarket.orders.${pubkey}`) || []
         const orderIndex = orders.findIndex(o => o.id === orderUpdate.id)
 
@@ -972,10 +906,8 @@ const market = async () => {
           pubkey: this.account.pubkey
         }
         event.id = NostrTools.getEventHash(event)
-        console.log('### event.content', event.content)
         try {
           event.sig = await NostrTools.signEvent(event, this.account.privkey)
-          console.log('### this.pool', this.pool)
           const pub = this.pool.publish(Array.from(this.relays), event)
           pub.on('ok', () => {
             console.debug(`Config event was sent`)
@@ -992,14 +924,13 @@ const market = async () => {
           })
           return
         }
-        this.naddr = NostrTools.nip19.naddrEncode({
+        const naddr = NostrTools.nip19.naddrEncode({
           pubkey: event.pubkey,
           kind: 30019,
           identifier: identifier,
           relays: Array.from(this.relays)
         })
-        this.copyText(this.naddr)
-        console.log('### naddr', this.naddr)
+        this.copyText(naddr)
       }
 
     }
