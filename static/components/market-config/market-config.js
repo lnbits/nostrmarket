@@ -19,7 +19,8 @@ async function marketConfig(path) {
                     ui: {
                         picture: null,
                         banner: null,
-                        theme: null
+                        theme: null,
+                        darkMode: false
                     }
                 },
                 themeOptions: [

@@ -25,9 +25,7 @@
           <span v-text="stall.currency" class="float-right"></span>
         </div>
       </q-card-section>
-      <!-- <q-card-section class="q-pl-sm">
-      
-      </q-card-section> -->
+
       <q-card-section class="q-pl-sm">
         <div v-if="stall.categories" class="text-subtitle1">
           <q-virtual-scroll :items="stall.categories || []" virtual-scroll-horizontal>

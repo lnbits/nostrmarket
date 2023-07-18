@@ -65,13 +65,6 @@ async function customerStall(path) {
           z => z.id == this.checkoutDialog.data.shippingzone
         )
         return +this.cart.total + zoneCost.cost
-      },
-      dropIn() {
-        return {
-          privkey: this.customerPrivkey,
-          pubkey: this.customerPubkey,
-          useExtension: this.customerUseExtension
-        }
       }
     },
     methods: {
@@ -97,33 +90,10 @@ async function customerStall(path) {
       getAmountFormated(amount, unit = 'USD') {
         return LNbits.utils.formatCurrency(amount, unit)
       },
-      updateQty(id, qty) {
-        let prod = this.cart.products
-        let product = prod.get(id)
-        prod.set(id, {
-          ...product,
-          quantity: qty
-        })
-        this.updateCart()
-      },
       addToCart(item) {
         this.$emit('add-to-cart', item)
       },
-      updateCart() {
-        this.cart.total = 0
-        this.cart.products.forEach(p => {
-          this.cart.total += p.quantity * p.price
-        })
 
-        this.cart.size = this.cart.products.size
-        this.cartMenu = Array.from(this.cart.products, item => {
-          return {id: item[0], ...item[1]}
-        })
-        this.$q.localStorage.set(`diagonAlley.carts.${this.stall.id}`, {
-          ...this.cart,
-          products: Object.fromEntries(this.cart.products)
-        })
-      },
       resetCart() {
         this.cart = {
           total: 0,
@@ -145,7 +115,7 @@ async function customerStall(path) {
             email: orderData?.email
           },
           items: Array.from(this.cart.products, p => {
-            return {product_id: p[0], quantity: p[1].quantity}
+            return { product_id: p[0], quantity: p[1].quantity }
           }),
           shipping_id: orderData.shippingzone
         }
@@ -162,28 +132,11 @@ async function customerStall(path) {
         this.customerUseExtension = true
         this.checkoutDialog.data.pubkey = this.customerPubkey
       },
-      async generateKeyPair() {
-        this.customerPrivkey = NostrTools.generatePrivateKey()
-        this.customerPubkey = NostrTools.getPublicKey(this.customerPrivkey)
-        this.customerUseExtension = false
-        this.checkoutDialog.data.pubkey = this.customerPubkey
-        this.checkoutDialog.data.privkey = this.customerPrivkey
-      },
+
       checkLogIn() {
         this.customerPubkey = this.account?.pubkey
         this.customerPrivkey = this.account?.privkey
         this.customerUseExtension = this.account?.useExtension
-      },
-      openCheckout() {
-        // Check if user is logged in
-        this.checkLogIn()
-        if (this.customerPubkey) {
-          this.checkoutDialog.data.pubkey = this.customerPubkey
-          if (this.customerPrivkey && !this.useExtension) {
-            this.checkoutDialog.data.privkey = this.customerPrivkey
-          }
-        }
-        this.checkoutDialog.show = true
       },
       resetCheckout() {
         this.loading = false
@@ -229,7 +182,7 @@ async function customerStall(path) {
             email: orderData?.email
           },
           items: Array.from(this.cart.products, p => {
-            return {product_id: p[0], quantity: p[1].quantity}
+            return { product_id: p[0], quantity: p[1].quantity }
           }),
           shipping_id: orderData.shippingzone,
           type: 0
@@ -327,7 +280,7 @@ async function customerStall(path) {
           console.error(`Error: ${err}`)
         }
       },
-      messageFilter(text, cb = () => {}) {
+      messageFilter(text, cb = () => { }) {
         if (!isJson(text)) return
         let json = JSON.parse(text)
         if (json.id != this.activeOrder) return
@@ -372,7 +325,7 @@ async function customerStall(path) {
         this.cart.products = new Map(Object.entries(storedCart.products))
 
         this.cartMenu = Array.from(this.cart.products, item => {
-          return {id: item[0], ...item[1]}
+          return { id: item[0], ...item[1] }
         })
       }
       setTimeout(() => {

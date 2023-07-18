@@ -101,9 +101,11 @@
             <q-input @change="updateUiConfig" outlined v-model="configData.ui.banner" type="text" label="Banner"
               class="q-mb-md">
             </q-input>
-            <q-select @input="updateUiConfig" filled v-model="configData.ui.theme"
-              hint="Choose marketplace theme" :options="themeOptions" label="Marketplace Theme"></q-select>
+            <q-select @input="updateUiConfig" filled v-model="configData.ui.theme" hint="Choose marketplace theme"
+              :options="themeOptions" label="Marketplace Theme"></q-select>
 
+            <q-checkbox @input="updateUiConfig" v-model="configData.ui.darkMode" label="Dark Mode"
+              size="sm"></q-checkbox>
 
           </q-tab-panel>
 
@@ -115,8 +117,8 @@
   <q-separator />
   <q-card-section>
     <div class="float-right">
-      <q-btn rounded label="Copy Naddr" color="green"></q-btn>
-      <q-btn rounded label="Update" class="q-ml-lg" color="primary"></q-btn>
+      <q-btn flat label="Copy Naddr" color="green"></q-btn>
+      <q-btn flat label="Update" class="q-ml-lg" color="primary"></q-btn>
     </div>
   </q-card-section>
   <q-card-section></q-card-section>

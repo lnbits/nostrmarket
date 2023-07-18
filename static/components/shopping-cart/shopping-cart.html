@@ -15,7 +15,7 @@
             standout
             :max="products.find(pr => pr.id == p.id).quantity"
           ></q-input>
-          <!-- <span class="text-center q-ma-xs">{{p.quantity}} x </span> -->
+          
           <q-btn color="green" size="xs" icon="add" @click="add(p.id)" />
         </q-item-section>
         <q-item-section avatar v-if="p.image">
