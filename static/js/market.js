@@ -541,14 +541,12 @@ const market = async () => {
       },
       navigateTo(page, opts = { stall: null, product: null, pubkey: null }) {
         console.log("### navigateTo", page, opts)
-        let { stall, product, pubkey } = opts
-        let url = new URL(window.location)
 
-        if (pubkey) url.searchParams.set('merchant', pubkey)
-        if (stall && !pubkey) {
-          pubkey = this.stalls.find(s => s.id == stall).pubkey
-          url.searchParams.set('merchant', pubkey)
-        }
+        const { stall, product, pubkey } = opts
+        const url = new URL(window.location)
+
+        const merchantPubkey = pubkey || this.stalls.find(s => s.id == stall)?.pubkey
+        url.searchParams.set('merchant', merchantPubkey)
 
         if (page === 'stall' || page === 'product') {
           if (stall) {
@@ -559,6 +557,8 @@ const market = async () => {
             this.activeProduct = product
             if (product) {
               url.searchParams.set('product', product)
+            } else {
+              url.searchParams.delete('product')
             }
           }
         } else {
