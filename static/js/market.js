@@ -188,9 +188,7 @@ const market = async () => {
       isValidAccountKey() {
         return isValidKey(this.accountDialog.data.key)
       },
-      canEditConfig() {
-        return this.account && this.account.pubkey == this.config?.pubkey
-      },
+
 
       allCartsItemCount() {
         return this.shoppingCarts.map(s => s.products).flat().reduce((t, p) => t + p.orderedQuantity, 0)
@@ -278,8 +276,10 @@ const market = async () => {
         this.account = this.$q.localStorage.getItem('nostrmarket.account') || null
 
         const uiConfig = this.$q.localStorage.getItem('nostrmarket.marketplace-config') || {}
+        console.log('### uiConfig storage: ', uiConfig)
         // trigger the `watch` logic
         this.config = { ...this.config, opts: { ...this.config.opts, ...uiConfig } }
+        console.log('#### restoreFromStorage  this.config',  this.config)
         this.applyUiConfigs(this.config)
 
 
@@ -297,9 +297,16 @@ const market = async () => {
       applyUiConfigs(config = {}) {
         if (config.opts?.ui?.theme) {
           document.body.setAttribute('data-theme', this.config.opts.ui.theme)
+          this.$q.localStorage.set('lnbits.theme', this.config.opts.ui.theme)
         }
-        if (config.opts?.ui?.darkMode) {
-          // tood
+        const newDarkMode = config.opts?.ui?.darkMode
+        if (newDarkMode !== undefined) {
+          const oldDarkMode = this.$q.localStorage.getItem('lnbits.darkMode')
+          if (newDarkMode !== oldDarkMode) {
+            this.$q.dark.toggle()
+            this.$q.localStorage.set('lnbits.darkMode', newDarkMode)
+          }
+
         }
       },
 

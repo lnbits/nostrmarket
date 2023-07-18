@@ -89,10 +89,12 @@ async function marketConfig(path) {
             }
         },
         created: async function () {
+            console.log('### this.configData', this.configData)
             console.log('### this.configUi', this.configUi)
             if (this.configUi) {
-                this.configData = { ...this.configData, ...this.configUi }
+                this.configData = { ...this.configData, ...this.configUi, ui: { ...this.configData.ui, ...(this.configUi.ui || {}) } }
             }
+            console.log('### this.configData', this.configData)
 
         }
     })
