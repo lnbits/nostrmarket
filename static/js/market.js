@@ -240,6 +240,7 @@ const market = async () => {
 
         // What component to render on start
         if (stallId) {
+          this.setActivePage('customer-stall')
           if (productId) {
             this.activeProduct = productId
           }
@@ -477,7 +478,6 @@ const market = async () => {
       },
 
       async checkMarketplaceNaddr(naddr) {
-        console.log('### checkMarketplaceNaddr')
         if (!naddr) return
 
         try {
