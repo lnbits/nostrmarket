@@ -263,7 +263,7 @@ const market = async () => {
 
         this.account = this.$q.localStorage.getItem('nostrmarket.account') || null
 
-        const uiConfig = this.$q.localStorage.getItem('nostrmarket.marketplace-config') || {}
+        const uiConfig = this.$q.localStorage.getItem('nostrmarket.marketplaceConfig') || { ui: { darkMode: false } }
         console.log('### uiConfig storage: ', uiConfig)
         // trigger the `watch` logic
         this.config = { ...this.config, opts: { ...this.config.opts, ...uiConfig } }
@@ -354,47 +354,7 @@ const market = async () => {
         const { name, about, ui } = updateData
         this.config = { ...this.config, opts: { ...this.config.opts, name, about, ui } }
         this.applyUiConfigs(this.config)
-        this.$q.localStorage.set('nostrmarket.marketplace-config', { name, about, ui })
-
-
-        if (!this.account?.privkey) return
-
-        const merchants = Array.from(this.merchants.map(m => m.publicKey))
-        const identifier = this.config.identifier ?? crypto.randomUUID()
-        const event = {
-          ...(await NostrTools.getBlankEvent()),
-          kind: 30019,
-          content: JSON.stringify({ name, about, ui, merchants }),
-          created_at: Math.floor(Date.now() / 1000),
-          tags: [['d', identifier]],
-          pubkey: this.account.pubkey
-        }
-        event.id = NostrTools.getEventHash(event)
-        try {
-          if (this.account.useExtension) {
-            event = await window.nostr.signEvent(event)
-          } else if (this.account.privkey) {
-            event.sig = await NostrTools.signEvent(event, this.account.privkey)
-          }
-          let pub = this.pool.publish(Array.from(this.relays), event)
-          pub.on('ok', () => console.debug(`Config event was sent`))
-          pub.on('failed', error => console.error(error))
-        } catch (err) {
-          console.error(err)
-          this.$q.notify({
-            message: `Error signing event.`,
-            color: 'negative',
-            icon: 'warning'
-          })
-          return
-        }
-        this.naddr = NostrTools.nip19.naddrEncode({
-          pubkey: event.pubkey,
-          kind: 30019,
-          identifier: identifier,
-          relays: Array.from(this.relays)
-        })
-        return
+        this.$q.localStorage.set('nostrmarket.marketplaceConfig', { name, about, ui })
       },
 
       async updateData(events) {
@@ -718,7 +678,7 @@ const market = async () => {
       },
 
       async placeOrder({ event, order, cartId }) {
-        if (!this.account.privkey) {
+        if (!this.account?.privkey) {
           this.openAccountDialog()
           return
         }
@@ -961,6 +921,51 @@ const market = async () => {
           }
         } catch { }
         return defaultValue
+      },
+
+      async publishNaddr() {
+        if (!this.account?.privkey) {
+          this.openAccountDialog()
+          return
+        }
+
+
+        const merchants = Array.from(this.merchants.map(m => m.publicKey))
+        const identifier = this.config.identifier ?? crypto.randomUUID()
+        const event = {
+          ...(await NostrTools.getBlankEvent()),
+          kind: 30019,
+          content: JSON.stringify({ name, about, ui, merchants }),
+          created_at: Math.floor(Date.now() / 1000),
+          tags: [['d', identifier]],
+          pubkey: this.account.pubkey
+        }
+        event.id = NostrTools.getEventHash(event)
+        try {
+          if (this.account.useExtension) {
+            event = await window.nostr.signEvent(event)
+          } else if (this.account.privkey) {
+            event.sig = await NostrTools.signEvent(event, this.account.privkey)
+          }
+          let pub = this.pool.publish(Array.from(this.relays), event)
+          pub.on('ok', () => console.debug(`Config event was sent`))
+          pub.on('failed', error => console.error(error))
+        } catch (err) {
+          console.error(err)
+          this.$q.notify({
+            message: `Error signing event.`,
+            color: 'negative',
+            icon: 'warning'
+          })
+          return
+        }
+        this.naddr = NostrTools.nip19.naddrEncode({
+          pubkey: event.pubkey,
+          kind: 30019,
+          identifier: identifier,
+          relays: Array.from(this.relays)
+        })
+        return
       }
 
     }

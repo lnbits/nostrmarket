@@ -86,6 +86,9 @@ async function marketConfig(path) {
                 const { name, about, ui } = this.configData
                 console.log('### this.info', { name, about, ui })
                 this.$emit('ui-config-update', { name, about, ui })
+            },
+            publishNaddr(){
+                this.$emit('publish-naddr')
             }
         },
         created: async function () {
