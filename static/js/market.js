@@ -306,16 +306,6 @@ const market = async () => {
         }
       },
 
-      async deleteAccount() {
-        await LNbits.utils
-          .confirmDialog(
-            `This will delete all stored data. If you didn't backup the Key Pair (Private and Public Keys), you will lose it. Continue?`
-          )
-          .onOk(() => {
-            window.localStorage.removeItem('nostrmarket.account')
-            this.account = null
-          })
-      },
       async createAccount(useExtension = false) {
         let nip07
         if (useExtension) {
@@ -328,9 +318,14 @@ const market = async () => {
             let { type, data } = NostrTools.nip19.decode(key)
             key = data
           }
+          const privkey = watchOnly ? null : key
+          const pubkey = watchOnly ? key : NostrTools.getPublicKey(key)
           this.$q.localStorage.set('nostrmarket.account', {
-            privkey: watchOnly ? null : key,
-            pubkey: watchOnly ? key : NostrTools.getPublicKey(key),
+            privkey,
+            pubkey,
+            nsec: NostrTools.nip19.nsecEncode(key),
+            npub: NostrTools.nip19.npubEncode(pubkey),
+
             useExtension: nip07 ?? false
           })
           this.accountDialog.data = {
@@ -929,6 +924,17 @@ const market = async () => {
           relays: Array.from(this.relays)
         })
         this.copyText(naddr)
+      },
+
+      logout(opts) {
+        window.localStorage.removeItem('nostrmarket.account')
+        this.account = null
+        if (opts?.clearAllData) {
+          this.$q.localStorage.getAllKeys().forEach(key => window.localStorage.removeItem(key))
+          window.location.href = window.location.origin + window.location.pathname;
+        }
+
+
       }
 
     }
