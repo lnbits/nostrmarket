@@ -757,7 +757,7 @@ const market = async () => {
         if (!paymentRequest) return
         this.qrCodeDialog.data.payment_request = paymentRequest
         this.qrCodeDialog.dismissMsg = this.$q.notify({
-          timeout: 0,
+          timeout: 10000,
           message: 'Waiting for payment...'
         })
 
