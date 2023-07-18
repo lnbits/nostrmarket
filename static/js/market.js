@@ -138,7 +138,7 @@ const market = async () => {
             LNbits.utils
               .confirmDialog('Do you want to import this market profile?')
               .onOk(async () => {
-                await this.checkMarketplaceNaddr(n)
+                await this.checkMarketNaddr(n)
                 this.searchText = ''
               })
           } catch { }
@@ -235,7 +235,7 @@ const market = async () => {
 
       const params = new URLSearchParams(window.location.search)
 
-      await this.checkMarketplaceNaddr(params.get('naddr'))
+      await this.checkMarketNaddr(params.get('naddr'))
       await this.handleQueryParams(params)
 
 
@@ -298,6 +298,9 @@ const market = async () => {
         console.log('#### relays', relays, this.relays)
       },
       applyUiConfigs(config = {}) {
+        const { name, about, ui } = config?.opts || {}
+        console.log('### applyUiConfigs', name, about, ui)
+        this.$q.localStorage.set('nostrmarket.marketplaceConfig', { name, about, ui })
         if (config.opts?.ui?.theme) {
           document.body.setAttribute('data-theme', this.config.opts.ui.theme)
           this.$q.localStorage.set('lnbits.theme', this.config.opts.ui.theme)
@@ -369,7 +372,6 @@ const market = async () => {
         const { name, about, ui } = updateData
         this.config = { ...this.config, opts: { ...this.config.opts, name, about, ui } }
         this.applyUiConfigs(this.config)
-        this.$q.localStorage.set('nostrmarket.marketplaceConfig', { name, about, ui })
       },
 
       async updateData(events) {
@@ -452,7 +454,7 @@ const market = async () => {
         return
       },
 
-      async checkMarketplaceNaddr(naddr) {
+      async checkMarketNaddr(naddr) {
         if (!naddr) return
 
         try {
@@ -486,8 +488,8 @@ const market = async () => {
           this.config = { ... this.config, opts: JSON.parse(event.content) }
 
           this.addMerchants(this.config.opts?.merchants)
-
           this.applyUiConfigs(this.config)
+
         } catch (error) {
           console.warn(error)
         }
