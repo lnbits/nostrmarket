@@ -218,33 +218,11 @@ const market = async () => {
 
       this.restoreFromStorage()
 
-
-
-      let params = new URLSearchParams(window.location.search)
-      let merchant_pubkey = params.get('merchant_pubkey')
-      let stall_id = params.get('stall_id')
-      let product_id = params.get('product_id')
+      const params = new URLSearchParams(window.location.search)
 
       await this.checkMarketplaceNaddr(params.get('naddr'))
+      await this.handleQueryParams(params)
 
-
-
-      // What component to render on start
-      if (stall_id) {
-        if (product_id) {
-          this.activeProduct = product_id
-        }
-        this.activeStall = stall_id
-      }
-      if (merchant_pubkey && !this.pubkeys.has(merchant_pubkey)) {
-        await LNbits.utils
-          .confirmDialog(
-            `We found a merchant pubkey in your request. Do you want to add it to the merchants list?`
-          )
-          .onOk(async () => {
-            await this.addPubkey(merchant_pubkey)
-          })
-      }
 
       // Get notes from Nostr
       await this.initNostr()
@@ -255,6 +233,29 @@ const market = async () => {
       await this.listenForIncommingDms(this.merchants.map(m => ({ publicKey: m.publicKey, since: this.lastDmForPubkey(m.publicKey) })))
     },
     methods: {
+      async handleQueryParams(params) {
+        const merchantPubkey = params.get('merchant_pubkey')
+        const stallId = params.get('stall_id')
+        const productId = params.get('product_id')
+
+        // What component to render on start
+        if (stallId) {
+          if (productId) {
+            this.activeProduct = productId
+          }
+          this.activeStall = stallId
+        }
+        if (merchantPubkey && !(this.merchants.find(m => m.publicKey === merchantPubkey))) {
+          await LNbits.utils
+            .confirmDialog(
+              `We found a merchant pubkey in your request. Do you want to add it to the merchants list?`
+            )
+            .onOk(async () => {
+              await this.merchants.push({ publicKey: merchantPubkey, profile: null })
+            })
+        }
+
+      },
       restoreFromStorage() {
         this.merchants = this.$q.localStorage.getItem('nostrmarket.merchants') || []
         this.shoppingCarts = this.$q.localStorage.getItem('nostrmarket.shoppingCarts') || []
