@@ -60,10 +60,9 @@
                   <q-item v-for="relay in relays" :key="relay">
 
                     <q-item-section avatar>
-                      <!-- <q-avatar>
-                        <img v-if="profile?.picture" :src="profile.picture" />
-                        <img v-else src="/nostrmarket/static/images/blank-avatar.webp" />
-                      </q-avatar> -->
+                      <q-avatar>
+                        <q-icon name="router"></q-icon>
+                      </q-avatar>
                     </q-item-section>
                     <q-item-section class="q-mt-sm">
                       <q-item-label><strong>{{ relay}}</strong></q-item-label>
@@ -117,7 +116,8 @@
   <q-separator />
   <q-card-section>
     <div class="float-right">
-      <q-btn @click="publishNaddr" flat label="Publish Market Profile" icon="share" class="q-ml-lg" color="primary"></q-btn>
+      <q-btn @click="publishNaddr" flat label="Share Market Profile" icon="share" class="q-ml-lg"
+        color="primary"></q-btn>
     </div>
   </q-card-section>
   <q-card-section></q-card-section>
