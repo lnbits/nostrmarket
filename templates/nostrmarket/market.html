@@ -73,35 +73,46 @@
       <div class="col-lg-2 col-md-1 col-sm-0"></div>
       <div class="col-lg-8 col-md-10 col-sm-12 auto-width">
         <q-banner class="row q-pa-none q-mb-lg gt-sm shadow-2">
-          <q-img v-if="bannerImage" :src="bannerImage" class="rounded-borders"
-            style="width: 100%; height: 250px" cover>
+          <q-img v-if="bannerImage" :src="bannerImage" class="rounded-borders" style="width: 100%; height: 250px" cover>
             <div v-if="config?.opts?.about" class="absolute-bottom text-subtitle1 text-center">
               <span v-text="config.opts.about"></span>
             </div>
           </q-img>
         </q-banner>
-        <div>
-          <q-breadcrumbs class="cursor">
-            <q-breadcrumbs-el :label="config?.opts?.name || 'Market'" icon="home" @click="navigateTo('market')" class="cursor-pointer">
-              <q-checkbox v-model="groupByStall" v-if="activePage === 'market'" class="q-pl-md float-right" size="xs"
-                val="xs" label="Group by stalls"></q-checkbox>
 
-            </q-breadcrumbs-el>
-            <q-breadcrumbs-el v-if="activePage === 'customer-stall'" :label="stallName"
-              @click="navigateTo('stall', {stall: activeStall})" icon="storefront"
-              class="cursor-pointer"></q-breadcrumbs-el>
-            <q-breadcrumbs-el v-if="activePage === 'customer-stall' && activeProduct" :label="productName"
-              class="cursor-pointer" icon="widgets"></q-breadcrumbs-el>
-            <q-breadcrumbs-el v-if="activePage === 'shopping-cart-list'" label="Shoping Cart"
-              icon="shopping_cart"></q-breadcrumbs-el>
-            <q-breadcrumbs-el v-if="activePage === 'customer-orders'" label="Orders"
-              icon="receipt_long"></q-breadcrumbs-el>
-            <q-breadcrumbs-el v-if="activePage === 'market-config'" label="Settings" icon="settings"></q-breadcrumbs-el>
-            <q-breadcrumbs-el v-if="activePage === 'user-config'" label="User Config"
-              icon="perm_identity"></q-breadcrumbs-el>
-            <q-breadcrumbs-el v-if="activePage === 'user-chat'" label="User Chat" icon="chat"></q-breadcrumbs-el>
-          </q-breadcrumbs>
-        </div>
+      </div>
+      <div class="col-lg-2 col-md-1 col-sm-0 auto-width"></div>
+    </div>
+
+    <div class="row q-mb-sm">
+      <div class="col-lg-2 col-md-1 col-sm-0"></div>
+      <div class="col-lg-7 col-md-9 col-sm-12 auto-width">
+        <q-breadcrumbs class="cursor q-mt-sm">
+          <q-breadcrumbs-el :label="config?.opts?.name || 'Market'" icon="home" @click="navigateTo('market')"
+            class="cursor-pointer auto-width">
+            <q-checkbox v-model="groupByStall" v-if="activePage === 'market'" class="q-pl-md float-right" size="xs"
+              val="xs" label="Group by stalls"></q-checkbox>
+
+          </q-breadcrumbs-el>
+          <q-breadcrumbs-el v-if="activePage === 'customer-stall'" :label="stallName"
+            @click="navigateTo('stall', {stall: activeStall})" icon="storefront"
+            class="cursor-pointer"></q-breadcrumbs-el>
+          <q-breadcrumbs-el v-if="activePage === 'customer-stall' && activeProduct" :label="productName"
+            class="cursor-pointer" icon="widgets"></q-breadcrumbs-el>
+          <q-breadcrumbs-el v-if="activePage === 'shopping-cart-list'" label="Shoping Cart"
+            icon="shopping_cart"></q-breadcrumbs-el>
+          <q-breadcrumbs-el v-if="activePage === 'customer-orders'" label="Orders"
+            icon="receipt_long"></q-breadcrumbs-el>
+          <q-breadcrumbs-el v-if="activePage === 'market-config'" label="Settings" icon="settings"></q-breadcrumbs-el>
+          <q-breadcrumbs-el v-if="activePage === 'user-config'" label="User Config"
+            icon="perm_identity"></q-breadcrumbs-el>
+          <q-breadcrumbs-el v-if="activePage === 'user-chat'" label="User Chat" icon="chat"></q-breadcrumbs-el>
+        </q-breadcrumbs>
+
+
+      </div>
+      <div class="col-lg-1 col-md-1 col-sm-0 gt-sm auto-width">
+        <q-btn v-if="activePage !== 'market'" flat color="grey" icon="content_copy" @click="copyUrl()" class="q-ml-sm float-right"></q-btn>
       </div>
       <div class="col-lg-2 col-md-1 col-sm-0 auto-width"></div>
     </div>

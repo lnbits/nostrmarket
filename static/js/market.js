@@ -575,6 +575,9 @@ const market = async () => {
         window.history.pushState({}, '', url)
         // this.activePage = page
       },
+      copyUrl: function () {
+        this.copyText(window.location)
+      },
       copyText: function (text) {
         var notify = this.$q.notify
         Quasar.utils.copyToClipboard(text).then(function () {
