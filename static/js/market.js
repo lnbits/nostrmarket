@@ -103,7 +103,6 @@ const market = async () => {
         },
 
         naddr: null,
-        loading: false,
 
         defaultBanner: '/nostrmarket/static/images/nostr-cover.png',
         defaultLogo: '/nostrmarket/static/images/nostr-avatar.png'
@@ -129,6 +128,22 @@ const market = async () => {
           })
         }
 
+      },
+      searchText(n, o) {
+        if (!n) return
+        if (n.toLowerCase().startsWith('naddr')) {
+          try {
+            const { type, data } = NostrTools.nip19.decode(n)
+            if (type !== 'naddr' || data.kind !== 30019) return
+            LNbits.utils
+              .confirmDialog('Do you want to import this market profile?')
+              .onOk(async () => {
+                await this.checkMarketplaceNaddr(n)
+                this.searchText = ''
+              })
+          } catch { }
+
+        }
       }
     },
     computed: {
@@ -442,6 +457,7 @@ const market = async () => {
 
         try {
           const { type, data } = NostrTools.nip19.decode(naddr)
+          console.log('### naddr {type, data}:', type, data)
           if (type !== 'naddr' || data.kind !== 30019) return // just double check
           this.config = {
             d: data.identifier,
@@ -464,16 +480,12 @@ const market = async () => {
             authors: [this.config.pubkey],
             '#d': [this.config.d]
           })
+          console.log('########### naddr event')
           if (!event) return
 
           this.config = { ... this.config, opts: JSON.parse(event.content) }
 
-          // add merchants 
-          const merchantsPubkeys = this.merchants.map(m => m.publicKey)
-          const extraMerchants = (this.config.opts?.merchants || [])
-            .filter(m => merchantsPubkeys.indexOf(m) === -1)
-            .map(m => ({ publicKey: m, profile: null }))
-          this.merchants.push(...extraMerchants)
+          this.addMerchants(this.config.opts?.merchants)
 
           this.applyUiConfigs(this.config)
         } catch (error) {
@@ -616,6 +628,17 @@ const market = async () => {
           publicKey,
           profile: null
         })
+        this.$q.localStorage.set('nostrmarket.merchants', this.merchants)
+        this.initNostr() // todo: improve
+      },
+      addMerchants(publicKeys = []) {
+        console.log('### addMerchats', publicKeys)
+        const merchantsPubkeys = this.merchants.map(m => m.publicKey)
+
+        const newMerchants = publicKeys
+          .filter(p => merchantsPubkeys.indexOf(p) === -1)
+          .map(p => ({ publicKey: p, profile: null }))
+        this.merchants.unshift(...newMerchants)
         this.$q.localStorage.set('nostrmarket.merchants', this.merchants)
         this.initNostr() // todo: improve
       },
@@ -927,8 +950,7 @@ const market = async () => {
         if (!this.account?.privkey) {
           this.openAccountDialog()
           this.$q.notify({
-            message: 'Please login before publshing the market profile',
-            color: 'warning',
+            message: 'Login Required!',
             icon: 'warning'
           })
           return
@@ -936,31 +958,35 @@ const market = async () => {
 
 
         const merchants = Array.from(this.merchants.map(m => m.publicKey))
+        const { name, about, ui } = this.config?.opts || {}
+        const content = { merchants, name, about, ui }
         const identifier = this.config.identifier ?? crypto.randomUUID()
         const event = {
           ...(await NostrTools.getBlankEvent()),
           kind: 30019,
-          content: JSON.stringify({ name, about, ui, merchants }),
+          content: JSON.stringify(content),
           created_at: Math.floor(Date.now() / 1000),
           tags: [['d', identifier]],
           pubkey: this.account.pubkey
         }
         event.id = NostrTools.getEventHash(event)
+        console.log('### event.content', event.content)
         try {
-          if (this.account.useExtension) {
-            event = await window.nostr.signEvent(event)
-          } else if (this.account.privkey) {
-            event.sig = await NostrTools.signEvent(event, this.account.privkey)
-          }
-          let pub = this.pool.publish(Array.from(this.relays), event)
-          pub.on('ok', () => console.debug(`Config event was sent`))
-          pub.on('failed', error => console.error(error))
+          event.sig = await NostrTools.signEvent(event, this.account.privkey)
+          console.log('### this.pool', this.pool)
+          const pub = this.pool.publish(Array.from(this.relays), event)
+          pub.on('ok', () => {
+            console.debug(`Config event was sent`)
+          })
+          pub.on('failed', error => {
+            console.error(error)
+          })
         } catch (err) {
           console.error(err)
           this.$q.notify({
-            message: `Error signing event.`,
-            color: 'negative',
-            icon: 'warning'
+            message: 'Cannot publish market profile',
+            caption: `Error: ${err}`,
+            color: 'negative'
           })
           return
         }
@@ -970,7 +996,8 @@ const market = async () => {
           identifier: identifier,
           relays: Array.from(this.relays)
         })
-        return
+        this.copyText(this.naddr)
+        console.log('### naddr', this.naddr)
       }
 
     }
