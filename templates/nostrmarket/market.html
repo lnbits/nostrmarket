@@ -144,9 +144,7 @@
 
         <customer-stall v-else-if="activePage === 'customer-stall'"
           :stall="stalls.find(stall => stall.id == activeStall)" :products="filterProducts"
-          :stall-products="products.filter(p => p.stall_id == activeStall)" :product-detail="activeProduct"
-          :relays="relays" :account="account" :pool="pool" :styles="config?.opts ?? {}"
-          @login-dialog="openAccountDialog" @change-page="navigateTo" @add-to-cart="addProductToCart"></customer-stall>
+          :product-detail="activeProduct" @change-page="navigateTo" @add-to-cart="addProductToCart"></customer-stall>
 
         <div v-else>
           <customer-stall-list v-if="groupByStall" :stalls="filterStalls"

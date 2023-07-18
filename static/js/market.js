@@ -352,7 +352,7 @@ const market = async () => {
       async updateUiConfig(updateData) {
         console.log('### updateUiConfig', updateData)
         const { name, about, ui } = updateData
-        this.config.opts = { ...this.config.opts, name, about, ui }
+        this.config.opts = { ...this.config, opts: { ...this.config.opts, name, about, ui } }
         this.applyUiConfigs(this.config)
         this.$q.localStorage.set('nostrmarket.marketplace-config', { name, about, ui })
 
