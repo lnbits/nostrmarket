@@ -234,9 +234,9 @@ const market = async () => {
     },
     methods: {
       async handleQueryParams(params) {
-        const merchantPubkey = params.get('merchant_pubkey')
-        const stallId = params.get('stall_id')
-        const productId = params.get('product_id')
+        const merchantPubkey = params.get('merchant')
+        const stallId = params.get('stall')
+        const productId = params.get('product')
 
         // What component to render on start
         if (stallId) {
@@ -544,30 +544,30 @@ const market = async () => {
         let { stall, product, pubkey } = opts
         let url = new URL(window.location)
 
-        if (pubkey) url.searchParams.set('merchant_pubkey', pubkey)
+        if (pubkey) url.searchParams.set('merchant', pubkey)
         if (stall && !pubkey) {
           pubkey = this.stalls.find(s => s.id == stall).pubkey
-          url.searchParams.set('merchant_pubkey', pubkey)
+          url.searchParams.set('merchant', pubkey)
         }
 
         if (page === 'stall' || page === 'product') {
           if (stall) {
             this.activeStall = stall
             this.setActivePage('customer-stall')
-            url.searchParams.set('stall_id', stall)
+            url.searchParams.set('stall', stall)
 
             this.activeProduct = product
             if (product) {
-              url.searchParams.set('product_id', product)
+              url.searchParams.set('product', product)
             }
           }
         } else {
           this.activeStall = null
           this.activeProduct = null
 
-          url.searchParams.delete('merchant_pubkey')
-          url.searchParams.delete('stall_id')
-          url.searchParams.delete('product_id')
+          url.searchParams.delete('merchant')
+          url.searchParams.delete('stall')
+          url.searchParams.delete('product')
 
           this.setActivePage('market')
         }
