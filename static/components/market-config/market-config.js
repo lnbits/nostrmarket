@@ -8,7 +8,6 @@ async function marketConfig(path) {
         data: function () {
             return {
                 tab: 'merchants',
-                profiles: new Map(),
                 merchantPubkey: null,
                 relayUrl: null,
                 configData: {

@@ -78,7 +78,6 @@ const market = async () => {
         filterCategories: [],
         groupByStall: false,
 
-        drawer: true,
         relays: new Set(),
         events: [],
         stalls: [],
@@ -87,6 +86,7 @@ const market = async () => {
 
         bannerImage: null,
         logoImage: null,
+        isLoading: false,
 
 
         profiles: new Map(),
@@ -191,9 +191,6 @@ const market = async () => {
           this.products.find(p => p.id == this.activeProduct)?.name || 'Product'
         )
       },
-      isLoading() {
-        return this.$q.loading.isActive
-      },
       hasExtension() {
         return window.nostr
       },
@@ -238,10 +235,10 @@ const market = async () => {
       // Get notes from Nostr
       await this.initNostr()
 
-      this.$q.loading.hide()
 
 
       await this.listenForIncommingDms(this.merchants.map(m => ({ publicKey: m.publicKey, since: this.lastDmForPubkey(m.publicKey) })))
+      this.isLoading = false
     },
     methods: {
       async handleQueryParams(params) {
@@ -414,7 +411,7 @@ const market = async () => {
           .filter(f => f)
       },
       async initNostr() {
-        this.$q.loading.show()
+        this.isLoading = true
         const pool = new NostrTools.SimplePool()
 
         let relays = Array.from(this.relays)
@@ -432,10 +429,10 @@ const market = async () => {
             await this.updateData(events)
           })
 
-        this.$q.loading.hide()
+
         this.pool = pool
         this.poolSubscribe()
-        return
+        this.isLoading = false
       },
       async poolSubscribe() {
         const authors = this.merchants.map(m => m.publicKey)
@@ -908,6 +905,7 @@ const market = async () => {
         event.id = NostrTools.getEventHash(event)
         try {
           event.sig = await NostrTools.signEvent(event, this.account.privkey)
+
           const pub = this.pool.publish(Array.from(this.relays), event)
           pub.on('ok', () => {
             console.debug(`Config event was sent`)
