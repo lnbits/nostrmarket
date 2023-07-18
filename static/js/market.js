@@ -213,56 +213,14 @@ const market = async () => {
         return x
       }
     },
+
     async created() {
       this.bannerImage = this.defaultBanner
       this.logoImage = this.defaultLogo
 
-      this.merchants = this.$q.localStorage.getItem('nostrmarket.merchants') || []
-      this.shoppingCarts = this.$q.localStorage.getItem('nostrmarket.shoppingCarts') || []
-
-      this.account = this.$q.localStorage.getItem('nostrmarket.account') || null
-
-      const uiConfig = this.$q.localStorage.getItem('nostrmarket.marketplace-config') || {}
-      // trigger the `watch` logic
-      this.config = { ...this.config, opts: { ...this.config.opts, ...uiConfig } }
-      if (this.config?.opts?.ui?.theme) {
-        document.body.setAttribute('data-theme', this.config.opts.ui.theme)
-      }
-
-      console.log('### uiConfig', uiConfig)
-      console.log('### this.config', this.config)
-
-      const prefix = 'nostrmarket.orders.'
-      const orderKeys = this.$q.localStorage.getAllKeys().filter(k => k.startsWith(prefix))
-      orderKeys.forEach(k => {
-        const pubkey = k.substring(prefix.length)
-        this.orders[pubkey] = this.$q.localStorage.getItem(k)
-      })
+      this.restoreFromStorage()
 
 
-
-
-
-      //console.log("UUID", crypto.randomUUID())
-
-      // Check for stored merchants and relays on localStorage
-      try {
-        let merchants = this.$q.localStorage.getItem(`diagonAlley.merchants`)
-        let relays = this.$q.localStorage.getItem(`nostrmarket.relays`)
-        if (merchants && merchants.length) {
-          this.pubkeys = new Set(merchants)
-        }
-        if (this.account) {
-          this.pubkeys.add(this.account.pubkey)
-        }
-        if (relays && relays.length) {
-          this.relays = new Set(relays)
-        } else {
-          this.relays = new Set(defaultRelays)
-        }
-      } catch (e) {
-        console.error(e)
-      }
 
       let params = new URLSearchParams(window.location.search)
       let merchant_pubkey = params.get('merchant_pubkey')
@@ -313,6 +271,33 @@ const market = async () => {
       await this.listenForIncommingDms(this.merchants.map(m => ({ publicKey: m.publicKey, since: this.lastDmForPubkey(m.publicKey) })))
     },
     methods: {
+      restoreFromStorage() {
+        this.merchants = this.$q.localStorage.getItem('nostrmarket.merchants') || []
+        this.shoppingCarts = this.$q.localStorage.getItem('nostrmarket.shoppingCarts') || []
+
+        this.account = this.$q.localStorage.getItem('nostrmarket.account') || null
+
+        const uiConfig = this.$q.localStorage.getItem('nostrmarket.marketplace-config') || {}
+        // trigger the `watch` logic
+        this.config = { ...this.config, opts: { ...this.config.opts, ...uiConfig } }
+        if (this.config?.opts?.ui?.theme) {
+          document.body.setAttribute('data-theme', this.config.opts.ui.theme)
+        }
+
+        console.log('### uiConfig', uiConfig)
+        console.log('### this.config', this.config)
+
+        const prefix = 'nostrmarket.orders.'
+        const orderKeys = this.$q.localStorage.getAllKeys().filter(k => k.startsWith(prefix))
+        orderKeys.forEach(k => {
+          const pubkey = k.substring(prefix.length)
+          this.orders[pubkey] = this.$q.localStorage.getItem(k)
+        })
+
+        const relays = this.$q.localStorage.getItem('nostrmarket.relays')
+        this.relays = new Set(relays?.length ? relays : defaultRelays)
+
+      },
       async deleteAccount() {
         await LNbits.utils
           .confirmDialog(
