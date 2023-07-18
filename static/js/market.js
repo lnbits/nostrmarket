@@ -224,24 +224,10 @@ const market = async () => {
       let merchant_pubkey = params.get('merchant_pubkey')
       let stall_id = params.get('stall_id')
       let product_id = params.get('product_id')
-      let naddr = params.get('naddr')
 
-      if (naddr) {
-        try {
-          let { type, data } = NostrTools.nip19.decode(naddr)
-          console.log('### naddr 1', type, data)
-          if (type == 'naddr' && data.kind == '30019') { // just double check
-            this.config = {
-              d: data.identifier,
-              pubkey: data.pubkey,
-              relays: data.relays
-            }
-          }
-          this.naddr = naddr
-        } catch (err) {
-          console.error(err)
-        }
-      }
+      await this.checkMarketplaceNaddr(params.get('naddr'))
+
+
 
       // What component to render on start
       if (stall_id) {
@@ -279,7 +265,7 @@ const market = async () => {
         console.log('### uiConfig storage: ', uiConfig)
         // trigger the `watch` logic
         this.config = { ...this.config, opts: { ...this.config.opts, ...uiConfig } }
-        console.log('#### restoreFromStorage  this.config',  this.config)
+        console.log('#### restoreFromStorage  this.config', this.config)
         this.applyUiConfigs(this.config)
 
 
@@ -463,10 +449,7 @@ const market = async () => {
         this.$q.loading.show()
         const pool = new NostrTools.SimplePool()
 
-        // If there is an naddr in the URL, get it and parse content
-        if (this.config) {
-          await this.checkMarketplaceNaddr(pool)
-        }
+
 
         let relays = Array.from(this.relays)
 
@@ -492,11 +475,27 @@ const market = async () => {
         return
       },
 
-      async checkMarketplaceNaddr(pool) {
-        if (!this.naddr) return
+      async checkMarketplaceNaddr(naddr) {
+        console.log('### checkMarketplaceNaddr')
+        if (!naddr) return
+
+        try {
+          const { type, data } = NostrTools.nip19.decode(naddr)
+          if (type !== 'naddr' || data.kind !== 30019) return // just double check
+          this.config = {
+            d: data.identifier,
+            pubkey: data.pubkey,
+            relays: data.relays
+          }
+        } catch (err) {
+          console.error(err)
+          return
+        }
+
+
         try {
           // add relays to the set   
-
+          const pool = new NostrTools.SimplePool()
           this.config.relays.forEach(r => this.relays.add(r))
           const event = await pool.get(this.config.relays, {
             kinds: [30019],
@@ -505,10 +504,9 @@ const market = async () => {
             '#d': [this.config.d]
           })
           if (!event) return
-          let content = JSON.parse(event.content)
-          console.log('### event', event)
-          console.log('### naddr content', content)
-          this.config = { ... this.config, opts: content }
+
+          this.config = { ... this.config, opts: JSON.parse(event.content) }
+
           // add merchants 
           const merchantsPubkeys = this.merchants.map(m => m.publicKey)
           const extraMerchants = (this.config.opts?.merchants || [])
@@ -521,6 +519,7 @@ const market = async () => {
           console.warn(error)
         }
       },
+
       async poolSubscribe() {
         const authors = Array.from(this.pubkeys).concat(this.merchants.map(m => m.publicKey))
         console.log('### poolSubscribe.authors', authors)
