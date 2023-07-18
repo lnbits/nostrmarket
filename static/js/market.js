@@ -926,6 +926,11 @@ const market = async () => {
       async publishNaddr() {
         if (!this.account?.privkey) {
           this.openAccountDialog()
+          this.$q.notify({
+            message: 'Please login before publshing the market profile',
+            color: 'warning',
+            icon: 'warning'
+          })
           return
         }
 
