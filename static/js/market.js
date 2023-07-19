@@ -110,7 +110,7 @@ const market = async () => {
       config(n, o) {
         if (!n?.opts?.ui?.banner) {
           this.bannerImage = this.defaultBanner
-        } else if (n?.opts?.ui?.banner !== o?.opts?.ui?.banner) {
+        } else {
           this.bannerImage = null
           setTimeout(() => {
             this.bannerImage = this.sanitizeImageSrc(n?.opts?.ui?.banner, this.defaultBanner), 1
@@ -118,7 +118,7 @@ const market = async () => {
         }
         if (!n?.opts?.ui?.picture) {
           this.logoImage = this.defaultLogo
-        } else if (n?.opts?.ui?.picture !== o?.opts?.ui?.picture) {
+        } else {
           this.logoImage = null
           setTimeout(() => {
             this.logoImage = this.sanitizeImageSrc(n?.opts?.ui?.picture, this.defaultLogo), 1
