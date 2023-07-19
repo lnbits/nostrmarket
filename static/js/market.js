@@ -11,7 +11,12 @@ const market = async () => {
     'wss://nostr.walletofsatoshi.com'
   ]
   const eventToObj = event => {
-    event.content = JSON.parse(event.content) || null
+    try {
+      event.content = JSON.parse(event.content) || null
+    } catch {
+      event.content = null
+    }
+
 
     return {
       ...event,
@@ -358,13 +363,14 @@ const market = async () => {
       },
 
 
-      async updateUiConfig(updateData) {
-        const { name, about, ui } = updateData
+      async updateUiConfig(data) {
+        const { name, about, ui } = data
         this.config = { ...this.config, opts: { ...this.config.opts, name, about, ui } }
         this.applyUiConfigs(this.config)
       },
 
       async updateData(events) {
+        console.log('### updateData', events)
         if (events.length < 1) {
           this.$q.notify({
             message: 'No matches were found!'
@@ -373,6 +379,13 @@ const market = async () => {
         }
         let products = new Map()
         let stalls = new Map()
+        const deleteEventsIds = events
+          .filter(e => e.kind === 5)
+          .map(e => (e.tags || []).filter(t => t[0] === 'e'))
+          .flat()
+          .map(t => t[1])
+          .filter(t => !!t)
+
 
         this.stalls.forEach(s => stalls.set(s.id, s))
         this.products.forEach(p => products.set(p.id, p))
@@ -385,9 +398,11 @@ const market = async () => {
             }
             this.merchants.filter(m => m.publicKey === e.pubkey).forEach(m => m.profile = e.content)
             return
+          } else if (e.kind == 5) {
+            console.log('### delete event', e)
           } else if (e.kind == 30018) {
             //it's a product `d` is the prod. id
-            products.set(e.d, { ...e.content, pubkey: e.pubkey, id: e.d, categories: e.t })
+            products.set(e.d, { ...e.content, pubkey: e.pubkey, id: e.d, categories: e.t, eventId: e.id })
           } else if (e.kind == 30017) {
             // it's a stall `d` is the stall id
             stalls.set(e.d, { ...e.content, pubkey: e.pubkey, id: e.d, pubkey: e.pubkey })
@@ -398,7 +413,7 @@ const market = async () => {
 
         this.products = Array.from(products.values())
           .map(obj => {
-            let stall = this.stalls.find(s => s.id == obj.stall_id)
+            const stall = this.stalls.find(s => s.id == obj.stall_id)
             if (!stall) return
             obj.stallName = stall.name
             obj.images = obj.images || [obj.image]
@@ -410,44 +425,33 @@ const market = async () => {
             }
             return obj
           })
-          .filter(f => f)
+          .filter(p => p && (deleteEventsIds.indexOf(p.eventId)) === -1)
+        console.log('### this.products', this.products)
       },
+
       async initNostr() {
         this.isLoading = true
-        const pool = new NostrTools.SimplePool()
+        this.pool = new NostrTools.SimplePool()
 
-        let relays = Array.from(this.relays)
+        const relays = Array.from(this.relays)
 
         const authors = this.merchants.map(m => m.publicKey)
-        await pool
-          .list(relays, [
-            {
-              kinds: [0, 30017, 30018], // for production kind is 30017
-              authors
-            }
-          ])
-          .then(async events => {
-            if (!events || events.length == 0) return
-            await this.updateData(events)
-          })
+        const events = await this.pool.list(relays, [{ kinds: [0, 30017, 30018], authors }])
+        if (!events || events.length == 0) return
+        await this.updateData(events)
 
-
-        this.pool = pool
-        this.poolSubscribe()
+        const lastEvent = events.sort((a, b) => b.created_at - a.created_at)[0]
+        console.log('### since', lastEvent.created_at) // 1685456534, 1689758074
+        this.poolSubscribe(lastEvent.created_at)
         this.isLoading = false
       },
-      async poolSubscribe() {
+      async poolSubscribe(since) {
         const authors = this.merchants.map(m => m.publicKey)
-        this.poolSub = this.pool.sub(Array.from(this.relays), [
-          {
-            kinds: [0, 30017, 30018],
-            authors,
-            since: Date.now() / 1000
-          }
-        ])
+        this.poolSub = this.pool.sub(Array.from(this.relays), [{ kinds: [0, 5, 30017, 30018], authors, since }])
         this.poolSub.on(
           'event',
           event => {
+            console.log('####### new event', event)
             this.updateData([event])
           },
           { id: 'masterSub' } //pass ID to cancel previous sub

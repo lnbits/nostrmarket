@@ -22,7 +22,6 @@ async function customerStallList(path) {
 
     },
     created() {
-      console.log('### stalls', this.stalls)
     }
   })
 }
