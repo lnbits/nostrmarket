@@ -441,21 +441,20 @@ const market = async () => {
         await this.updateData(events)
 
         const lastEvent = events.sort((a, b) => b.created_at - a.created_at)[0]
-        console.log('### since', lastEvent.created_at) // 1685456534, 1689758074
         this.poolSubscribe(lastEvent.created_at)
         this.isLoading = false
       },
       async poolSubscribe(since) {
         const authors = this.merchants.map(m => m.publicKey)
-        this.poolSub = this.pool.sub(Array.from(this.relays), [{ kinds: [0, 5, 30017, 30018], authors, since }])
-        this.poolSub.on(
-          'event',
-          event => {
-            console.log('####### new event', event)
-            this.updateData([event])
-          },
-          { id: 'masterSub' } //pass ID to cancel previous sub
-        )
+        this.pool
+          .sub(Array.from(this.relays), [{ kinds: [0, 5, 30017, 30018], authors, since }])
+          .on(
+            'event',
+            event => {
+              this.updateData([event])
+            },
+            { id: 'masterSub' } //pass ID to cancel previous sub
+          )
       },
 
       async checkMarketNaddr(naddr) {
