@@ -2,7 +2,7 @@ async function marketConfig(path) {
     const template = await loadTemplateAsync(path)
     Vue.component('market-config', {
         name: 'market-config',
-        props: ['merchants', 'relays', 'config-ui'],
+        props: ['merchants', 'relays', 'config-ui', 'read-notes'],
         template,
 
         data: function () {
@@ -85,17 +85,26 @@ async function marketConfig(path) {
                 console.log('### this.info', { name, about, ui })
                 this.$emit('ui-config-update', { name, about, ui })
             },
-            publishNaddr(){
+            publishNaddr() {
                 this.$emit('publish-naddr')
+            },
+            clearAllData() {
+                this.$emit('clear-all-data')
+            },
+            markNoteAsRead(noteId) {
+                this.$emit('note-read', noteId)
             }
         },
         created: async function () {
-            console.log('### this.configData', this.configData)
-            console.log('### this.configUi', this.configUi)
             if (this.configUi) {
-                this.configData = { ...this.configData, ...this.configUi, ui: { ...this.configData.ui, ...(this.configUi.ui || {}) } }
+                this.configData = {
+                    ...this.configData,
+                    ...this.configUi,
+                    ui: {
+                        ...this.configData.ui, ...(this.configUi.ui || {})
+                    }
+                }
             }
-            console.log('### this.configData', this.configData)
 
         }
     })

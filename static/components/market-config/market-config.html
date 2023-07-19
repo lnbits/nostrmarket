@@ -18,6 +18,43 @@
 
         <q-tab-panels v-model="tab">
           <q-tab-panel name="merchants">
+            <q-list v-if="!readNotes.merchants" class="q-mb-lg" bordered>
+              <q-item>
+                <q-item-section avatar>
+                  <q-avatar>
+                    <q-icon color="primary" name="info" size="xl" />
+                  </q-avatar>
+                </q-item-section>
+                <q-item-section class="q-mt-sm q-ml-lg">
+                  <q-item-label><strong>Note</strong></q-item-label>
+                  <q-item-label>
+                    <div class="text-caption">
+                      <ul>
+                        <li><span class="text-subtitle1">
+                            Here all the mercants of the marketplace are listed.
+                          </span>
+                        </li>
+                        <li>
+                          <span class="text-subtitle1">
+                            You can easily add a new merchant by
+                            entering its public key in the input below.
+                          </span>
+                        </li>
+                        <li>
+                          <span class="text-subtitle1">
+                            When a merchant is added all its products and stalls will be available in the Market page.
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-btn @click="markNoteAsRead('merchants')" size="lg" outline color="primary" label="Got it!"
+                    icon="check_small" />
+                </q-item-section>
+              </q-item>
+            </q-list>
             <div>
               <q-input outlined v-model="merchantPubkey" @keydown.enter="addMerchant" type="text" label="Pubkey/Npub"
                 hint="Add merchants">
@@ -66,12 +103,6 @@
                     </q-item-section>
                     <q-item-section class="q-mt-sm">
                       <q-item-label><strong>{{ relay}}</strong></q-item-label>
-                      <!-- <q-item-label>
-                        <div class="text-caption text-grey ellipsis-2-lines">
-                          <p>{{ publicKey }}</p>
-                        </div>
-                      </q-item-label> -->
-                      <!-- <q-tooltip>{{ publicKey }}</q-tooltip> -->
                     </q-item-section>
                     <q-item-section side>
                       <q-btn size="12px" flat dense round icon="delete" @click="removeRelay(relay)" />
@@ -83,24 +114,59 @@
             </div>
           </q-tab-panel>
           <q-tab-panel name="marketplace">
+            <q-list v-if="!readNotes.marketUi" class="q-mb-lg" bordered>
+              <q-item>
+                <q-item-section avatar>
+                  <q-avatar>
+                    <q-icon color="primary" name="info" size="xl" />
+                  </q-avatar>
+                </q-item-section>
+                <q-item-section class="q-mt-sm q-ml-lg">
+                  <q-item-label><strong>Note</strong></q-item-label>
+                  <q-item-label>
+                    <div class="text-caption">
+                      <ul>
+                        <li><span class="text-subtitle1">
+                            Here one can customize the look and feel of the Market.
+                          </span>
+                        </li>
+                        <li>
+                          <span class="text-subtitle1">
+                            When the Market Profile is shared (via <code>naddr</code> ) these customisations will be
+                            available to the
+                            customers.
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-btn @click="markNoteAsRead('marketUi')" size="lg" outline color="primary" label="Got it!"
+                    icon="check_small" />
+                </q-item-section>
+              </q-item>
+            </q-list>
             <div class="q-mb-md"> <strong>Information</strong></div>
-            <q-input @change="updateUiConfig" outlined v-model="configData.name" type="text" label="Marketplace Name"
-              class="q-mb-md">
+            <q-input @change="updateUiConfig" outlined v-model="configData.name" type="text" label="Market Name"
+              hint="Short name for the market" class="q-mb-md">
             </q-input>
             <q-input @change="updateUiConfig" outlined v-model="configData.about" type="textarea" rows="3"
-              label="Marketplace Description" class="q-mb-lg"></q-input>
+              label="Marketplace Description"
+              hint="It will be displayed on top of the banner image. Can be a longer text." class="q-mb-lg"></q-input>
 
             <div class="q-mb-md q-mt-lg">
               <strong>UI Configurations</strong>
             </div>
 
             <q-input @change="updateUiConfig" outlined v-model="configData.ui.picture" type="text" label="Logo"
-              class="q-mb-md">
+              hint="It will be displayed next to the search input. Can be png, jpg, ico, gif, svg." class="q-mb-md">
             </q-input>
             <q-input @change="updateUiConfig" outlined v-model="configData.ui.banner" type="text" label="Banner"
-              class="q-mb-md">
+              hint="It represents the visual identity of the market. Can be png, jpg, ico, gif, svg." class="q-mb-md">
             </q-input>
-            <q-select @input="updateUiConfig" filled v-model="configData.ui.theme" hint="Choose marketplace theme"
+            <q-select @input="updateUiConfig" filled v-model="configData.ui.theme"
+              hint="The colors of the market will vary based on the theme. It applies to all components (buttons, labels, inputs, etc)"
               :options="themeOptions" label="Marketplace Theme"></q-select>
 
             <q-checkbox @input="updateUiConfig" v-model="configData.ui.darkMode" label="Dark Mode"
@@ -116,6 +182,7 @@
   <q-separator />
   <q-card-section>
     <div class="float-right">
+      <q-btn @click="clearAllData" flat label="Clear All Data" icon="delete" class="q-ml-lg" color="negative"></q-btn>
       <q-btn @click="publishNaddr" flat label="Share Market Profile" icon="share" class="q-ml-lg"
         color="primary"></q-btn>
     </div>

@@ -7,7 +7,6 @@ async function userConfig(path) {
 
         data: function () {
             return {
-                clearAllData: false
             }
         },
         methods: {
@@ -17,7 +16,7 @@ async function userConfig(path) {
                         'Please make sure you save your private key! You will not be able to recover it later!'
                     )
                     .onOk(async () => {
-                        this.$emit('logout', { clearAllData: this.clearAllData })
+                        this.$emit('logout')
                     })
             },
             copyText(text) {

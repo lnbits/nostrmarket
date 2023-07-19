@@ -103,7 +103,11 @@ const market = async () => {
 
 
         defaultBanner: '/nostrmarket/static/images/nostr-cover.png',
-        defaultLogo: '/nostrmarket/static/images/nostr-avatar.png'
+        defaultLogo: '/nostrmarket/static/images/nostr-avatar.png',
+        readNotes: {
+          merchants: false,
+          marketUi: false
+        }
       }
     },
     watch: {
@@ -287,6 +291,9 @@ const market = async () => {
 
         const relays = this.$q.localStorage.getItem('nostrmarket.relays')
         this.relays = new Set(relays?.length ? relays : defaultRelays)
+
+        const readNotes = this.$q.localStorage.getItem('nostrmarket.readNotes') || {}
+        this.readNotes = { ...this.readNotes, ...readNotes }
       },
       applyUiConfigs(config = {}) {
         const { name, about, ui } = config?.opts || {}
@@ -926,15 +933,38 @@ const market = async () => {
         this.copyText(naddr)
       },
 
-      logout(opts) {
+      logout() {
         window.localStorage.removeItem('nostrmarket.account')
+        window.location.href = window.location.origin + window.location.pathname;
         this.account = null
-        if (opts?.clearAllData) {
-          this.$q.localStorage.getAllKeys().forEach(key => window.localStorage.removeItem(key))
-          window.location.href = window.location.origin + window.location.pathname;
-        }
+        this.accountMetadata = null
+      },
 
+      clearAllData() {
+        LNbits.utils
+          .confirmDialog(
+            'This will remove all information about merchants, products, relays and others. ' +
+            'You will NOT be logged out. Do you want to proceed?'
+          )
+          .onOk(async () => {
+            this.$q.localStorage.getAllKeys()
+              .filter(key => key !== 'nostrmarket.account')
+              .forEach(key => window.localStorage.removeItem(key))
 
+            this.merchants = []
+            this.relays = []
+            this.orders = []
+            this.config = { opts: null }
+            this.shoppingCarts = []
+            this.checkoutCart = null
+            window.location.href = window.location.origin + window.location.pathname;
+
+          })
+
+      },
+      markNoteAsRead(noteId) {
+        this.readNotes[noteId] = true
+        this.$q.localStorage.set('nostrmarket.readNotes', this.readNotes)
       }
 
     }
