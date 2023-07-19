@@ -79,7 +79,7 @@ const market = async () => {
           show: false
         },
 
-        searchNostr: false,
+        
         filterCategories: [],
         groupByStall: false,
 
