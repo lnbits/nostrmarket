@@ -19,23 +19,23 @@
 
     <div class="row">
       <div class="col-10">
-        <q-input v-model="account.nsec" readonly disbled outlined type="password" label="Private Key"
-          class="q-mb-md">
+        <q-input v-model="account.nsec" readonly disbled outlined type="password" label="Private Key" class="q-mb-md">
           <template v-slot:append>
-            <q-btn @click="copyText(account.nsec)"  icon="content_copy" label="Nsec" flat color="gray float-right q-mt-sm"></q-btn>
+            <q-btn @click="copyText(account.nsec)" icon="content_copy" label="Nsec" flat
+              color="gray float-right q-mt-sm"></q-btn>
           </template>
         </q-input>
       </div>
 
       <div class="col-2 auto-width">
-        <q-btn @click="copyText(account.privkey)"  icon="content_copy" label="Hex" flat color="gray float-right q-mt-sm"></q-btn>
+        <q-btn @click="copyText(account.privkey)" icon="content_copy" label="Hex" flat
+          color="gray float-right q-mt-sm"></q-btn>
       </div>
     </div>
   </q-card-section>
   <q-separator />
   <q-card-section>
     <div v-if="account" class="float-right">
-      <q-checkbox v-model="clearAllData" label="Clear All Data"></q-checkbox>
       <q-btn @click="logout" flat label="Logout" icon="logout" class="q-ml-lg" color="primary"></q-btn>
     </div>
     <div v-else>
