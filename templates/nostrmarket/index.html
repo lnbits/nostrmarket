@@ -230,10 +230,7 @@
   }
 </style>
 
-<!-- todo: serve locally -->
-<script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pica@6.1.1/dist/pica.min.js"></script>
-
+<script src="{{ url_for('nostrmarket_static', path='js/nostr.bundle.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/utils.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/key-pair/key-pair.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='components/shipping-zones/shipping-zones.js') }}"></script>
