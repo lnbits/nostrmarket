@@ -1,8 +1,6 @@
 async function stallDetails(path) {
   const template = await loadTemplateAsync(path)
 
-  const pica = window.pica()
-
   Vue.component('stall-details', {
     name: 'stall-details',
     template,
