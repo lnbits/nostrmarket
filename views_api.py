@@ -117,9 +117,7 @@ async def api_create_merchant(
             ),
         )
 
-        await nostr_client.subscribe_to_stall_events(data.public_key, 0)
-        await nostr_client.subscribe_to_product_events(data.public_key, 0)
-        await nostr_client.subscribe_to_direct_messages(data.public_key, 0)
+        await nostr_client.subscribe_merchant(data.public_key, 0)
 
         return merchant
     except AssertionError as ex:
@@ -170,14 +168,15 @@ async def api_delete_merchant(
         assert merchant, "Merchant cannot be found"
         assert merchant.id == merchant_id, "Wrong merchant ID"
 
+        # first unsubscribe so new events are not created during the clean-up
+        await nostr_client.unsubscribe_merchant(merchant.public_key)
+
         await delete_merchant_orders(merchant.id)
         await delete_merchant_products(merchant.id)
         await delete_merchant_stalls(merchant.id)
         await delete_merchant_direct_messages(merchant.id)
         await delete_merchant_zones(merchant.id)
-
-        await nostr_client.unsubscribe_from_direct_messages(merchant.public_key)
-        await nostr_client.unsubscribe_from_merchant_events(merchant.public_key)
+        
         await delete_merchant(merchant.id)
     except AssertionError as ex:
         raise HTTPException(

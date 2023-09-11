@@ -12,7 +12,7 @@ from .crud import (
     get_merchants_ids_with_pubkeys,
 )
 from .nostr.nostr_client import NostrClient
-from .services import handle_order_paid, process_nostr_message
+from .services import get_last_event_date_for_merchant, handle_order_paid, process_nostr_message
 
 
 async def wait_for_paid_invoices():
@@ -39,23 +39,12 @@ async def on_invoice_paid(payment: Payment) -> None:
 async def wait_for_nostr_events(nostr_client: NostrClient):
     merchant_ids = await get_merchants_ids_with_pubkeys()
     for id, pk in merchant_ids:
-        last_order_time = await get_last_order_time(id)
-        last_dm_time = await get_last_direct_messages_created_at(id)
-        since = max(last_order_time, last_dm_time)
+        since = await get_last_event_date_for_merchant(id)
+        await nostr_client.subscribe_merchant(pk, since)
 
-        await nostr_client.subscribe_to_direct_messages(pk, since)
-
-    for id, pk in merchant_ids:
-        last_stall_update = await get_last_stall_update_time(id)
-        await nostr_client.subscribe_to_stall_events(pk, last_stall_update)
-
-    for id, pk in merchant_ids:
-        last_product_update = await get_last_product_update_time(id)
-        await nostr_client.subscribe_to_product_events(pk, last_product_update)
-
-    customers = await get_all_unique_customers()
-    for c in customers:
-        await nostr_client.subscribe_to_user_profile(c.public_key, c.event_created_at)
+    # customers = await get_all_unique_customers()
+    # for c in customers:
+    #     await nostr_client.subscribe_to_user_profile(c.public_key, c.event_created_at)
 
     while True:
         message = await nostr_client.get_event()
