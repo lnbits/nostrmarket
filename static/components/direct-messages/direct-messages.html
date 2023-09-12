@@ -57,7 +57,7 @@
                 <div>
                   <span v-text="dm.message.message"></span>
                   <q-badge color="orange">
-                    <span v-text="dm.message.id" @click="showOrderDetails(dm.message.id)" class="cursor-pointer"></span>
+                    <span v-text="dm.message.id" @click="showOrderDetails(dm.message.id, dm.event_id)" class="cursor-pointer"></span>
                   </q-badge>
                 </div>
                 <q-badge @click="showMessageRawData(index)" class="cursor-pointer">...</q-badge>

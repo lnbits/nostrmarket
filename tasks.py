@@ -41,7 +41,7 @@ async def wait_for_nostr_events(nostr_client: NostrClient):
     merchant_ids = await get_merchants_ids_with_pubkeys()
     for id, pk in merchant_ids:
         since = await get_last_event_date_for_merchant(id)
-        await nostr_client.subscribe_merchant(pk, since)
+        await nostr_client.subscribe_merchant(pk, since + 1)
         await asyncio.sleep(0.1) # try to avoid 'too many concurrent REQ' from relays
 
     # customers = await get_all_unique_customers()
