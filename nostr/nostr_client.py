@@ -83,7 +83,6 @@ class NostrClient:
         product_filters = self._filters_for_product_events(public_key, since)
         profile_filters = self._filters_for_user_profile(public_key, since)
 
-        # merchant_filters = [json.dumps(f) for f in dm_filters + stall_filters + product_filters + profile_filters]
         merchant_filters = dm_filters + stall_filters + product_filters + profile_filters
 
         await self.send_req_queue.put(
@@ -91,7 +90,6 @@ class NostrClient:
         )
 
         logger.debug(f"Subscribed to events for: '{public_key}'.")
-        # print("### merchant_filters", merchant_filters)
         
 
     def _filters_for_direct_messages(self, public_key: str, since: int) -> List:
@@ -121,7 +119,7 @@ class NostrClient:
     def _filters_for_user_profile(self, public_key: str, since: int) -> List:
         profile_filter = {"kinds": [0], "authors": [public_key]}
         if since and since != 0:
-            profile_filter["since"] = since + 1
+            profile_filter["since"] = since
 
         return [profile_filter]
     
@@ -129,7 +127,7 @@ class NostrClient:
     def subscribe_to_user_profile(self, public_key: str, since: int) -> List:
         profile_filter = {"kinds": [0], "authors": [public_key]}
         if since and since != 0:
-            profile_filter["since"] = since + 1
+            profile_filter["since"] = since
 
         # Disabled for now. The number of clients can grow large. 
         # Some relays only allow a small number of subscriptions.
