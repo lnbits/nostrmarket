@@ -189,12 +189,33 @@ async function orderList(path) {
           LNbits.utils.notifyApiError(error)
         }
       },
+      restoreOrder: async function (eventId) {
+        console.log('### restoreOrder', eventId)
+        try {
+          this.search.restoring = true
+          const {data} = await LNbits.api.request(
+            'PUT',
+            `/nostrmarket/api/v1/order/restore/${eventId}`,
+            this.adminkey
+          )
+          await this.getOrders()
+          this.$q.notify({
+            type: 'positive',
+            message: 'Order restored!'
+          })
+          return data
+        } catch (error) {
+          LNbits.utils.notifyApiError(error)
+        } finally {
+          this.search.restoring = false
+        }
+      },
       restoreOrders: async function () {
         try {
           this.search.restoring = true
           await LNbits.api.request(
             'PUT',
-            `/nostrmarket/api/v1/order/restore`,
+            `/nostrmarket/api/v1/orders/restore`,
             this.adminkey
           )
           await this.getOrders()
@@ -269,9 +290,25 @@ async function orderList(path) {
           
         }
       },
-      orderSelected: async function (orderId) {
+      orderSelected: async function (orderId, eventId) {
         const order = await this.getOrder(orderId)
-        if (!order) return
+        if (!order) {
+          LNbits.utils
+          .confirmDialog(
+            "Order could not be found. Do you want to restore it from this direct message?"
+          )
+          .onOk(async () => {
+            const restoredOrder = await this.restoreOrder(eventId)
+            console.log('### restoredOrder', restoredOrder)
+            if (restoredOrder) {
+              restoredOrder.expanded = true
+              restoredOrder.isNew = false
+              this.orders = [restoredOrder]
+            }
+            
+          })
+          return
+        }
         order.expanded = true
         order.isNew = false
         this.orders = [order]

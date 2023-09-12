@@ -16,6 +16,10 @@ from .crud import (
     create_product,
     create_stall,
     get_customer,
+    get_last_direct_messages_created_at,
+    get_last_order_time,
+    get_last_product_update_time,
+    get_last_stall_update_time,
     get_merchant_by_pubkey,
     get_order,
     get_order_by_event_id,
@@ -364,6 +368,12 @@ async def extract_customer_order_from_dm(
 
     return order
 
+async def get_last_event_date_for_merchant(id) -> int:
+    last_order_time = await get_last_order_time(id)
+    last_dm_time = await get_last_direct_messages_created_at(id)
+    last_stall_update = await get_last_stall_update_time(id)
+    last_product_update = await get_last_product_update_time(id)
+    return max(last_order_time, last_dm_time, last_stall_update, last_product_update)
 
 async def _handle_nip04_message(merchant_public_key: str, event: NostrEvent):
     merchant = await get_merchant_by_pubkey(merchant_public_key)

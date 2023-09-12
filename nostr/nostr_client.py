@@ -77,45 +77,56 @@ class NostrClient:
     async def publish_nostr_event(self, e: NostrEvent):
         await self.send_req_queue.put(["EVENT", e.dict()])
 
-    async def subscribe_to_direct_messages(self, public_key: str, since: int):
+    async def subscribe_merchant(self,  public_key: str, since = 0):
+        dm_filters = self._filters_for_direct_messages(public_key, since)
+        stall_filters = self._filters_for_stall_events(public_key, since)
+        product_filters = self._filters_for_product_events(public_key, since)
+        profile_filters = self._filters_for_user_profile(public_key, since)
+
+        # merchant_filters = [json.dumps(f) for f in dm_filters + stall_filters + product_filters + profile_filters]
+        merchant_filters = dm_filters + stall_filters + product_filters + profile_filters
+
+        await self.send_req_queue.put(
+            ["REQ", f"merchant:{public_key}"] + merchant_filters
+        )
+
+        logger.debug(f"Subscribed to events for: '{public_key}'.")
+        # print("### merchant_filters", merchant_filters)
+        
+
+    def _filters_for_direct_messages(self, public_key: str, since: int) -> List:
         in_messages_filter = {"kinds": [4], "#p": [public_key]}
         out_messages_filter = {"kinds": [4], "authors": [public_key]}
         if since and since != 0:
             in_messages_filter["since"] = since
             out_messages_filter["since"] = since
 
-        await self.send_req_queue.put(
-            ["REQ", f"direct-messages-in:{public_key}", in_messages_filter]
-        )
-        await self.send_req_queue.put(
-            ["REQ", f"direct-messages-out:{public_key}", out_messages_filter]
-        )
+        return [in_messages_filter, out_messages_filter]
 
-        logger.debug(f"Subscribed to direct-messages '{public_key}'.")
-
-    async def subscribe_to_stall_events(self, public_key: str, since: int):
+    def _filters_for_stall_events(self, public_key: str, since: int) -> List:
         stall_filter = {"kinds": [30017], "authors": [public_key]}
         if since and since != 0:
             stall_filter["since"] = since
 
-        await self.send_req_queue.put(
-            ["REQ", f"stall-events:{public_key}", stall_filter]
-        )
+        return [stall_filter]
 
-        logger.debug(f"Subscribed to stall-events: '{public_key}'.")
-
-    async def subscribe_to_product_events(self, public_key: str, since: int):
+    def _filters_for_product_events(self, public_key: str, since: int) -> List:
         product_filter = {"kinds": [30018], "authors": [public_key]}
         if since and since != 0:
             product_filter["since"] = since
 
-        await self.send_req_queue.put(
-            ["REQ", f"product-events:{public_key}", product_filter]
-        )
-        logger.debug(f"Subscribed to product-events: '{public_key}'.")
+        return [product_filter]
 
 
-    async def subscribe_to_user_profile(self, public_key: str, since: int):
+    def _filters_for_user_profile(self, public_key: str, since: int) -> List:
+        profile_filter = {"kinds": [0], "authors": [public_key]}
+        if since and since != 0:
+            profile_filter["since"] = since + 1
+
+        return [profile_filter]
+    
+
+    def subscribe_to_user_profile(self, public_key: str, since: int) -> List:
         profile_filter = {"kinds": [0], "authors": [public_key]}
         if since and since != 0:
             profile_filter["since"] = since + 1
@@ -127,17 +138,6 @@ class NostrClient:
         #     ["REQ", f"user-profile-events:{public_key}", profile_filter]
         # )
 
-    async def unsubscribe_from_direct_messages(self, public_key: str):
-        await self.send_req_queue.put(["CLOSE", f"direct-messages-in:{public_key}"])
-        await self.send_req_queue.put(["CLOSE", f"direct-messages-out:{public_key}"])
-        
-        logger.debug(f"Unsubscribed from direct-messages '{public_key}'.")
-
-    async def unsubscribe_from_merchant_events(self, public_key: str):
-        await self.send_req_queue.put(["CLOSE", f"stall-events:{public_key}"])
-        await self.send_req_queue.put(["CLOSE", f"product-events:{public_key}"])
-
-        logger.debug(f"Unsubscribed from stall-events and product-events '{public_key}'.")
 
     async def restart(self, public_keys: List[str]):
         await self.unsubscribe_merchants(public_keys)
@@ -160,11 +160,15 @@ class NostrClient:
         self.ws.close()
         self.ws = None
 
+    async def unsubscribe_merchant(self,  public_key: str):
+        await self.send_req_queue.put(["CLOSE", public_key])
+
+        logger.debug(f"Unsubscribed from merchant events: '{public_key}'.")
+    
     async def unsubscribe_merchants(self,  public_keys: List[str]):
         for pk in public_keys:
             try:
-                await self.unsubscribe_from_direct_messages(pk)
-                await self.unsubscribe_from_merchant_events(pk)
+                await self.unsubscribe_merchant(pk)
             except Exception as ex:
                 logger.warning(ex)
         

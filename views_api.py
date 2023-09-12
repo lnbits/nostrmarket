@@ -35,12 +35,14 @@ from .crud import (
     delete_zone,
     get_customer,
     get_customers,
+    get_direct_message_by_event_id,
     get_direct_messages,
     get_last_direct_messages_time,
     get_merchant_by_pubkey,
     get_merchant_for_user,
     get_merchants_ids_with_pubkeys,
     get_order,
+    get_order_by_event_id,
     get_orders,
     get_orders_for_stall,
     get_orders_from_direct_messages,
@@ -117,9 +119,7 @@ async def api_create_merchant(
             ),
         )
 
-        await nostr_client.subscribe_to_stall_events(data.public_key, 0)
-        await nostr_client.subscribe_to_product_events(data.public_key, 0)
-        await nostr_client.subscribe_to_direct_messages(data.public_key, 0)
+        await nostr_client.subscribe_merchant(data.public_key, 0)
 
         return merchant
     except AssertionError as ex:
@@ -170,14 +170,15 @@ async def api_delete_merchant(
         assert merchant, "Merchant cannot be found"
         assert merchant.id == merchant_id, "Wrong merchant ID"
 
+        # first unsubscribe so new events are not created during the clean-up
+        await nostr_client.unsubscribe_merchant(merchant.public_key)
+
         await delete_merchant_orders(merchant.id)
         await delete_merchant_products(merchant.id)
         await delete_merchant_stalls(merchant.id)
         await delete_merchant_direct_messages(merchant.id)
         await delete_merchant_zones(merchant.id)
 
-        await nostr_client.unsubscribe_from_direct_messages(merchant.public_key)
-        await nostr_client.unsubscribe_from_merchant_events(merchant.public_key)
         await delete_merchant(merchant.id)
     except AssertionError as ex:
         raise HTTPException(
@@ -833,10 +834,39 @@ async def api_update_order_status(
         )
 
 
-@nostrmarket_ext.put("/api/v1/order/restore")
+@nostrmarket_ext.put("/api/v1/order/restore/{event_id}")
 async def api_restore_orders(
+    event_id: str,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Order:
+    try:
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+
+        dm = await get_direct_message_by_event_id(merchant.id, event_id)
+        assert dm, "Canot find direct message"
+
+        await create_or_update_order_from_dm(merchant.id, merchant.public_key, dm)
+
+        return await get_order_by_event_id(merchant.id, event_id)
+
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot restore order",
+        )
+
+
+@nostrmarket_ext.put("/api/v1/orders/restore")
+async def api_restore_orders(
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> None:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
@@ -849,7 +879,7 @@ async def api_restore_orders(
                 )
             except Exception as e:
                 logger.debug(
-                    f"Failed to restore order friom event '{dm.event_id}': '{str(e)}'."
+                    f"Failed to restore order from event '{dm.event_id}': '{str(e)}'."
                 )
 
     except AssertionError as ex:

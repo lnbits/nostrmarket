@@ -140,8 +140,8 @@ async function directMessages(path) {
         }
         this.getCustomersDebounced()
       },
-      showOrderDetails: function (orderId) {
-        this.$emit('order-selected', orderId)
+      showOrderDetails: function (orderId, eventId) {
+        this.$emit('order-selected', { orderId, eventId })
       },
       showClientOrders: function () {
         this.$emit('customer-selected', this.activePublicKey)
