@@ -4,8 +4,7 @@ from typing import List, Optional, Tuple
 from loguru import logger
 
 from lnbits.bolt11 import decode
-from lnbits.core import create_invoice, get_wallet
-from lnbits.core.services import websocketUpdater
+from lnbits.core.services import websocketUpdater, create_invoice, get_wallet
 
 from . import nostr_client
 from .crud import (
@@ -291,7 +290,7 @@ async def process_nostr_message(msg: str):
             return
 
     except Exception as ex:
-        logger.warning(ex)
+        logger.debug(ex)
 
 
 async def create_or_update_order_from_dm(
@@ -368,12 +367,14 @@ async def extract_customer_order_from_dm(
 
     return order
 
+
 async def get_last_event_date_for_merchant(id) -> int:
     last_order_time = await get_last_order_time(id)
     last_dm_time = await get_last_direct_messages_created_at(id)
     last_stall_update = await get_last_stall_update_time(id)
     last_product_update = await get_last_product_update_time(id)
     return max(last_order_time, last_dm_time, last_stall_update, last_product_update)
+
 
 async def _handle_nip04_message(merchant_public_key: str, event: NostrEvent):
     merchant = await get_merchant_by_pubkey(merchant_public_key)
