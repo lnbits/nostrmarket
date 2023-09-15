@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import List, Optional, Tuple
 
@@ -176,6 +177,8 @@ async def handle_order_paid(order_id: str, merchant_pubkey: str):
         success, message = await update_products_for_order(merchant, order)
         await notify_client_of_order_status(order, merchant, success, message)
 
+        await autoreply_for_products_in_order(merchant, order)
+
     except Exception as ex:
         logger.warning(ex)
 
@@ -202,32 +205,8 @@ async def notify_client_of_order_status(
     else:
         dm_content = f"Order cannot be fulfilled. Reason: {message}"
 
-    dm_event = merchant.build_dm_event(dm_content, order.public_key)
-
-    dm = PartialDirectMessage(
-        event_id=dm_event.id,
-        event_created_at=dm_event.created_at,
-        message=dm_content,
-        public_key=order.public_key,
-        type=DirectMessageType.ORDER_PAID_OR_SHIPPED.value
-        if success
-        else DirectMessageType.PLAIN_TEXT.value,
-    )
-    dm_reply = await create_direct_message(merchant.id, dm)
-
-    await nostr_client.publish_nostr_event(dm_event)
-
-    await websocketUpdater(
-        merchant.id,
-        json.dumps(
-            {
-                "type": f"dm:{dm.type}",
-                "customerPubkey": order.public_key,
-                "dm": dm_reply.dict(),
-            }
-        ),
-    )
-
+    dm_type = DirectMessageType.ORDER_PAID_OR_SHIPPED.value if success else DirectMessageType.PLAIN_TEXT.value
+    await send_dm(merchant, order.public_key, dm_type, dm_content)
 
 async def update_products_for_order(
     merchant: Merchant, order: Order
@@ -247,6 +226,44 @@ async def update_products_for_order(
 
     return True, "ok"
 
+async def autoreply_for_products_in_order(
+    merchant: Merchant, order: Order
+) -> Tuple[bool, str]:
+    product_ids = [i.product_id for i in order.items]
+
+    products = await get_products_by_ids(merchant.id, product_ids)
+    products_with_autoreply = [p for p in products  if p.config.use_autoreply]
+
+    for p in products_with_autoreply:
+        dm_content = p.config.autoreply_message
+        await send_dm(merchant, order.public_key, DirectMessageType.PLAIN_TEXT.value, dm_content)
+        await asyncio.sleep(1) # do not send all autoreplies at once
+
+
+async def send_dm(merchant: Merchant, other_pubkey: str, type: str, dm_content: str,):
+    dm_event = merchant.build_dm_event(dm_content, other_pubkey)
+
+    dm = PartialDirectMessage(
+        event_id=dm_event.id,
+        event_created_at=dm_event.created_at,
+        message=dm_content,
+        public_key=other_pubkey,
+        type=type
+    )
+    dm_reply = await create_direct_message(merchant.id, dm)
+
+    await nostr_client.publish_nostr_event(dm_event)
+
+    await websocketUpdater(
+    merchant.id,
+    json.dumps(
+        {
+            "type": f"dm:{dm.type}",
+            "customerPubkey": other_pubkey,
+            "dm": dm_reply.dict(),
+        }
+    ),
+    )
 
 async def compute_products_new_quantity(
     merchant_id: str, product_ids: List[str], items: List[OrderItem]
