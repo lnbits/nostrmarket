@@ -11,7 +11,7 @@ var eventToObj = event => {
     try {
         event.content = JSON.parse(event.content) || null
     } catch {
-        event.content = null
+
     }
 
 
@@ -156,7 +156,7 @@ function isValidKey(key, prefix = 'n') {
 }
 
 function isValidKeyHex(key) {
-    return key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)
+    return !!key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)
 }
 
 function formatCurrency(value, currency) {
