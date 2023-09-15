@@ -218,6 +218,8 @@ class Stall(PartialStall, Nostrable):
 class ProductConfig(BaseModel):
     description: Optional[str]
     currency: Optional[str]
+    use_autoreply: Optional[bool] = False
+    autoreply_message: Optional[str]
 
 
 class PartialProduct(BaseModel):

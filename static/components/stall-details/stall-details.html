@@ -153,6 +153,28 @@
           :mask="stall.currency != 'sat' ? '#.##' : '#'" fill-mask="0" reverse-fill-mask></q-input>
         <q-input filled dense v-model.number="productDialog.data.quantity" type="number" label="Quantity"></q-input>
 
+
+        <q-expansion-item group="advanced" icon="settings" label="Advanced options">
+          <q-card>
+            <q-card-section>
+              <div class="row q-mb-sm">
+                <div class="col">
+                  <q-checkbox v-model="productDialog.data.config.use_autoreply" dense label="Autoreply when paid" />
+                </div>
+              </div>
+
+              <div class="row q-mb-sm q-ml-sm">
+                <div class="col">
+                  <q-input v-model="productDialog.data.config.autoreply_message" filled dense type="textarea" rows="5"
+                    label="Autoreply message" hint="It can include link to a digital asset">
+                  </q-input>
+                </div>
+              </div>
+            </q-card-section>
+          </q-card>
+        </q-expansion-item>
+
+
         <div class="row q-mt-lg">
           <q-btn v-if="productDialog.data.id" type="submit"
             :label="productDialog.data.pending ? 'Restore Product' : 'Update Product'" unelevated
@@ -164,6 +186,8 @@
 
           <q-btn v-close-popup flat color="grey" class="q-ml-auto">Cancel</q-btn>
         </div>
+
+
       </q-form>
     </q-card>
   </q-dialog>
@@ -191,8 +215,7 @@
         There are no products to be restored.
       </div>
       <div class="row q-mt-lg">
-        <q-btn @click="restoreAllPendingProducts" v-close-popup flat color="green"
-              >Restore All</q-btn>
+        <q-btn @click="restoreAllPendingProducts" v-close-popup flat color="green">Restore All</q-btn>
         <q-btn v-close-popup flat color="grey" class="q-ml-auto">Close</q-btn>
       </div>
     </q-card>
