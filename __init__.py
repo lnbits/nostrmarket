@@ -3,7 +3,6 @@ from asyncio import Task
 from typing import List
 
 from fastapi import APIRouter
-from starlette.staticfiles import StaticFiles
 
 from lnbits.db import Database
 from lnbits.helpers import template_renderer
@@ -16,14 +15,13 @@ nostrmarket_ext: APIRouter = APIRouter(prefix="/nostrmarket", tags=["nostrmarket
 nostrmarket_static_files = [
     {
         "path": "/nostrmarket/static",
-        "app": StaticFiles(directory="lnbits/extensions/nostrmarket/static"),
         "name": "nostrmarket_static",
     }
 ]
 
 
 def nostrmarket_renderer():
-    return template_renderer(["lnbits/extensions/nostrmarket/templates"])
+    return template_renderer(["nostrmarket/templates"])
 
 
 from .nostr.nostr_client import NostrClient
