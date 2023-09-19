@@ -63,7 +63,7 @@ class NostrClient:
                     # be sure the connection is open
                     await asyncio.sleep(3)
                 req = await self.send_req_queue.get()
-                print("### nostr req", req)
+
                 if isinstance(req, ValueError):
                     running = False
                     logger.warning(str(req))

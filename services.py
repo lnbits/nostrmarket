@@ -231,7 +231,6 @@ async def update_products_for_order(
 
     return True, "ok"
 
-
 async def autoreply_for_products_in_order(
     merchant: Merchant, order: Order
 ) -> Tuple[bool, str]:
@@ -614,7 +613,6 @@ async def _handle_new_customer(event, merchant: Merchant):
         merchant.id, Customer(merchant_id=merchant.id, public_key=event.pubkey)
     )
     await nostr_client.subscribe_to_user_profile(event.pubkey, 0)
-
 
 
 async def _handle_customer_profile_update(event: NostrEvent):
