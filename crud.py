@@ -1,5 +1,4 @@
 import json
-import time
 from typing import List, Optional
 
 from lnbits.helpers import urlsafe_short_hash
@@ -536,17 +535,6 @@ async def get_orders_for_stall(
         (merchant_id, stall_id, *values),
     )
     return [Order.from_row(row) for row in rows]
-
-
-async def get_last_order_time(merchant_id: str) -> int:
-    row = await db.fetchone(
-        """
-            SELECT event_created_at FROM nostrmarket.orders 
-            WHERE merchant_id = ? ORDER BY event_created_at DESC LIMIT 1
-        """,
-        (merchant_id,),
-    )
-    return row[0] if row else 0
 
 
 async def update_order(merchant_id: str, order_id: str, **kwargs) -> Optional[Order]:

@@ -17,10 +17,10 @@ from .crud import (
     create_stall,
     get_customer,
     get_last_direct_messages_created_at,
-    get_last_order_time,
     get_last_product_update_time,
     get_last_stall_update_time,
     get_merchant_by_pubkey,
+    get_merchants_ids_with_pubkeys,
     get_order,
     get_order_by_event_id,
     get_products,
@@ -307,7 +307,7 @@ async def process_nostr_message(msg: str):
         type, *rest = json.loads(msg)
 
         if type.upper() == "EVENT":
-            subscription_id, event = rest
+            _, event = rest
             event = NostrEvent(**event)
             if event.kind == 0:
                 await _handle_customer_profile_update(event)
@@ -396,14 +396,6 @@ async def extract_customer_order_from_dm(
     )
 
     return order
-
-
-async def get_last_event_date_for_merchant(id) -> int:
-    last_order_time = await get_last_order_time(id)
-    last_dm_time = await get_last_direct_messages_created_at(id)
-    last_stall_update = await get_last_stall_update_time(id)
-    last_product_update = await get_last_product_update_time(id)
-    return max(last_order_time, last_dm_time, last_stall_update, last_product_update)
 
 
 async def _handle_nip04_message(event: NostrEvent):
@@ -600,12 +592,29 @@ async def create_new_failed_order(
     await create_order(merchant_id, order)
     return PaymentRequest(id=order.id, message=fail_message, payment_options=[])
 
+async def resubscribe_to_all_merchants():
+    await nostr_client.unsubscribe_merchants()
+    # give some time for the message to propagate
+    asyncio.sleep(1)
+    await subscribe_to_all_merchants()
+
+async def subscribe_to_all_merchants():
+    ids = await get_merchants_ids_with_pubkeys()
+    public_keys = [pk for _, pk in ids]
+
+    last_dm_time = await get_last_direct_messages_created_at()
+    last_stall_time = await get_last_stall_update_time()
+    last_prod_time = await get_last_product_update_time()
+    
+    await nostr_client.subscribe_merchants(public_keys, last_dm_time, last_stall_time, last_prod_time, 0)
+
 
 async def _handle_new_customer(event, merchant: Merchant):
     await create_customer(
         merchant.id, Customer(merchant_id=merchant.id, public_key=event.pubkey)
     )
     await nostr_client.subscribe_to_user_profile(event.pubkey, 0)
+
 
 
 async def _handle_customer_profile_update(event: NostrEvent):

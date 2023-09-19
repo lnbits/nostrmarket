@@ -40,7 +40,6 @@ from .crud import (
     get_last_direct_messages_time,
     get_merchant_by_pubkey,
     get_merchant_for_user,
-    get_merchants_ids_with_pubkeys,
     get_order,
     get_order_by_event_id,
     get_orders,
@@ -86,7 +85,9 @@ from .services import (
     reply_to_structured_dm,
     build_order_with_payment,
     create_or_update_order_from_dm,
+    resubscribe_to_all_merchants,
     sign_and_send_to_nostr,
+    subscribe_to_all_merchants,
     update_merchant_to_nostr,
 )
 
@@ -119,7 +120,7 @@ async def api_create_merchant(
             ),
         )
 
-        await nostr_client.subscribe_merchant(data.public_key, 0)
+        await resubscribe_to_all_merchants()
 
         return merchant
     except AssertionError as ex:
@@ -170,8 +171,7 @@ async def api_delete_merchant(
         assert merchant, "Merchant cannot be found"
         assert merchant.id == merchant_id, "Wrong merchant ID"
 
-        # first unsubscribe so new events are not created during the clean-up
-        await nostr_client.unsubscribe_merchant(merchant.public_key)
+        await nostr_client.unsubscribe_merchants()
 
         await delete_merchant_orders(merchant.id)
         await delete_merchant_products(merchant.id)
@@ -180,6 +180,7 @@ async def api_delete_merchant(
         await delete_merchant_zones(merchant.id)
 
         await delete_merchant(merchant.id)
+       
     except AssertionError as ex:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
@@ -191,7 +192,8 @@ async def api_delete_merchant(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get merchant",
         )
-
+    finally:
+        await subscribe_to_all_merchants()
 
 @nostrmarket_ext.put("/api/v1/merchant/{merchant_id}/nostr")
 async def api_republish_merchant(
@@ -1084,9 +1086,7 @@ async def api_list_currencies_available():
 @nostrmarket_ext.put("/api/v1/restart")
 async def restart_nostr_client(wallet: WalletTypeInfo = Depends(require_admin_key)):
     try:
-        ids = await get_merchants_ids_with_pubkeys()
-        merchant_public_keys = [id[0] for id in ids]
-        await nostr_client.restart(merchant_public_keys)
+        await nostr_client.restart()
     except Exception as ex:
         logger.warning(ex)
 
@@ -1100,9 +1100,7 @@ async def api_stop(wallet: WalletTypeInfo = Depends(check_admin)):
             logger.warning(ex)
 
     try:
-        ids = await get_merchants_ids_with_pubkeys()
-        merchant_public_keys = [id[0] for id in ids]
-        await nostr_client.stop(merchant_public_keys)
+        await nostr_client.stop()
     except Exception as ex:
         logger.warning(ex)
 

@@ -8,6 +8,7 @@ from loguru import logger
 from websocket import WebSocketApp
 
 from lnbits.app import settings
+from lnbits.helpers import urlsafe_short_hash
 
 from .event import NostrEvent
 
@@ -17,6 +18,7 @@ class NostrClient:
         self.recieve_event_queue: Queue = Queue()
         self.send_req_queue: Queue = Queue()
         self.ws: WebSocketApp = None
+        self.subscription_id = "nostrmarket-" + urlsafe_short_hash()[:32]
 
     async def connect_to_nostrclient_ws(
         self, on_open: Callable, on_message: Callable
@@ -94,10 +96,13 @@ class NostrClient:
             dm_filters + stall_filters + product_filters + profile_filters
         )
 
-        await self.send_req_queue.put(["REQ", "nostrmarket"] + merchant_filters)
+        self.subscription_id = "nostrmarket-" + urlsafe_short_hash()[:32]
+        await self.send_req_queue.put(["REQ", self.subscription_id] + merchant_filters)
+
+        logger.debug(f"Subscribed to events for: {len(public_keys)} keys. New subscription id: {self.subscription_id}")
 
         print("###  merchant_filters: ", merchant_filters)
-        logger.debug(f"Subscribed to events for: {len(public_keys)} keys.")
+
 
     def _filters_for_direct_messages(self, public_keys: List[str], since: int) -> List:
         in_messages_filter = {"kinds": [4], "#p": public_keys}
@@ -135,8 +140,8 @@ class NostrClient:
         if since and since != 0:
             profile_filter["since"] = since
 
-    async def restart(self, public_keys: List[str]):
-        await self.unsubscribe_merchants(public_keys)
+    async def restart(self):
+        await self.unsubscribe_merchants()
         # Give some time for the CLOSE events to propagate before restarting
         await asyncio.sleep(10)
 
@@ -147,22 +152,16 @@ class NostrClient:
         self.ws.close()
         self.ws = None
 
-    async def stop(self, public_keys: List[str]):
-        await self.unsubscribe_merchants(public_keys)
+    async def stop(self):
+        await self.unsubscribe_merchants()
 
         # Give some time for the CLOSE events to propagate before closing the connection
         await asyncio.sleep(10)
         self.ws.close()
         self.ws = None
 
-    async def unsubscribe_merchant(self, public_key: str):
-        await self.send_req_queue.put(["CLOSE", public_key])
 
-        logger.debug(f"Unsubscribed from merchant events: '{public_key}'.")
+    async def unsubscribe_merchants(self):
+        await self.send_req_queue.put(["CLOSE", self.subscription_id])
 
-    async def unsubscribe_merchants(self, public_keys: List[str]):
-        for pk in public_keys:
-            try:
-                await self.unsubscribe_merchant(pk)
-            except Exception as ex:
-                logger.warning(ex)
+        logger.debug("Unsubscribed from all merchants events")
