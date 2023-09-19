@@ -103,7 +103,7 @@ class NostrClient:
             f"Subscribed to events for: {len(public_keys)} keys. New subscription id: {self.subscription_id}"
         )
 
-    async def merchant_temp_subscription(self, pk, duration = 30):
+    async def merchant_temp_subscription(self, pk, duration=5):
         dm_filters = self._filters_for_direct_messages([pk], 0)
         stall_filters = self._filters_for_stall_events([pk], 0)
         product_filters = self._filters_for_product_events([pk], 0)
@@ -114,7 +114,9 @@ class NostrClient:
         )
 
         subscription_id = "merchant-" + urlsafe_short_hash()[:32]
-        logger.debug(f"New temp subscription ({duration} sec). Subscription id: {subscription_id}")
+        logger.debug(
+            f"New merchant temp subscription ({duration} sec). Subscription id: {subscription_id}"
+        )
         await self.send_req_queue.put(["REQ", subscription_id] + merchant_filters)
 
         async def unsubscribe_with_delay(sub_id, d):
@@ -122,6 +124,23 @@ class NostrClient:
             await self.unsubscribe(sub_id)
 
         asyncio.create_task(unsubscribe_with_delay(subscription_id, duration))
+
+    async def user_profile_temp_subscribe(self, public_key: str, duration=30) -> List:
+        try:
+            profile_filter = [{"kinds": [0], "authors": [public_key]}]
+            subscription_id = "profile-" + urlsafe_short_hash()[:32]
+            logger.debug(
+                f"New user temp subscription ({duration} sec). Subscription id: {subscription_id}"
+            )
+            await self.send_req_queue.put(["REQ", subscription_id] + profile_filter)
+
+            async def unsubscribe_with_delay(sub_id, d):
+                await asyncio.sleep(d)
+                await self.unsubscribe(sub_id)
+
+            asyncio.create_task(unsubscribe_with_delay(subscription_id, duration))
+        except Exception as ex:
+            logger.debug(ex)
 
     def _filters_for_direct_messages(self, public_keys: List[str], since: int) -> List:
         in_messages_filter = {"kinds": [4], "#p": public_keys}
@@ -152,12 +171,6 @@ class NostrClient:
             profile_filter["since"] = since
 
         return [profile_filter]
-
-    # todo: remove
-    def subscribe_to_user_profile(self, public_keys: List[str], since: int) -> List:
-        profile_filter = {"kinds": [0], "authors": public_keys}
-        if since and since != 0:
-            profile_filter["since"] = since
 
     async def restart(self):
         await self.unsubscribe_merchants()

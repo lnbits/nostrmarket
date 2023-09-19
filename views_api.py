@@ -1061,8 +1061,8 @@ async def api_create_customer(
         customer = await create_customer(
             merchant.id, Customer(merchant_id=merchant.id, public_key=pubkey)
         )
-        # todo: nope
-        await nostr_client.subscribe_to_user_profile(pubkey, 0)
+
+        await nostr_client.user_profile_temp_subscribe(pubkey)
 
         return customer
     except (ValueError, AssertionError) as ex:

@@ -608,11 +608,11 @@ async def subscribe_to_all_merchants():
     await nostr_client.subscribe_merchants(public_keys, last_dm_time, last_stall_time, last_prod_time, 0)
 
 
-async def _handle_new_customer(event, merchant: Merchant):
+async def _handle_new_customer(event: NostrEvent, merchant: Merchant):
     await create_customer(
         merchant.id, Customer(merchant_id=merchant.id, public_key=event.pubkey)
     )
-    await nostr_client.subscribe_to_user_profile(event.pubkey, 0)
+    await nostr_client.user_profile_temp_subscribe(event.pubkey)
 
 
 async def _handle_customer_profile_update(event: NostrEvent):
