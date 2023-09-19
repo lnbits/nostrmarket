@@ -122,6 +122,8 @@ async def api_create_merchant(
 
         await resubscribe_to_all_merchants()
 
+        await nostr_client.merchant_temp_subscription(data.public_key)
+
         return merchant
     except AssertionError as ex:
         raise HTTPException(
@@ -1059,6 +1061,7 @@ async def api_create_customer(
         customer = await create_customer(
             merchant.id, Customer(merchant_id=merchant.id, public_key=pubkey)
         )
+        # todo: nope
         await nostr_client.subscribe_to_user_profile(pubkey, 0)
 
         return customer

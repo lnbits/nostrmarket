@@ -99,10 +99,29 @@ class NostrClient:
         self.subscription_id = "nostrmarket-" + urlsafe_short_hash()[:32]
         await self.send_req_queue.put(["REQ", self.subscription_id] + merchant_filters)
 
-        logger.debug(f"Subscribed to events for: {len(public_keys)} keys. New subscription id: {self.subscription_id}")
+        logger.debug(
+            f"Subscribed to events for: {len(public_keys)} keys. New subscription id: {self.subscription_id}"
+        )
 
-        print("###  merchant_filters: ", merchant_filters)
+    async def merchant_temp_subscription(self, pk, duration = 30):
+        dm_filters = self._filters_for_direct_messages([pk], 0)
+        stall_filters = self._filters_for_stall_events([pk], 0)
+        product_filters = self._filters_for_product_events([pk], 0)
+        profile_filters = self._filters_for_user_profile([pk], 0)
 
+        merchant_filters = (
+            dm_filters + stall_filters + product_filters + profile_filters
+        )
+
+        subscription_id = "merchant-" + urlsafe_short_hash()[:32]
+        logger.debug(f"New temp subscription ({duration} sec). Subscription id: {subscription_id}")
+        await self.send_req_queue.put(["REQ", subscription_id] + merchant_filters)
+
+        async def unsubscribe_with_delay(sub_id, d):
+            await asyncio.sleep(d)
+            await self.unsubscribe(sub_id)
+
+        asyncio.create_task(unsubscribe_with_delay(subscription_id, duration))
 
     def _filters_for_direct_messages(self, public_keys: List[str], since: int) -> List:
         in_messages_filter = {"kinds": [4], "#p": public_keys}
@@ -160,8 +179,12 @@ class NostrClient:
         self.ws.close()
         self.ws = None
 
-
     async def unsubscribe_merchants(self):
         await self.send_req_queue.put(["CLOSE", self.subscription_id])
+        logger.debug(
+            f"Unsubscribed from all merchants events. Subscription id: {self.subscription_id}"
+        )
 
-        logger.debug("Unsubscribed from all merchants events")
+    async def unsubscribe(self, subscription_id):
+        await self.send_req_queue.put(["CLOSE", subscription_id])
+        logger.debug(f"Unsubscribed from subscription id: {subscription_id}")
