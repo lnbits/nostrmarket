@@ -13,7 +13,11 @@ from .crud import (
     get_merchants_ids_with_pubkeys,
 )
 from .nostr.nostr_client import NostrClient
-from .services import get_last_event_date_for_merchant, handle_order_paid, process_nostr_message
+from .services import (
+    get_last_event_date_for_merchant,
+    handle_order_paid,
+    process_nostr_message,
+)
 
 
 async def wait_for_paid_invoices():
@@ -38,15 +42,14 @@ async def on_invoice_paid(payment: Payment) -> None:
 
 
 async def wait_for_nostr_events(nostr_client: NostrClient):
-    merchant_ids = await get_merchants_ids_with_pubkeys()
-    for id, pk in merchant_ids:
-        since = await get_last_event_date_for_merchant(id)
-        await nostr_client.subscribe_merchant(pk, since + 1)
-        await asyncio.sleep(0.1) # try to avoid 'too many concurrent REQ' from relays
+    ids = await get_merchants_ids_with_pubkeys()
+    public_keys = [pk for _, pk in ids]
+    print("### public_keys", public_keys)
 
-    # customers = await get_all_unique_customers()
-    # for c in customers:
-    #     await nostr_client.subscribe_to_user_profile(c.public_key, c.event_created_at)
+    last_dm_time = await get_last_direct_messages_created_at()
+    last_stall_time = await get_last_stall_update_time()
+    last_prod_time = await get_last_product_update_time()
+    await nostr_client.subscribe_merchants(public_keys, last_dm_time, last_stall_time, last_prod_time, 0)
 
     while True:
         message = await nostr_client.get_event()

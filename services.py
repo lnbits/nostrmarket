@@ -205,8 +205,13 @@ async def notify_client_of_order_status(
     else:
         dm_content = f"Order cannot be fulfilled. Reason: {message}"
 
-    dm_type = DirectMessageType.ORDER_PAID_OR_SHIPPED.value if success else DirectMessageType.PLAIN_TEXT.value
+    dm_type = (
+        DirectMessageType.ORDER_PAID_OR_SHIPPED.value
+        if success
+        else DirectMessageType.PLAIN_TEXT.value
+    )
     await send_dm(merchant, order.public_key, dm_type, dm_content)
+
 
 async def update_products_for_order(
     merchant: Merchant, order: Order
@@ -226,21 +231,29 @@ async def update_products_for_order(
 
     return True, "ok"
 
+
 async def autoreply_for_products_in_order(
     merchant: Merchant, order: Order
 ) -> Tuple[bool, str]:
     product_ids = [i.product_id for i in order.items]
 
     products = await get_products_by_ids(merchant.id, product_ids)
-    products_with_autoreply = [p for p in products  if p.config.use_autoreply]
+    products_with_autoreply = [p for p in products if p.config.use_autoreply]
 
     for p in products_with_autoreply:
         dm_content = p.config.autoreply_message
-        await send_dm(merchant, order.public_key, DirectMessageType.PLAIN_TEXT.value, dm_content)
-        await asyncio.sleep(1) # do not send all autoreplies at once
+        await send_dm(
+            merchant, order.public_key, DirectMessageType.PLAIN_TEXT.value, dm_content
+        )
+        await asyncio.sleep(1)  # do not send all autoreplies at once
 
 
-async def send_dm(merchant: Merchant, other_pubkey: str, type: str, dm_content: str,):
+async def send_dm(
+    merchant: Merchant,
+    other_pubkey: str,
+    type: str,
+    dm_content: str,
+):
     dm_event = merchant.build_dm_event(dm_content, other_pubkey)
 
     dm = PartialDirectMessage(
@@ -248,22 +261,23 @@ async def send_dm(merchant: Merchant, other_pubkey: str, type: str, dm_content: 
         event_created_at=dm_event.created_at,
         message=dm_content,
         public_key=other_pubkey,
-        type=type
+        type=type,
     )
     dm_reply = await create_direct_message(merchant.id, dm)
 
     await nostr_client.publish_nostr_event(dm_event)
 
     await websocketUpdater(
-    merchant.id,
-    json.dumps(
-        {
-            "type": f"dm:{dm.type}",
-            "customerPubkey": other_pubkey,
-            "dm": dm_reply.dict(),
-        }
-    ),
+        merchant.id,
+        json.dumps(
+            {
+                "type": f"dm:{dm.type}",
+                "customerPubkey": other_pubkey,
+                "dm": dm_reply.dict(),
+            }
+        ),
     )
+
 
 async def compute_products_new_quantity(
     merchant_id: str, product_ids: List[str], items: List[OrderItem]
@@ -298,8 +312,7 @@ async def process_nostr_message(msg: str):
             if event.kind == 0:
                 await _handle_customer_profile_update(event)
             elif event.kind == 4:
-                _, merchant_public_key = subscription_id.split(":")
-                await _handle_nip04_message(merchant_public_key, event)
+                await _handle_nip04_message(event)
             elif event.kind == 30017:
                 await _handle_stall(event)
             elif event.kind == 30018:
@@ -393,8 +406,19 @@ async def get_last_event_date_for_merchant(id) -> int:
     return max(last_order_time, last_dm_time, last_stall_update, last_product_update)
 
 
-async def _handle_nip04_message(merchant_public_key: str, event: NostrEvent):
+async def _handle_nip04_message(event: NostrEvent):
+    merchant_public_key = event.pubkey
     merchant = await get_merchant_by_pubkey(merchant_public_key)
+
+    if not merchant:
+        p_tags = event.tag_values("p")
+        merchant_public_key = p_tags[0] if len(p_tags) else None
+        merchant = (
+            await get_merchant_by_pubkey(merchant_public_key)
+            if merchant_public_key
+            else None
+        )
+
     assert merchant, f"Merchant not found for public key '{merchant_public_key}'"
 
     if event.pubkey == merchant_public_key:
@@ -550,6 +574,7 @@ async def _handle_new_order(
 
         payment_req = await create_new_order(merchant_public_key, partial_order)
     except Exception as e:
+        logger.debug(e)
         payment_req = await create_new_failed_order(
             merchant_id, merchant_public_key, dm, json_data, str(e)
         )

@@ -18,7 +18,6 @@ class NostrClient:
         self.send_req_queue: Queue = Queue()
         self.ws: WebSocketApp = None
 
-
     async def connect_to_nostrclient_ws(
         self, on_open: Callable, on_message: Callable
     ) -> WebSocketApp:
@@ -62,6 +61,7 @@ class NostrClient:
                     # be sure the connection is open
                     await asyncio.sleep(3)
                 req = await self.send_req_queue.get()
+                print("### nostr req", req)
                 if isinstance(req, ValueError):
                     running = False
                     logger.warning(str(req))
@@ -77,65 +77,63 @@ class NostrClient:
     async def publish_nostr_event(self, e: NostrEvent):
         await self.send_req_queue.put(["EVENT", e.dict()])
 
-    async def subscribe_merchant(self,  public_key: str, since = 0):
-        dm_filters = self._filters_for_direct_messages(public_key, since)
-        stall_filters = self._filters_for_stall_events(public_key, since)
-        product_filters = self._filters_for_product_events(public_key, since)
-        profile_filters = self._filters_for_user_profile(public_key, since)
+    async def subscribe_merchants(
+        self,
+        public_keys: List[str],
+        dm_time=0,
+        stall_time=0,
+        product_time=0,
+        profile_time=0,
+    ):
+        dm_filters = self._filters_for_direct_messages(public_keys, dm_time)
+        stall_filters = self._filters_for_stall_events(public_keys, stall_time)
+        product_filters = self._filters_for_product_events(public_keys, product_time)
+        profile_filters = self._filters_for_user_profile(public_keys, profile_time)
 
-        merchant_filters = dm_filters + stall_filters + product_filters + profile_filters
-
-        await self.send_req_queue.put(
-            ["REQ", f"merchant:{public_key}"] + merchant_filters
+        merchant_filters = (
+            dm_filters + stall_filters + product_filters + profile_filters
         )
 
-        logger.debug(f"Subscribed to events for: '{public_key}'.")
-        
+        await self.send_req_queue.put(["REQ", "nostrmarket"] + merchant_filters)
 
-    def _filters_for_direct_messages(self, public_key: str, since: int) -> List:
-        in_messages_filter = {"kinds": [4], "#p": [public_key]}
-        out_messages_filter = {"kinds": [4], "authors": [public_key]}
+        print("###  merchant_filters: ", merchant_filters)
+        logger.debug(f"Subscribed to events for: {len(public_keys)} keys.")
+
+    def _filters_for_direct_messages(self, public_keys: List[str], since: int) -> List:
+        in_messages_filter = {"kinds": [4], "#p": public_keys}
+        out_messages_filter = {"kinds": [4], "authors": public_keys}
         if since and since != 0:
             in_messages_filter["since"] = since
             out_messages_filter["since"] = since
 
         return [in_messages_filter, out_messages_filter]
 
-    def _filters_for_stall_events(self, public_key: str, since: int) -> List:
-        stall_filter = {"kinds": [30017], "authors": [public_key]}
+    def _filters_for_stall_events(self, public_keys: List[str], since: int) -> List:
+        stall_filter = {"kinds": [30017], "authors": public_keys}
         if since and since != 0:
             stall_filter["since"] = since
 
         return [stall_filter]
 
-    def _filters_for_product_events(self, public_key: str, since: int) -> List:
-        product_filter = {"kinds": [30018], "authors": [public_key]}
+    def _filters_for_product_events(self, public_keys: List[str], since: int) -> List:
+        product_filter = {"kinds": [30018], "authors": public_keys}
         if since and since != 0:
             product_filter["since"] = since
 
         return [product_filter]
 
-
-    def _filters_for_user_profile(self, public_key: str, since: int) -> List:
-        profile_filter = {"kinds": [0], "authors": [public_key]}
+    def _filters_for_user_profile(self, public_keys: List[str], since: int) -> List:
+        profile_filter = {"kinds": [0], "authors": public_keys}
         if since and since != 0:
             profile_filter["since"] = since
 
         return [profile_filter]
-    
 
-    def subscribe_to_user_profile(self, public_key: str, since: int) -> List:
-        profile_filter = {"kinds": [0], "authors": [public_key]}
+    # todo: remove
+    def subscribe_to_user_profile(self, public_keys: List[str], since: int) -> List:
+        profile_filter = {"kinds": [0], "authors": public_keys}
         if since and since != 0:
             profile_filter["since"] = since
-
-        # Disabled for now. The number of clients can grow large. 
-        # Some relays only allow a small number of subscriptions.
-        # There is the risk that more important subscriptions will be blocked.
-        # await self.send_req_queue.put(
-        #     ["REQ", f"user-profile-events:{public_key}", profile_filter]
-        # )
-
 
     async def restart(self, public_keys: List[str]):
         await self.unsubscribe_merchants(public_keys)
@@ -149,24 +147,22 @@ class NostrClient:
         self.ws.close()
         self.ws = None
 
-
     async def stop(self, public_keys: List[str]):
-        await self.unsubscribe_merchants(public_keys)       
+        await self.unsubscribe_merchants(public_keys)
 
-        # Give some time for the CLOSE events to propagate before closing the connection  
-        await asyncio.sleep(10)   
+        # Give some time for the CLOSE events to propagate before closing the connection
+        await asyncio.sleep(10)
         self.ws.close()
         self.ws = None
 
-    async def unsubscribe_merchant(self,  public_key: str):
+    async def unsubscribe_merchant(self, public_key: str):
         await self.send_req_queue.put(["CLOSE", public_key])
 
         logger.debug(f"Unsubscribed from merchant events: '{public_key}'.")
-    
-    async def unsubscribe_merchants(self,  public_keys: List[str]):
+
+    async def unsubscribe_merchants(self, public_keys: List[str]):
         for pk in public_keys:
             try:
                 await self.unsubscribe_merchant(pk)
             except Exception as ex:
                 logger.warning(ex)
-        
