@@ -90,7 +90,7 @@ async def build_order_with_payment(
     assert shipping_zone, f"Shipping zone not found for order '{data.id}'"
 
     product_cost_sat, shipping_cost_sat = await data.costs_in_sats(
-        products, shipping_zone.cost
+        products, shipping_zone.id, shipping_zone.cost
     )
 
     wallet_id = await get_wallet_for_product(data.items[0].product_id)

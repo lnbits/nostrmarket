@@ -214,16 +214,18 @@ class Stall(PartialStall, Nostrable):
 
 ######################################## PRODUCTS ########################################
 
+
 class ProductShippingCost(BaseModel):
     id: str
     cost: int
+
 
 class ProductConfig(BaseModel):
     description: Optional[str]
     currency: Optional[str]
     use_autoreply: Optional[bool] = False
     autoreply_message: Optional[str]
-    shipping: Optional[List[ProductShippingCost]]
+    shipping: Optional[List[ProductShippingCost]] = []
 
 
 class PartialProduct(BaseModel):
@@ -362,24 +364,31 @@ class PartialOrder(BaseModel):
                 )
 
     async def costs_in_sats(
-        self, products: List[Product], shipping_cost: float
+        self, products: List[Product], shipping_id: str, stall_shipping_cost: float
     ) -> Tuple[float, float]:
         product_prices = {}
         for p in products:
-            product_prices[p.id] = p
+            product_shipping_cost = next(
+                (s.cost for s in p.config.shipping if s.id == shipping_id), 0
+            )
+            product_prices[p.id] = {
+                "price": p.price + product_shipping_cost,
+                "currency": p.config.currency or "sat"
+            }
 
         product_cost: float = 0  # todo
         for item in self.items:
-            price = product_prices[item.product_id].price
-            currency = product_prices[item.product_id].config.currency or "sat"
+            assert item.quantity > 0, "Quantity cannot be negative"
+            price = product_prices[item.product_id]["price"]
+            currency = product_prices[item.product_id]["currency"]
             if currency != "sat":
                 price = await fiat_amount_as_satoshis(price, currency)
             product_cost += item.quantity * price
 
         if currency != "sat":
-            shipping_cost = await fiat_amount_as_satoshis(shipping_cost, currency)
+            stall_shipping_cost = await fiat_amount_as_satoshis(stall_shipping_cost, currency)
 
-        return product_cost, shipping_cost
+        return product_cost, stall_shipping_cost
 
 
 class Order(PartialOrder):
