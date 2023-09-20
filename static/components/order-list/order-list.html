@@ -15,7 +15,7 @@
     <div class="col-md-4 col-sm-6">
 
       <q-btn-dropdown @click="getOrders()" :disable="search.restoring" outline unelevated split
-        class="q-pt-md float-right" :label="search.restoring ? 'Restoring Orders...' : 'Search Orders'">
+        class="q-pt-md float-right" :label="search.restoring ? 'Restoring Orders...' : 'Load Orders'">
         <q-spinner v-if="search.restoring" color="primary" size="2.55em" class="q-pt-md float-right"></q-spinner>
         <q-item @click="restoreOrders" clickable v-close-popup>
           <q-item-section>

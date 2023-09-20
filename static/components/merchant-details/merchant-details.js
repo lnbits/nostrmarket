@@ -33,6 +33,23 @@ async function merchantDetails(path) {
           LNbits.utils.notifyApiError(error)
         }
       },
+      requeryMerchantData: async function () {
+        try {
+          await LNbits.api.request(
+            'GET',
+            `/nostrmarket/api/v1/merchant/${this.merchantId}/nostr`,
+            this.adminkey
+          )
+          this.$q.notify({
+            type: 'positive',
+            message: 'Merchant data refreshed from Nostr',
+            timeout: 5000
+          })
+        } catch (error) {
+          console.warn(error)
+          LNbits.utils.notifyApiError(error)
+        }
+      },
       deleteMerchantTables: function () {
         LNbits.utils
           .confirmDialog(

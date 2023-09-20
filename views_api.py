@@ -219,7 +219,31 @@ async def api_republish_merchant(
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            detail="Cannot get merchant",
+            detail="Cannot republish to nostr",
+        )
+    
+@nostrmarket_ext.get("/api/v1/merchant/{merchant_id}/nostr")
+async def api_refresh_merchant(
+    merchant_id: str,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+):
+    try:
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+        assert merchant.id == merchant_id, "Wrong merchant ID"
+
+        await nostr_client.merchant_temp_subscription(merchant.public_key)
+
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        )
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot refresh from nostr",
         )
 
 
