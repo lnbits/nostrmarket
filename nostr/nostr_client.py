@@ -103,7 +103,7 @@ class NostrClient:
             f"Subscribed to events for: {len(public_keys)} keys. New subscription id: {self.subscription_id}"
         )
 
-    async def merchant_temp_subscription(self, pk, duration=5):
+    async def merchant_temp_subscription(self, pk, duration=10):
         dm_filters = self._filters_for_direct_messages([pk], 0)
         stall_filters = self._filters_for_stall_events([pk], 0)
         product_filters = self._filters_for_product_events([pk], 0)
@@ -125,7 +125,7 @@ class NostrClient:
 
         asyncio.create_task(unsubscribe_with_delay(subscription_id, duration))
 
-    async def user_profile_temp_subscribe(self, public_key: str, duration=30) -> List:
+    async def user_profile_temp_subscribe(self, public_key: str, duration=5) -> List:
         try:
             profile_filter = [{"kinds": [0], "authors": [public_key]}]
             subscription_id = "profile-" + urlsafe_short_hash()[:32]

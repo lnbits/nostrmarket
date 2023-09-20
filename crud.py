@@ -205,7 +205,7 @@ async def create_stall(merchant_id: str, data: PartialStall) -> Stall:
     )
 
     stall = await get_stall(merchant_id, stall_id)
-    assert stall, "Newly created stall couldn't be retrieved"
+    assert stall, f"Newly created stall couldn't be retrieved. Id: {stall_id}"
     return stall
 
 
