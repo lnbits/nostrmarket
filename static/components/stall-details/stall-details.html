@@ -176,15 +176,15 @@
           </q-expansion-item>
           <q-expansion-item group="advanced" label="Custom Shipping Cost"
             caption="Configure custom shipping costs for this product" class="q-ml-sm">
-            <div v-for="zone in stall.shipping_zones" class="row q-mb-sm q-ml-lg q-mt-sm">
+            <!-- <div v-for="zone of productDialog.data.config.shipping" class="row q-mb-sm q-ml-lg q-mt-sm">
               <div class="col">
                 <span v-text="zone.name"></span>
               </div>
               <div class="col q-pr-md">
-                <q-input filled dense type="number" label="Extra cost">
+                <q-input v-model="zone.cost" filled dense type="number" label="Extra cost">
                 </q-input>
               </div>
-            </div>
+            </div> -->
           </q-expansion-item>
         </q-expansion-item>
 

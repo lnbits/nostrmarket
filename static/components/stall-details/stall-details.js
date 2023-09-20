@@ -23,19 +23,7 @@ async function stallDetails(path) {
           showDialog: false,
           showRestore: false,
           url: true,
-          data: {
-            id: null,
-            name: '',
-            categories: [],
-            images: [],
-            image: null,
-            price: 0,
-
-            quantity: 0,
-            config: {
-              description: ''
-            }
-          }
+          data: null
         },
         productsFilter: '',
         productsTable: {
@@ -111,6 +99,24 @@ async function stallDetails(path) {
             : z.countries.join(', '))
         )
         return stall
+      },
+      newEmtpyProductData: function() {
+        return {
+          id: null,
+          name: '',
+          categories: [],
+          images: [],
+          image: null,
+          price: 0,
+
+          quantity: 0,
+          config: {
+            description: '',
+            use_autoreply: false,
+            autoreply_message: '',
+            shipping: (this.stall.shipping_zones || []).map(z => ({id: z.id, name: z.name, cost: 0}))
+          }
+        }
       },
       getStall: async function () {
         try {
@@ -202,7 +208,7 @@ async function stallDetails(path) {
         }
       },
       sendProductFormData: function () {
-        var data = {
+        const data = {
           stall_id: this.stall.id,
           id: this.productDialog.data.id,
           name: this.productDialog.data.name,
@@ -265,7 +271,14 @@ async function stallDetails(path) {
         }
       },
       editProduct: async function (product) {
+        const emptyShipping = this.newEmtpyProductData().config.shipping
         this.productDialog.data = { ...product }
+        this.productDialog.data.config.shipping = emptyShipping.map(shippingZone => {
+          const existingShippingCost = (product.config.shipping || []).find(ps => ps.id === shippingZone.id)
+          shippingZone.cost = existingShippingCost?.cost || 0
+          return shippingZone
+        })
+        
         this.productDialog.showDialog = true
       },
       deleteProduct: async function (productId) {
@@ -293,19 +306,7 @@ async function stallDetails(path) {
           })
       },
       showNewProductDialog: async function (data) {
-        this.productDialog.data = data || {
-          id: null,
-          name: '',
-          description: '',
-          categories: [],
-          image: null,
-          images: [],
-          price: 0,
-          quantity: 0,
-          config: {
-            description: ''
-          }
-        }
+        this.productDialog.data = data || this.newEmtpyProductData()
         this.productDialog.showDialog = true
       },
       openSelectPendingProductDialog: async function () {
@@ -329,6 +330,7 @@ async function stallDetails(path) {
     created: async function () {
       await this.getStall()
       this.products = await this.getProducts()
+      this.productDialog.data = this.newEmtpyProductData()
     }
   })
 }
