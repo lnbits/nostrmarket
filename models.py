@@ -214,12 +214,16 @@ class Stall(PartialStall, Nostrable):
 
 ######################################## PRODUCTS ########################################
 
+class ProductShippingCost(BaseModel):
+    id: str
+    cost: int
 
 class ProductConfig(BaseModel):
     description: Optional[str]
     currency: Optional[str]
     use_autoreply: Optional[bool] = False
     autoreply_message: Optional[str]
+    shipping: Optional[List[ProductShippingCost]]
 
 
 class PartialProduct(BaseModel):
