@@ -17,10 +17,10 @@ from .crud import (
     create_stall,
     get_customer,
     get_last_direct_messages_created_at,
-    get_last_order_time,
     get_last_product_update_time,
     get_last_stall_update_time,
     get_merchant_by_pubkey,
+    get_merchants_ids_with_pubkeys,
     get_order,
     get_order_by_event_id,
     get_products,
@@ -205,8 +205,13 @@ async def notify_client_of_order_status(
     else:
         dm_content = f"Order cannot be fulfilled. Reason: {message}"
 
-    dm_type = DirectMessageType.ORDER_PAID_OR_SHIPPED.value if success else DirectMessageType.PLAIN_TEXT.value
+    dm_type = (
+        DirectMessageType.ORDER_PAID_OR_SHIPPED.value
+        if success
+        else DirectMessageType.PLAIN_TEXT.value
+    )
     await send_dm(merchant, order.public_key, dm_type, dm_content)
+
 
 async def update_products_for_order(
     merchant: Merchant, order: Order
@@ -232,15 +237,22 @@ async def autoreply_for_products_in_order(
     product_ids = [i.product_id for i in order.items]
 
     products = await get_products_by_ids(merchant.id, product_ids)
-    products_with_autoreply = [p for p in products  if p.config.use_autoreply]
+    products_with_autoreply = [p for p in products if p.config.use_autoreply]
 
     for p in products_with_autoreply:
         dm_content = p.config.autoreply_message
-        await send_dm(merchant, order.public_key, DirectMessageType.PLAIN_TEXT.value, dm_content)
-        await asyncio.sleep(1) # do not send all autoreplies at once
+        await send_dm(
+            merchant, order.public_key, DirectMessageType.PLAIN_TEXT.value, dm_content
+        )
+        await asyncio.sleep(1)  # do not send all autoreplies at once
 
 
-async def send_dm(merchant: Merchant, other_pubkey: str, type: str, dm_content: str,):
+async def send_dm(
+    merchant: Merchant,
+    other_pubkey: str,
+    type: str,
+    dm_content: str,
+):
     dm_event = merchant.build_dm_event(dm_content, other_pubkey)
 
     dm = PartialDirectMessage(
@@ -248,22 +260,23 @@ async def send_dm(merchant: Merchant, other_pubkey: str, type: str, dm_content: 
         event_created_at=dm_event.created_at,
         message=dm_content,
         public_key=other_pubkey,
-        type=type
+        type=type,
     )
     dm_reply = await create_direct_message(merchant.id, dm)
 
     await nostr_client.publish_nostr_event(dm_event)
 
     await websocketUpdater(
-    merchant.id,
-    json.dumps(
-        {
-            "type": f"dm:{dm.type}",
-            "customerPubkey": other_pubkey,
-            "dm": dm_reply.dict(),
-        }
-    ),
+        merchant.id,
+        json.dumps(
+            {
+                "type": f"dm:{dm.type}",
+                "customerPubkey": other_pubkey,
+                "dm": dm_reply.dict(),
+            }
+        ),
     )
+
 
 async def compute_products_new_quantity(
     merchant_id: str, product_ids: List[str], items: List[OrderItem]
@@ -293,13 +306,12 @@ async def process_nostr_message(msg: str):
         type, *rest = json.loads(msg)
 
         if type.upper() == "EVENT":
-            subscription_id, event = rest
+            _, event = rest
             event = NostrEvent(**event)
             if event.kind == 0:
                 await _handle_customer_profile_update(event)
             elif event.kind == 4:
-                _, merchant_public_key = subscription_id.split(":")
-                await _handle_nip04_message(merchant_public_key, event)
+                await _handle_nip04_message(event)
             elif event.kind == 30017:
                 await _handle_stall(event)
             elif event.kind == 30018:
@@ -385,16 +397,19 @@ async def extract_customer_order_from_dm(
     return order
 
 
-async def get_last_event_date_for_merchant(id) -> int:
-    last_order_time = await get_last_order_time(id)
-    last_dm_time = await get_last_direct_messages_created_at(id)
-    last_stall_update = await get_last_stall_update_time(id)
-    last_product_update = await get_last_product_update_time(id)
-    return max(last_order_time, last_dm_time, last_stall_update, last_product_update)
-
-
-async def _handle_nip04_message(merchant_public_key: str, event: NostrEvent):
+async def _handle_nip04_message(event: NostrEvent):
+    merchant_public_key = event.pubkey
     merchant = await get_merchant_by_pubkey(merchant_public_key)
+
+    if not merchant:
+        p_tags = event.tag_values("p")
+        merchant_public_key = p_tags[0] if len(p_tags) else None
+        merchant = (
+            await get_merchant_by_pubkey(merchant_public_key)
+            if merchant_public_key
+            else None
+        )
+
     assert merchant, f"Merchant not found for public key '{merchant_public_key}'"
 
     if event.pubkey == merchant_public_key:
@@ -550,6 +565,7 @@ async def _handle_new_order(
 
         payment_req = await create_new_order(merchant_public_key, partial_order)
     except Exception as e:
+        logger.debug(e)
         payment_req = await create_new_failed_order(
             merchant_id, merchant_public_key, dm, json_data, str(e)
         )
@@ -575,12 +591,28 @@ async def create_new_failed_order(
     await create_order(merchant_id, order)
     return PaymentRequest(id=order.id, message=fail_message, payment_options=[])
 
+async def resubscribe_to_all_merchants():
+    await nostr_client.unsubscribe_merchants()
+    # give some time for the message to propagate
+    asyncio.sleep(1)
+    await subscribe_to_all_merchants()
 
-async def _handle_new_customer(event, merchant: Merchant):
+async def subscribe_to_all_merchants():
+    ids = await get_merchants_ids_with_pubkeys()
+    public_keys = [pk for _, pk in ids]
+
+    last_dm_time = await get_last_direct_messages_created_at()
+    last_stall_time = await get_last_stall_update_time()
+    last_prod_time = await get_last_product_update_time()
+    
+    await nostr_client.subscribe_merchants(public_keys, last_dm_time, last_stall_time, last_prod_time, 0)
+
+
+async def _handle_new_customer(event: NostrEvent, merchant: Merchant):
     await create_customer(
         merchant.id, Customer(merchant_id=merchant.id, public_key=event.pubkey)
     )
-    await nostr_client.subscribe_to_user_profile(event.pubkey, 0)
+    await nostr_client.user_profile_temp_subscribe(event.pubkey)
 
 
 async def _handle_customer_profile_update(event: NostrEvent):

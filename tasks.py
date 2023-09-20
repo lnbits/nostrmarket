@@ -1,19 +1,14 @@
 from asyncio import Queue
-import asyncio
 
 from lnbits.core.models import Payment
 from lnbits.tasks import register_invoice_listener
 
-from .crud import (
-    get_all_unique_customers,
-    get_last_direct_messages_created_at,
-    get_last_order_time,
-    get_last_product_update_time,
-    get_last_stall_update_time,
-    get_merchants_ids_with_pubkeys,
-)
 from .nostr.nostr_client import NostrClient
-from .services import get_last_event_date_for_merchant, handle_order_paid, process_nostr_message
+from .services import (
+    handle_order_paid,
+    process_nostr_message,
+    subscribe_to_all_merchants,
+)
 
 
 async def wait_for_paid_invoices():
@@ -38,15 +33,8 @@ async def on_invoice_paid(payment: Payment) -> None:
 
 
 async def wait_for_nostr_events(nostr_client: NostrClient):
-    merchant_ids = await get_merchants_ids_with_pubkeys()
-    for id, pk in merchant_ids:
-        since = await get_last_event_date_for_merchant(id)
-        await nostr_client.subscribe_merchant(pk, since + 1)
-        await asyncio.sleep(0.1) # try to avoid 'too many concurrent REQ' from relays
 
-    # customers = await get_all_unique_customers()
-    # for c in customers:
-    #     await nostr_client.subscribe_to_user_profile(c.public_key, c.event_created_at)
+    await subscribe_to_all_merchants()
 
     while True:
         message = await nostr_client.get_event()
