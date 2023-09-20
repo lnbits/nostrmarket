@@ -64,18 +64,6 @@ async function stallDetails(path) {
               align: 'left',
               label: 'Quantity',
               field: 'quantity'
-            },
-            {
-              name: 'categories',
-              align: 'left',
-              label: 'Categories',
-              field: 'categories'
-            },
-            {
-              name: 'description',
-              align: 'left',
-              label: 'Description',
-              field: 'description'
             }
           ],
           pagination: {
@@ -325,6 +313,10 @@ async function stallDetails(path) {
       },
       customerSelectedForOrder: function (customerPubkey) {
         this.$emit('customer-selected-for-order', customerPubkey)
+      },
+      shortLabel(value = ''){
+        if (value.length <= 44) return value
+        return value.substring(0, 40) + '...'
       }
     },
     created: async function () {

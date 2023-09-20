@@ -251,6 +251,10 @@ async function stallList(path) {
       },
       customerSelectedForOrder: function (customerPubkey) {
         this.$emit('customer-selected-for-order', customerPubkey)
+      },
+      shortLabel(value = ''){
+        if (value.length <= 64) return value
+        return value.substring(0, 60) + '...'
       }
     },
     created: async function () {

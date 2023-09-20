@@ -102,19 +102,10 @@
                   </q-td>
 
                   <q-td key="id" :props="props"> {{props.row.id}} </q-td>
-                  <q-td key="name" :props="props"> {{props.row.name}} </q-td>
+                  <q-td key="name" :props="props"> {{shortLabel(props.row.name)}} </q-td>
                   <q-td key="price" :props="props"> {{props.row.price}} </q-td>
                   <q-td key="quantity" :props="props">
                     {{props.row.quantity}}
-                  </q-td>
-
-                  <q-td key="categories" :props="props">
-                    <div>
-                      {{props.row.categories.filter(c => c).join(', ')}}
-                    </div>
-                  </q-td>
-                  <q-td key="description" :props="props">
-                    {{props.row.config.description}}
                   </q-td>
                 </q-tr>
               </template>
