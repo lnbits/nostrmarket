@@ -257,6 +257,7 @@ class Product(PartialProduct, Nostrable):
             "currency": self.config.currency,
             "price": self.price,
             "quantity": self.quantity,
+            "shipping": [dict(s) for s in self.config.shipping or []]
         }
         categories = [["t", tag] for tag in self.categories]
 
