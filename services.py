@@ -69,13 +69,13 @@ async def create_new_order(
     if data.event_id and await get_order_by_event_id(merchant.id, data.event_id):
         return None
 
-    order, invoice = await build_order_with_payment(
+    order, invoice, receipt = await build_order_with_payment(
         merchant.id, merchant.public_key, data
     )
     await create_order(merchant.id, order)
 
     return PaymentRequest(
-        id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)]
+        id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)], message=receipt
     )
 
 
@@ -90,6 +90,9 @@ async def build_order_with_payment(
     assert shipping_zone, f"Shipping zone not found for order '{data.id}'"
 
     product_cost_sat, shipping_cost_sat = await data.costs_in_sats(
+        products, shipping_zone.id, shipping_zone.cost
+    )
+    receipt = data.receipt(
         products, shipping_zone.id, shipping_zone.cost
     )
 
@@ -126,7 +129,7 @@ async def build_order_with_payment(
         extra=extra,
     )
 
-    return order, invoice
+    return order, invoice, receipt
 
 
 async def update_merchant_to_nostr(
@@ -567,7 +570,7 @@ async def _handle_new_order(
     except Exception as e:
         logger.debug(e)
         payment_req = await create_new_failed_order(
-            merchant_id, merchant_public_key, dm, json_data, str(e)
+            merchant_id, merchant_public_key, dm, json_data, "Order received, but cannot be processed. Please contact merchant."
         )
 
     response = {

@@ -373,7 +373,7 @@ class PartialOrder(BaseModel):
             )
             product_prices[p.id] = {
                 "price": p.price + product_shipping_cost,
-                "currency": p.config.currency or "sat"
+                "currency": p.config.currency or "sat",
             }
 
         product_cost: float = 0  # todo
@@ -386,9 +386,45 @@ class PartialOrder(BaseModel):
             product_cost += item.quantity * price
 
         if currency != "sat":
-            stall_shipping_cost = await fiat_amount_as_satoshis(stall_shipping_cost, currency)
+            stall_shipping_cost = await fiat_amount_as_satoshis(
+                stall_shipping_cost, currency
+            )
 
         return product_cost, stall_shipping_cost
+
+    def receipt(
+        self, products: List[Product], shipping_id: str, stall_shipping_cost: float
+    ) -> str:
+        if len(products) == 0:
+            return "[No Products]"
+        receipt = ""
+        product_prices = {}
+        for p in products:
+            product_shipping_cost = next(
+                (s.cost for s in p.config.shipping if s.id == shipping_id), 0
+            )
+            product_prices[p.id] = {
+                "name": p.name,
+                "price": p.price,
+                "product_shipping_cost": product_shipping_cost
+            }
+
+        currency = products[0].config.currency or "sat"
+        products_cost: float = 0  # todo
+        items_receipts = []
+        for item in self.items:
+            prod = product_prices[item.product_id]
+            price = prod["price"] + prod["product_shipping_cost"]
+
+            products_cost += item.quantity * price
+
+            items_receipts.append(f"""[{prod["name"]}:  {item.quantity} x ({prod["price"]} + {prod["product_shipping_cost"]}) = {item.quantity * price} {currency}] """)
+
+        receipt = "; ".join(items_receipts)
+        receipt += f"[Products cost: {products_cost} {currency}] [Stall shipping cost: {stall_shipping_cost} {currency}]; "
+        receipt += f"[Total: {products_cost + stall_shipping_cost} {currency}]"
+
+        return receipt
 
 
 class Order(PartialOrder):
