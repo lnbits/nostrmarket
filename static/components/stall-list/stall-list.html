@@ -34,15 +34,14 @@
             :icon="props.row.expanded? 'remove' : 'add'" />
         </q-td>
 
-        <q-td key="id" :props="props"> {{props.row.name}} </q-td>
+        <q-td key="id" :props="props"> {{shortLabel(props.row.name)}} </q-td>
         <q-td key="currency" :props="props"> {{props.row.currency}} </q-td>
         <q-td key="description" :props="props">
-          {{props.row.config.description}}
+          {{shortLabel(props.row.config.description)}}
         </q-td>
         <q-td key="shippingZones" :props="props">
           <div>
-            {{props.row.shipping_zones.filter(z => !!z.name).map(z =>
-            z.name).join(', ')}}
+            {{shortLabel(props.row.shipping_zones.filter(z => !!z.name).map(z => z.name).join(', '))}}
           </div>
         </q-td>
       </q-tr>

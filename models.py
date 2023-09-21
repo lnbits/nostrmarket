@@ -215,11 +215,17 @@ class Stall(PartialStall, Nostrable):
 ######################################## PRODUCTS ########################################
 
 
+class ProductShippingCost(BaseModel):
+    id: str
+    cost: int
+
+
 class ProductConfig(BaseModel):
     description: Optional[str]
     currency: Optional[str]
     use_autoreply: Optional[bool] = False
     autoreply_message: Optional[str]
+    shipping: Optional[List[ProductShippingCost]] = []
 
 
 class PartialProduct(BaseModel):
@@ -251,6 +257,7 @@ class Product(PartialProduct, Nostrable):
             "currency": self.config.currency,
             "price": self.price,
             "quantity": self.quantity,
+            "shipping": [dict(s) for s in self.config.shipping or []]
         }
         categories = [["t", tag] for tag in self.categories]
 
@@ -358,24 +365,67 @@ class PartialOrder(BaseModel):
                 )
 
     async def costs_in_sats(
-        self, products: List[Product], shipping_cost: float
+        self, products: List[Product], shipping_id: str, stall_shipping_cost: float
     ) -> Tuple[float, float]:
         product_prices = {}
         for p in products:
-            product_prices[p.id] = p
+            product_shipping_cost = next(
+                (s.cost for s in p.config.shipping if s.id == shipping_id), 0
+            )
+            product_prices[p.id] = {
+                "price": p.price + product_shipping_cost,
+                "currency": p.config.currency or "sat",
+            }
 
         product_cost: float = 0  # todo
         for item in self.items:
-            price = product_prices[item.product_id].price
-            currency = product_prices[item.product_id].config.currency or "sat"
+            assert item.quantity > 0, "Quantity cannot be negative"
+            price = product_prices[item.product_id]["price"]
+            currency = product_prices[item.product_id]["currency"]
             if currency != "sat":
                 price = await fiat_amount_as_satoshis(price, currency)
             product_cost += item.quantity * price
 
         if currency != "sat":
-            shipping_cost = await fiat_amount_as_satoshis(shipping_cost, currency)
+            stall_shipping_cost = await fiat_amount_as_satoshis(
+                stall_shipping_cost, currency
+            )
 
-        return product_cost, shipping_cost
+        return product_cost, stall_shipping_cost
+
+    def receipt(
+        self, products: List[Product], shipping_id: str, stall_shipping_cost: float
+    ) -> str:
+        if len(products) == 0:
+            return "[No Products]"
+        receipt = ""
+        product_prices = {}
+        for p in products:
+            product_shipping_cost = next(
+                (s.cost for s in p.config.shipping if s.id == shipping_id), 0
+            )
+            product_prices[p.id] = {
+                "name": p.name,
+                "price": p.price,
+                "product_shipping_cost": product_shipping_cost
+            }
+
+        currency = products[0].config.currency or "sat"
+        products_cost: float = 0  # todo
+        items_receipts = []
+        for item in self.items:
+            prod = product_prices[item.product_id]
+            price = prod["price"] + prod["product_shipping_cost"]
+
+            products_cost += item.quantity * price
+
+            items_receipts.append(f"""[{prod["name"]}:  {item.quantity} x ({prod["price"]} + {prod["product_shipping_cost"]}) = {item.quantity * price} {currency}] """)
+
+        receipt = "; ".join(items_receipts)
+        receipt += f"[Products cost: {products_cost} {currency}] [Stall shipping cost: {stall_shipping_cost} {currency}]; "
+        receipt += f"[Total: {products_cost + stall_shipping_cost} {currency}]"
+
+        return receipt
 
 
 class Order(PartialOrder):

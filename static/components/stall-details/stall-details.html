@@ -102,19 +102,10 @@
                   </q-td>
 
                   <q-td key="id" :props="props"> {{props.row.id}} </q-td>
-                  <q-td key="name" :props="props"> {{props.row.name}} </q-td>
+                  <q-td key="name" :props="props"> {{shortLabel(props.row.name)}} </q-td>
                   <q-td key="price" :props="props"> {{props.row.price}} </q-td>
                   <q-td key="quantity" :props="props">
                     {{props.row.quantity}}
-                  </q-td>
-
-                  <q-td key="categories" :props="props">
-                    <div>
-                      {{props.row.categories.filter(c => c).join(', ')}}
-                    </div>
-                  </q-td>
-                  <q-td key="description" :props="props">
-                    {{props.row.config.description}}
                   </q-td>
                 </q-tr>
               </template>
@@ -131,35 +122,66 @@
     </q-tab-panel>
   </q-tab-panels>
   <q-dialog v-model="productDialog.showDialog" position="top">
-    <q-card v-if="stall" class="q-pa-lg q-pt-xl" style="width: 500px">
+    <q-card v-if="stall && productDialog.data" class="q-pa-lg q-pt-xl" style="width: 500px">
       <q-form @submit="sendProductFormData" class="q-gutter-md">
         <q-input filled dense v-model.trim="productDialog.data.name" label="Name"></q-input>
 
         <q-input filled dense v-model.trim="productDialog.data.config.description" label="Description"></q-input>
-        <q-select filled multiple dense emit-value v-model.trim="productDialog.data.categories" use-input use-chips
-          multiple hide-dropdown-icon input-debounce="0" new-value-mode="add-unique"
-          label="Categories (Hit Enter to add)" placeholder="crafts,robots,etc"></q-select>
 
-        <q-input filled dense v-model.trim="productDialog.data.image" @keydown.enter="addProductImage" type="url"
-          label="Image URL">
-          <q-btn @click="addProductImage" dense flat icon="add"></q-btn></q-input>
-
-        <q-chip v-for="imageUrl in productDialog.data.images" :key="imageUrl" removable
-          @remove="removeProductImage(imageUrl)" color="primary" text-color="white">
-          <span v-text="imageUrl.split('/').pop()"></span>
-        </q-chip>
-        <q-input filled dense v-model.number="productDialog.data.price" type="number"
-          :label="'Price (' + stall.currency + ') *'" :step="stall.currency != 'sat' ? '0.01' : '1'"
-          :mask="stall.currency != 'sat' ? '#.##' : '#'" fill-mask="0" reverse-fill-mask></q-input>
-        <q-input filled dense v-model.number="productDialog.data.quantity" type="number" label="Quantity"></q-input>
+        <div class="row q-mb-sm">
+          <div class="col">
+            <q-input filled dense v-model.number="productDialog.data.price" type="number"
+              :label="'Price (' + stall.currency + ') *'" :step="stall.currency != 'sat' ? '0.01' : '1'"
+              :mask="stall.currency != 'sat' ? '#.##' : '#'" fill-mask="0" reverse-fill-mask></q-input>
+          </div>
+          <div class="col q-ml-md">
+            <q-input filled dense v-model.number="productDialog.data.quantity" type="number" label="Quantity"></q-input>
+          </div>
+        </div>
 
 
-        <q-expansion-item group="advanced" icon="settings" label="Advanced options">
+        <q-expansion-item group="advanced" label="Categories"
+          caption="Add tags to producsts, make them easy to search.">
+          <div class="q-pl-sm q-pt-sm">
+            <q-select filled multiple dense emit-value v-model.trim="productDialog.data.categories" use-input use-chips
+              multiple hide-dropdown-icon input-debounce="0" new-value-mode="add-unique"
+              label="Categories (Hit Enter to add)" placeholder="crafts,robots,etc"></q-select>
+          </div>
+        </q-expansion-item>
+
+        <q-expansion-item group="advanced" label="Images" caption="Add images for product.">
+          <div class="q-pl-sm q-pt-sm">
+            <q-input filled dense v-model.trim="productDialog.data.image" @keydown.enter="addProductImage" type="url"
+              label="Image URL">
+              <q-btn @click="addProductImage" dense flat icon="add"></q-btn></q-input>
+
+            <q-chip v-for="imageUrl in productDialog.data.images" :key="imageUrl" removable
+              @remove="removeProductImage(imageUrl)" color="primary" text-color="white">
+              <span v-text="imageUrl.split('/').pop()"></span>
+            </q-chip>
+          </div>
+        </q-expansion-item>
+
+
+        <q-expansion-item group="advanced" label="Custom Shipping Cost"
+          caption="Configure custom shipping costs for this product">
+          <div v-for="zone of productDialog.data.config.shipping" class="row q-mb-sm q-ml-lg q-mt-sm">
+            <div class="col">
+              <span v-text="zone.name"></span>
+            </div>
+            <div class="col q-pr-md">
+              <q-input v-model="zone.cost" filled dense type="number" label="Extra cost">
+              </q-input>
+            </div>
+          </div>
+        </q-expansion-item>
+        <q-expansion-item group="advanced" label="Autoreply" caption="Autoreply when paid">
           <q-card>
             <q-card-section>
               <div class="row q-mb-sm">
                 <div class="col">
-                  <q-checkbox v-model="productDialog.data.config.use_autoreply" dense label="Autoreply when paid" />
+                  <q-checkbox v-model="productDialog.data.config.use_autoreply" dense
+                    label="Send a direct message when paid" class="q-ml-sm" />
                 </div>
               </div>
 
