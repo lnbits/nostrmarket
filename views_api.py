@@ -182,7 +182,7 @@ async def api_delete_merchant(
         await delete_merchant_zones(merchant.id)
 
         await delete_merchant(merchant.id)
-       
+
     except AssertionError as ex:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
@@ -221,7 +221,7 @@ async def api_republish_merchant(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot republish to nostr",
         )
-    
+
 @nostrmarket_ext.get("/api/v1/merchant/{merchant_id}/nostr")
 async def api_refresh_merchant(
     merchant_id: str,
@@ -863,7 +863,7 @@ async def api_update_order_status(
 
 
 @nostrmarket_ext.put("/api/v1/order/restore/{event_id}")
-async def api_restore_orders(
+async def api_restore_order(
     event_id: str,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Order:
@@ -938,7 +938,7 @@ async def api_reissue_order_invoice(
         if reissue_data.shipping_id:
             data.shipping_id = reissue_data.shipping_id
 
-        order, invoice = await build_order_with_payment(
+        order, invoice, receipt = await build_order_with_payment(
             merchant.id, merchant.public_key, PartialOrder(**data.dict())
         )
 
@@ -956,7 +956,7 @@ async def api_reissue_order_invoice(
             **order_update,
         )
         payment_req = PaymentRequest(
-            id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)]
+            id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)], message=receipt
         )
         response = {
             "type": DirectMessageType.PAYMENT_REQUEST.value,
