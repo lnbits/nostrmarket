@@ -1,0 +1,59 @@
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Create github release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+        run: |
+          gh release create "$tag" --generate-notes
+
+  pullrequest:
+    needs: [release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.EXT_GITHUB }}
+          repository: lnbits/lnbits-extensions
+          path: './lnbits-extensions'
+
+      - name: setup git user
+        run: |
+          git config --global user.name "alan"
+          git config --global user.email "alan@lnbits.com"
+
+      - name: Create pull request in extensions repo
+        env:
+          GH_TOKEN: ${{ secrets.EXT_GITHUB }}
+          repo_name: "${{ github.event.repository.name }}"
+          tag: "${{ github.ref_name }}"
+          branch: "update-${{ github.event.repository.name }}-${{ github.ref_name }}"
+          title: "[UPDATE] ${{ github.event.repository.name }} to ${{ github.ref_name }}"
+          body: "https://github.com/lnbits/${{ github.event.repository.name }}/releases/${{ github.ref_name }}"
+          archive: "https://github.com/lnbits/${{ github.event.repository.name }}/archive/refs/tags/${{ github.ref_name }}.zip"
+        run: |
+          cd lnbits-extensions
+          git checkout -b $branch
+
+          # if there is another open PR
+          git pull origin $branch || echo "branch does not exist"
+
+          sh util.sh update_extension $repo_name $tag
+
+          git add -A
+          git commit -am "$title"
+          git push origin $branch
+
+          # check if pr exists before creating it
+          gh config set pager cat
+          check=$(gh pr list -H $branch | wc -l)
+          test $check -ne 0 || gh pr create --title "$title" --body "$body" --repo lnbits/lnbits-extensions
