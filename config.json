@@ -3,5 +3,5 @@
   "short_description": "Nostr Webshop/market on LNbits",
   "tile": "/nostrmarket/static/images/bitcoin-shop.png",
   "contributors": [],
-  "min_lnbits_version": "0.XX.0"
+  "min_lnbits_version": "0.11.0"
 }
