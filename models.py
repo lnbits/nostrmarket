@@ -272,10 +272,10 @@ class Product(PartialProduct, Nostrable):
                 content=json.dumps(content, separators=(",", ":"), ensure_ascii=False),
             )
             event.id = event.event_id
-            
+
             return event
         else
-            return to_nostr_delete_event(self, str)
+            return to_nostr_delete_event(str)
 
     def to_nostr_delete_event(self, pubkey: str) -> NostrEvent:
         delete_event = NostrEvent(
