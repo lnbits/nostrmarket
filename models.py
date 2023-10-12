@@ -275,7 +275,7 @@ class Product(PartialProduct, Nostrable):
 
             return event
         else:
-            return to_nostr_delete_event(str)
+            return self.to_nostr_delete_event(str)
 
     def to_nostr_delete_event(self, pubkey: str) -> NostrEvent:
         delete_event = NostrEvent(
