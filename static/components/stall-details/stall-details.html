@@ -101,7 +101,7 @@
                     <q-btn size="sm" color="accent" dense @click="editProduct(props.row)" icon="edit" />
                   </q-td>
                   <q-td auto-width>
-                    <q-btn size="sm" color="positive" dense @click="updateProduct({ ...props.row, active: !props.row.active })" icon="check" />
+                    <q-btn size="sm" color="dark" dense @click="updateProduct({ ...props.row, active: !props.row.active })" :icon="props.row.active ? 'check' : ''" />
                   </q-td>
 
                   <q-td key="id" :props="props"> {{props.row.id}} </q-td>
