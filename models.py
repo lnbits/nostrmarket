@@ -263,7 +263,7 @@ class Product(PartialProduct, Nostrable):
         }
         categories = [["t", tag] for tag in self.categories]
 
-        if self.active then
+        if self.active:
             event = NostrEvent(
                 pubkey=pubkey,
                 created_at=round(time.time()),
@@ -274,7 +274,7 @@ class Product(PartialProduct, Nostrable):
             event.id = event.event_id
 
             return event
-        else
+        else:
             return to_nostr_delete_event(str)
 
     def to_nostr_delete_event(self, pubkey: str) -> NostrEvent:
