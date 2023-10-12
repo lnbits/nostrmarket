@@ -101,7 +101,14 @@
                     <q-btn size="sm" color="accent" dense @click="editProduct(props.row)" icon="edit" />
                   </q-td>
                   <q-td auto-width>
-                    <q-btn size="sm" color="dark" dense @click="updateProduct({ ...props.row, active: !props.row.active })" :icon="props.row.active ? 'check' : ''" />
+                    <q-toggle
+                      @input="updateProduct({ ...props.row, active: props.row.active })"
+                      size="xs"
+                      checked-icon="check"
+                      v-model="props.row.active"
+                      color="green"
+                      unchecked-icon="clear"
+                    />
                   </q-td>
 
                   <q-td key="id" :props="props"> {{props.row.id}} </q-td>
