@@ -25,12 +25,20 @@ class NostrClient:
     ) -> WebSocketApp:
         def on_error(_, error):
             logger.warning(error)
+            self.send_req_queue.put_nowait(ValueError("Websocket error."))
+            self.recieve_event_queue.put_nowait(ValueError("Websocket error."))
+
+        def on_close(_, status_code, message):
+            logger.warning(f"Websocket closed: '{status_code}' '{message}'")
+            self.send_req_queue.put_nowait(ValueError("Websocket close."))
+            self.recieve_event_queue.put_nowait(ValueError("Websocket close."))
 
         logger.debug(f"Subscribing to websockets for nostrclient extension")
         ws = WebSocketApp(
             f"ws://localhost:{settings.port}/nostrclient/api/v1/relay",
             on_message=on_message,
             on_open=on_open,
+            on_close=on_close,
             on_error=on_error,
         )
 
@@ -53,6 +61,7 @@ class NostrClient:
         def on_message(_, message):
             self.recieve_event_queue.put_nowait(message)
 
+        self._safe_ws_stop()
         running = True
 
         while running:
@@ -73,7 +82,7 @@ class NostrClient:
                 logger.warning(ex)
                 if req:
                     await self.send_req_queue.put(req)
-                self.ws = None  # todo close
+                self._safe_ws_stop()
                 await asyncio.sleep(5)
 
     async def publish_nostr_event(self, e: NostrEvent):
@@ -172,6 +181,15 @@ class NostrClient:
 
         return [profile_filter]
 
+    def _safe_ws_stop(self):
+        if not self.ws:
+            return
+        try:
+            self.ws.close()
+        except:
+            pass
+        self.ws = None
+
     async def restart(self):
         await self.unsubscribe_merchants()
         # Give some time for the CLOSE events to propagate before restarting
@@ -181,16 +199,14 @@ class NostrClient:
         await self.send_req_queue.put(ValueError("Restarting NostrClient..."))
         await self.recieve_event_queue.put(ValueError("Restarting NostrClient..."))
 
-        self.ws.close()
-        self.ws = None
+        self._safe_ws_stop()
 
     async def stop(self):
         await self.unsubscribe_merchants()
 
         # Give some time for the CLOSE events to propagate before closing the connection
         await asyncio.sleep(10)
-        self.ws.close()
-        self.ws = None
+        self._safe_ws_stop()
 
     async def unsubscribe_merchants(self):
         await self.send_req_queue.put(["CLOSE", self.subscription_id])
