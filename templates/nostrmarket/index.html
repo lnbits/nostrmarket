@@ -6,7 +6,7 @@
       <q-card>
         <q-card-section>
           <div class="row">
-            <div class="col-3">
+            <div class="col-4">
               <merchant-details
                 :merchant-id="merchant.id"
                 :inkey="g.user.wallets[0].inkey"
@@ -15,17 +15,17 @@
                 @merchant-deleted="handleMerchantDeleted"
               ></merchant-details>
             </div>
-            <div class="col-2">
+            <div class="col-6">
               <q-toggle
               @input="toggleMerchantState()"
               size="md"
               checked-icon="check"
               v-model="merchant.config.active"
-              color="green"
+              color="primary"
               unchecked-icon="clear"
-            /> <span v-text="merchant.config.active ? 'Active': 'Deactivated'"></span>
+              class="float-left"
+            /> <span v-text="merchant.config.active ? 'Accepting Orders': 'Orders Paused'"></span>
             </div>
-            <div class="col-5"></div>
             <div class="col-2">
               <shipping-zones
                 :inkey="g.user.wallets[0].inkey"
@@ -148,7 +148,8 @@
         <q-card-section class="q-pa-md">
           <q-btn
             label="Restart Nostr Connection"
-            color="pink"
+            color="grey"
+            outline
             @click="restartNostrConnection"
           >
             <q-tooltip>

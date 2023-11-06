@@ -33,7 +33,7 @@
         <template v-slot:body="props">
           <q-tr :props="props">
             <q-td auto-width>
-              <q-btn size="sm" color="accent" round dense @click="props.row.expanded= !props.row.expanded"
+              <q-btn size="sm" color="primary" round dense @click="props.row.expanded= !props.row.expanded"
                 :icon="props.row.expanded? 'remove' : 'add'" />
             </q-td>
 

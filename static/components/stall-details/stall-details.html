@@ -55,10 +55,10 @@
       </div>
       <div class="row items-center q-mt-xl">
         <div class="col-6 q-pr-lg">
-          <q-btn unelevated color="secondary" class="float-left" @click="updateStall()">Update Stall</q-btn>
+          <q-btn  outline unelevated class="float-left"  color="primary" @click="updateStall()">Update Stall</q-btn>
         </div>
         <div class="col-6">
-          <q-btn unelevated color="pink" icon="cancel" class="float-right" @click="deleteStall()">Delete Stall</q-btn>
+          <q-btn outline unelevated icon="cancel" class="float-right" @click="deleteStall()">Delete Stall</q-btn>
         </div>
       </div>
     </q-tab-panel>
@@ -67,7 +67,7 @@
         <div class="row items-center no-wrap q-mb-md">
           <div class="col-3 q-pr-lg">
 
-            <q-btn-dropdown @click="showNewProductDialog()" unelevated split color="green" class="float-left"
+            <q-btn-dropdown @click="showNewProductDialog()"  outline unelevated split class="float-left"  color="primary"
               label="New Product">
               <q-item @click="showNewProductDialog()" clickable v-close-popup>
                 <q-item-section>
@@ -95,10 +95,10 @@
               <template v-slot:body="props">
                 <q-tr :props="props">
                   <q-td auto-width>
-                    <q-btn size="sm" color="pink" dense @click="deleteProduct(props.row.id)" icon="delete" />
+                    <q-btn size="sm" color="grey" dense @click="deleteProduct(props.row.id)" icon="delete" />
                   </q-td>
                   <q-td auto-width>
-                    <q-btn size="sm" color="accent" dense @click="editProduct(props.row)" icon="edit" />
+                    <q-btn size="sm" color="primary" dense @click="editProduct(props.row)" icon="edit" />
                   </q-td>
 
                   <q-td key="id" :props="props"> {{props.row.id}} </q-td>
