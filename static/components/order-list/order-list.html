@@ -89,7 +89,9 @@
                     <div class="col-1">{{item.quantity}}</div>
                     <div class="col-1">x</div>
                     <div class="col-4">
-                      {{productName(props.row, item.product_id)}}
+                      <p :title="productName(props.row, item.product_id)">
+                        {{shortLabel(productName(props.row, item.product_id))}}
+                      </p>
                     </div>
                     <div class="col-2">
                       {{productPrice(props.row, item.product_id)}}

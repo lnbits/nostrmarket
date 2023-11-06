@@ -130,6 +130,10 @@ async function orderList(path) {
       formatFiat(value, currency) {
         return Math.trunc(value) + ' ' + currency
       },
+      shortLabel(value = ''){
+        if (value.length <= 44) return value
+        return value.substring(0, 20) + '...'
+      },
       productName: function (order, productId) {
         product = order.extra.products.find(p => p.id === productId)
         if (product) {
@@ -287,7 +291,7 @@ async function orderList(path) {
             const order = await this.getOrder(orderData.id)
             this.orders.unshift(order)
           }
-          
+
         }
       },
       orderSelected: async function (orderId, eventId) {
@@ -305,7 +309,7 @@ async function orderList(path) {
               restoredOrder.isNew = false
               this.orders = [restoredOrder]
             }
-            
+
           })
           return
         }
