@@ -2,7 +2,7 @@
   <div class="row items-center no-wrap q-mb-md">
     <div class="col q-pr-lg">
 
-      <q-btn-dropdown @click="openCreateStallDialog()" unelevated split color="green" class="float-left"
+      <q-btn-dropdown @click="openCreateStallDialog()" outline unelevated split class="float-left" color="primary"
         label="New Stall (Store)">
         <q-item @click="openCreateStallDialog()" clickable v-close-popup>
           <q-item-section>
@@ -30,7 +30,7 @@
     <template v-slot:body="props">
       <q-tr :props="props">
         <q-td auto-width>
-          <q-btn size="sm" color="accent" round dense @click="props.row.expanded= !props.row.expanded"
+          <q-btn size="sm" color="primary" round dense @click="props.row.expanded= !props.row.expanded"
             :icon="props.row.expanded? 'remove' : 'add'" />
         </q-td>
 
