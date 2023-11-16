@@ -292,8 +292,8 @@ async def create_product(merchant_id: str, data: PartialProduct) -> Product:
     await db.execute(
         f"""
         INSERT INTO nostrmarket.products 
-        (merchant_id, id, stall_id, name, price, quantity, pending, event_id, event_created_at, image_urls, category_list, meta)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (merchant_id, id, stall_id, name, price, quantity, active, pending, event_id, event_created_at, image_urls, category_list, meta)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO NOTHING
         """,
         (
@@ -303,6 +303,7 @@ async def create_product(merchant_id: str, data: PartialProduct) -> Product:
             data.name,
             data.price,
             data.quantity,
+            data.active,
             data.pending,
             data.event_id,
             data.event_created_at,
@@ -321,13 +322,14 @@ async def update_product(merchant_id: str, product: Product) -> Product:
 
     await db.execute(
         f"""
-        UPDATE nostrmarket.products set name = ?, price = ?, quantity = ?,  pending = ?, event_id =?, event_created_at = ?, image_urls = ?, category_list = ?, meta = ?
+        UPDATE nostrmarket.products set name = ?, price = ?, quantity = ?, active = ?, pending = ?, event_id =?, event_created_at = ?, image_urls = ?, category_list = ?, meta = ?
         WHERE merchant_id = ? AND id = ?
         """,
         (
             product.name,
             product.price,
             product.quantity,
+            product.active,
             product.pending,
             product.event_id,
             product.event_created_at,
@@ -385,7 +387,7 @@ async def get_products_by_ids(
     q = ",".join(["?"] * len(product_ids))
     rows = await db.fetchall(
         f"""
-            SELECT id, stall_id, name, price, quantity, category_list, meta  
+            SELECT id, stall_id, name, price, quantity, active, category_list, meta  
             FROM nostrmarket.products 
             WHERE merchant_id = ? AND pending = false AND id IN ({q})
         """,

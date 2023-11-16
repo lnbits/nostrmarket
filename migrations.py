@@ -173,3 +173,8 @@ async def m004_add_merchant_timestamp(db):
     await db.execute(
         f"ALTER TABLE nostrmarket.merchants ADD COLUMN time TIMESTAMP;"
     )
+
+async def m005_update_product_activation(db):
+    await db.execute(
+        "ALTER TABLE nostrmarket.products ADD COLUMN active BOOLEAN NOT NULL DEFAULT true;"
+    )

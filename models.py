@@ -236,6 +236,7 @@ class PartialProduct(BaseModel):
     images: List[str] = []
     price: float
     quantity: int
+    active: bool = False
     pending: bool = False
     config: ProductConfig = ProductConfig()
 
@@ -257,20 +258,24 @@ class Product(PartialProduct, Nostrable):
             "currency": self.config.currency,
             "price": self.price,
             "quantity": self.quantity,
+            "active": self.active,
             "shipping": [dict(s) for s in self.config.shipping or []]
         }
         categories = [["t", tag] for tag in self.categories]
 
-        event = NostrEvent(
-            pubkey=pubkey,
-            created_at=round(time.time()),
-            kind=30018,
-            tags=[["d", self.id]] + categories,
-            content=json.dumps(content, separators=(",", ":"), ensure_ascii=False),
-        )
-        event.id = event.event_id
+        if self.active:
+            event = NostrEvent(
+                pubkey=pubkey,
+                created_at=round(time.time()),
+                kind=30018,
+                tags=[["d", self.id]] + categories,
+                content=json.dumps(content, separators=(",", ":"), ensure_ascii=False),
+            )
+            event.id = event.event_id
 
-        return event
+            return event
+        else:
+            return self.to_nostr_delete_event(pubkey)
 
     def to_nostr_delete_event(self, pubkey: str) -> NostrEvent:
         delete_event = NostrEvent(
