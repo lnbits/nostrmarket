@@ -22,6 +22,8 @@ async function shippingZones(path) {
         shippingZoneOptions: [
           'Free (digital)',
           'Flat rate',
+          'Meetup',
+          'P2P',
           'Worldwide',
           'Europe',
           'Australia',
