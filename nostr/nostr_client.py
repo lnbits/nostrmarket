@@ -8,7 +8,7 @@ from loguru import logger
 from websocket import WebSocketApp
 
 from lnbits.app import settings
-from lnbits.helpers import urlsafe_short_hash
+from lnbits.helpers import encrypt_internal_message, urlsafe_short_hash
 
 from .event import NostrEvent
 
@@ -34,8 +34,9 @@ class NostrClient:
             self.recieve_event_queue.put_nowait(ValueError("Websocket close."))
 
         logger.debug(f"Subscribing to websockets for nostrclient extension")
+        relay_endpoint = encrypt_internal_message("relay")
         ws = WebSocketApp(
-            f"ws://localhost:{settings.port}/nostrclient/api/v1/relay",
+            f"ws://localhost:{settings.port}/nostrclient/api/v1/{relay_endpoint}",
             on_message=on_message,
             on_open=on_open,
             on_close=on_close,
