@@ -1,4 +1,7 @@
 from asyncio import Queue
+import asyncio
+
+from loguru import logger
 
 from lnbits.core.models import Payment
 from lnbits.tasks import register_invoice_listener
@@ -33,9 +36,13 @@ async def on_invoice_paid(payment: Payment) -> None:
 
 
 async def wait_for_nostr_events(nostr_client: NostrClient):
-
-    await subscribe_to_all_merchants()
-
     while True:
-        message = await nostr_client.get_event()
-        await process_nostr_message(message)
+        try:
+            await subscribe_to_all_merchants()
+
+            while True:
+                message = await nostr_client.get_event()
+                await process_nostr_message(message)
+        except:
+            logger.warning("Subcription failed. Will retry in one minute.")
+            await asyncio.sleep(60)
