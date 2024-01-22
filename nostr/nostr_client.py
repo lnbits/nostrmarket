@@ -94,7 +94,7 @@ class NostrClient:
         await self.send_req_queue.put(["REQ", self.subscription_id] + merchant_filters)
 
         logger.debug(
-            f"Subscribed to events for: {len(public_keys)} keys. New subscription id: {self.subscription_id}"
+            f"Subscribing to events for: {len(public_keys)} keys. New subscription id: {self.subscription_id}"
         )
 
     async def merchant_temp_subscription(self, pk, duration=10):
