@@ -41,7 +41,6 @@ def nostrmarket_start():
         # wait for 'nostrclient' extension to initialize
         await asyncio.sleep(10)
         await nostr_client.run_forever()
-        raise ValueError("Must reconnect to websocket")
 
     async def _wait_for_nostr_events():
         # wait for this extension to initialize
