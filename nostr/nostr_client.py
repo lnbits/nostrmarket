@@ -19,6 +19,7 @@ class NostrClient:
         self.send_req_queue: Queue = Queue()
         self.ws: WebSocketApp = None
         self.subscription_id = "nostrmarket-" + urlsafe_short_hash()[:32]
+        self.running = False
 
     @property
     def is_websocket_connected(self):
@@ -46,10 +47,9 @@ class NostrClient:
 
         return ws
 
-
-
     async def run_forever(self):
-        while True:
+        self.running = True
+        while self.running:
             try:
                 if not self.is_websocket_connected:
                     self.ws = await self.connect_to_nostrclient_ws()
@@ -197,14 +197,14 @@ class NostrClient:
         # Give some time for the CLOSE events to propagate before restarting
         await asyncio.sleep(10)
 
-        logger.info("Restating NostrClient...")
-        await self.send_req_queue.put(ValueError("Restarting NostrClient..."))
+        logger.info("Restarting NostrClient...")
         await self.recieve_event_queue.put(ValueError("Restarting NostrClient..."))
 
         self._safe_ws_stop()
 
     async def stop(self):
         await self.unsubscribe_merchants()
+        self.running = False
 
         # Give some time for the CLOSE events to propagate before closing the connection
         await asyncio.sleep(10)

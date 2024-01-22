@@ -43,6 +43,6 @@ async def wait_for_nostr_events(nostr_client: NostrClient):
             while True:
                 message = await nostr_client.get_event()
                 await process_nostr_message(message)
-        except:
-            logger.warning("Subcription failed. Will retry in one minute.")
-            await asyncio.sleep(60)
+        except Exception as e:
+            logger.warning(f"Subcription failed. Will retry in one minute: {e}")
+            await asyncio.sleep(10)
