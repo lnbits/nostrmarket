@@ -6,7 +6,7 @@ from fastapi import Depends
 from fastapi.exceptions import HTTPException
 from loguru import logger
 
-from lnbits.core.services import websocketUpdater
+from lnbits.core.services import websocket_updater
 from lnbits.decorators import (
     WalletTypeInfo,
     check_admin,
@@ -836,7 +836,7 @@ async def api_update_order_status(
         await create_direct_message(merchant.id, dm)
 
         await nostr_client.publish_nostr_event(dm_event)
-        await websocketUpdater(
+        await websocket_updater(
             merchant.id,
             json.dumps(
                 {

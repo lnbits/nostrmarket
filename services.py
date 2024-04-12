@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple
 from loguru import logger
 
 from lnbits.bolt11 import decode
-from lnbits.core.services import websocketUpdater, create_invoice, get_wallet
+from lnbits.core.services import websocket_updater, create_invoice, get_wallet
 
 from . import nostr_client
 from .crud import (
@@ -269,7 +269,7 @@ async def send_dm(
 
     await nostr_client.publish_nostr_event(dm_event)
 
-    await websocketUpdater(
+    await websocket_updater(
         merchant.id,
         json.dumps(
             {
@@ -508,7 +508,7 @@ async def _persist_dm(
     )
     new_dm = await create_direct_message(merchant_id, dm)
 
-    await websocketUpdater(
+    await websocket_updater(
         merchant_id,
         json.dumps(
             {
@@ -535,7 +535,7 @@ async def reply_to_structured_dm(
     await create_direct_message(merchant.id, dm)
     await nostr_client.publish_nostr_event(dm_event)
 
-    await websocketUpdater(
+    await websocket_updater(
         merchant.id,
         json.dumps(
             {"type": f"dm:{dm_type}", "customerPubkey": dm.public_key, "dm": dm.dict()}
@@ -607,7 +607,7 @@ async def subscribe_to_all_merchants():
     last_dm_time = await get_last_direct_messages_created_at()
     last_stall_time = await get_last_stall_update_time()
     last_prod_time = await get_last_product_update_time()
-    
+
     await nostr_client.subscribe_merchants(public_keys, last_dm_time, last_stall_time, last_prod_time, 0)
 
 
