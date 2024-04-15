@@ -9,14 +9,13 @@ from loguru import logger
 from lnbits.core.services import websocket_updater
 from lnbits.decorators import (
     WalletTypeInfo,
-    check_admin,
     get_key_type,
     require_admin_key,
     require_invoice_key,
 )
 from lnbits.utils.exchange_rates import currencies
 
-from . import nostr_client, nostrmarket_ext, scheduled_tasks
+from . import nostr_client, nostrmarket_ext
 from .crud import (
     create_customer,
     create_direct_message,
@@ -1116,19 +1115,3 @@ async def restart_nostr_client(wallet: WalletTypeInfo = Depends(require_admin_ke
         await nostr_client.restart()
     except Exception as ex:
         logger.warning(ex)
-
-
-@nostrmarket_ext.delete("/api/v1", status_code=HTTPStatus.OK)
-async def api_stop(wallet: WalletTypeInfo = Depends(check_admin)):
-    for t in scheduled_tasks:
-        try:
-            t.cancel()
-        except Exception as ex:
-            logger.warning(ex)
-
-    try:
-        await nostr_client.stop()
-    except Exception as ex:
-        logger.warning(ex)
-
-    return {"success": True}
