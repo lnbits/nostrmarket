@@ -2,6 +2,46 @@
   "name": "Nostr Market",
   "short_description": "Nostr Webshop/market on LNbits",
   "tile": "/nostrmarket/static/images/bitcoin-shop.png",
-  "contributors": [],
-  "min_lnbits_version": "0.12.6"
+  "min_lnbits_version": "0.12.6",
+  "contributors": [
+    {
+      "name": "motorina0",
+      "uri": "https://github.com/motorina0",
+      "role": "Contributor"
+    },
+    {
+      "name": "benarc",
+      "uri": "https://github.com/benarc",
+      "role": "Developer"
+    },
+    {
+      "name": "talvasconcelos",
+      "uri": "https://github.com/talvasconcelos",
+      "role": "Developer"
+    }
+  ],
+  "images": [
+    {
+      "uri": "https://raw.githubusercontent.com/lnbits/nostrmarket/main/static/image/1.png"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/lnbits/nostrmarket/main/static/image/2.png"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/lnbits/nostrmarket/main/static/image/3.png"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/lnbits/nostrmarket/main/static/image/4.png"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/lnbits/nostrmarket/main/static/image/5.png"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/lnbits/nostrmarket/main/static/image/6.jpg",
+      "link": "https://www.youtube.com/embed/t9Z2tEsrNIU?si=rOQvwCUSWhwPPmYW"
+    }
+  ],
+  "description_md": "https://raw.githubusercontent.com/lnbits/nostrmarket/main/description.md",
+  "terms_and_conditions_md": "https://raw.githubusercontent.com/lnbits/nostrmarket/main/toc.md",
+  "license": "MIT"
 }
