@@ -40,6 +40,12 @@ async function stallDetails(path) {
               label: '',
               field: ''
             },
+            {
+              name: 'activate',
+              align: 'left',
+              label: '',
+              field: ''
+            },
 
             {
               name: 'id',
