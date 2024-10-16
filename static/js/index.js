@@ -58,8 +58,8 @@ const merchant = async () => {
       showImportKeysDialog: async function () {
         this.importKeyDialog.show = true
       },
-      toggleMerchantKeys: function (value) {
-        this.showKeys = value
+      toggleShowKeys: function () {
+        this.showKeys = !this.showKeys
       },
       toggleMerchantState: async function () {
         const merchant = await this.getMerchant()
