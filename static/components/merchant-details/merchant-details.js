@@ -2,18 +2,16 @@ async function merchantDetails(path) {
   const template = await loadTemplateAsync(path)
   Vue.component('merchant-details', {
     name: 'merchant-details',
-    props: ['merchant-id', 'adminkey', 'inkey'],
+    props: ['merchant-id', 'adminkey', 'inkey','showKeys'],
     template,
 
     data: function () {
       return {
-        showKeys: false
       }
     },
     methods: {
-      toggleMerchantKeys: async function () {
-        this.showKeys = !this.showKeys
-        this.$emit('show-keys', this.showKeys)
+      toggleShowKeys: async function () {
+        this.$emit('toggle-show-keys')
       },
 
       republishMerchantData: async function () {

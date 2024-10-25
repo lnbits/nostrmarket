@@ -11,7 +11,8 @@
                 :merchant-id="merchant.id"
                 :inkey="g.user.wallets[0].inkey"
                 :adminkey="g.user.wallets[0].adminkey"
-                @show-keys="toggleMerchantKeys"
+                :show-keys="showKeys"
+                @toggle-show-keys="toggleShowKeys"
                 @merchant-deleted="handleMerchantDeleted"
               ></merchant-details>
             </div>
