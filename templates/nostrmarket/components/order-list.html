@@ -80,15 +80,17 @@
             </q-td>
 
             <q-td key="id" :props="props">
-              {{toShortId(props.row.id)}}
+              <span v-text="toShortId(props.row.id)"></span>
+
               <q-badge v-if="props.row.isNew" color="orange">new</q-badge></q-td
             >
             <q-td key="total" :props="props">
-              {{satBtc(props.row.total)}}
+              <span v-text="satBtc(props.row.total)"></span>
             </q-td>
             <q-td key="fiat" :props="props">
               <span v-if="props.row.extra.currency !== 'sat'">
-                {{orderTotal(props.row)}} {{props.row.extra.currency}}
+                <span v-text="orderTotal(props.row)"></span
+                ><span v-text="props.row.extra.currency"></span>
               </span>
             </q-td>
 
@@ -115,11 +117,11 @@
                 @click="customerSelected(props.row.public_key)"
                 class="cursor-pointer"
               >
-                {{toShortId(props.row.public_key)}}
+                <span v-text="toShortId(props.row.public_key)"></span>
               </span>
             </q-td>
             <q-td key="event_created_at" :props="props">
-              {{formatDate(props.row.event_created_at)}}
+              <span v-text="formatDate(props.row.event_created_at)"></span>
             </q-td>
           </q-tr>
           <q-tr v-if="props.row.expanded" :props="props">
@@ -144,15 +146,21 @@
                     v-for="item in props.row.items"
                     class="row items-center no-wrap q-mb-md"
                   >
-                    <div class="col-1">{{item.quantity}}</div>
+                    <div class="col-1">
+                      <span v-text="item.quantity"></span>
+                    </div>
                     <div class="col-1">x</div>
                     <div class="col-4">
                       <p :title="productName(props.row, item.product_id)">
-                        {{shortLabel(productName(props.row, item.product_id))}}
+                        <span
+                          v-text="shortLabel(productName(props.row, item.product_id))"
+                        ></span>
                       </p>
                     </div>
                     <div class="col-2">
-                      {{productPrice(props.row, item.product_id)}}
+                      <span
+                        v-text="productPrice(props.row, item.product_id)"
+                      ></span>
                     </div>
                     <div class="col-4"></div>
                   </div>
@@ -164,8 +172,8 @@
                     <div class="col-1"></div>
                     <div class="col-4">Shipping Cost</div>
                     <div class="col-2">
-                      {{props.row.extra.shipping_cost}}
-                      {{props.row.extra.currency}}
+                      <span v-text="props.row.extra.shipping_cost"></span>
+                      <span v-text="props.row.extra.currency"></span>
                     </div>
                     <div class="col-4"></div>
                   </div>

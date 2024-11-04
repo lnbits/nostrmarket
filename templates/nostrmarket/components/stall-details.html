@@ -193,13 +193,17 @@
                     />
                   </q-td>
 
-                  <q-td key="id" :props="props"> {{props.row.id}} </q-td>
-                  <q-td key="name" :props="props">
-                    {{shortLabel(props.row.name)}}
+                  <q-td key="id" :props="props"
+                    ><span v-text="props.row.id"></span>
                   </q-td>
-                  <q-td key="price" :props="props"> {{props.row.price}} </q-td>
+                  <q-td key="name" :props="props">
+                    <span v-text="shortLabel(props.row.name)"></span>
+                  </q-td>
+                  <q-td key="price" :props="props"
+                    ><span v-text="props.row.price"></span>
+                  </q-td>
                   <q-td key="quantity" :props="props">
-                    {{props.row.quantity}}
+                    <span v-text="props.row.quantity"></span>
                   </q-td>
                 </q-tr>
               </template>

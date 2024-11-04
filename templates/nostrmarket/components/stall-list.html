@@ -62,15 +62,21 @@
           />
         </q-td>
 
-        <q-td key="id" :props="props"> {{shortLabel(props.row.name)}} </q-td>
-        <q-td key="currency" :props="props"> {{props.row.currency}} </q-td>
+        <span v-text=""></span>
+        <q-td key="id" :props="props"
+          ><span v-text="shortLabel(props.row.name)"></span
+        ></q-td>
+        <q-td key="currency" :props="props"
+          ><span v-text="props.row.currency"></span>
+        </q-td>
         <q-td key="description" :props="props">
-          {{shortLabel(props.row.config.description)}}
+          <span v-text="shortLabel(props.row.config.description)"></span>
         </q-td>
         <q-td key="shippingZones" :props="props">
           <div>
-            {{shortLabel(props.row.shipping_zones.filter(z => !!z.name).map(z =>
-            z.name).join(', '))}}
+            <span
+              v-text="shortLabel(props.row.shipping_zones.filter(z => !!z.name).map(z => z.name).join(', '))"
+            ></span>
           </div>
         </q-td>
       </q-tr>
