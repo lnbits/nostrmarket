@@ -259,7 +259,7 @@ class Product(PartialProduct, Nostrable):
             "price": self.price,
             "quantity": self.quantity,
             "active": self.active,
-            "shipping": [dict(s) for s in self.config.shipping or []]
+            "shipping": [dict(s) for s in self.config.shipping or []],
         }
         categories = [["t", tag] for tag in self.categories]
 
@@ -412,7 +412,7 @@ class PartialOrder(BaseModel):
             product_prices[p.id] = {
                 "name": p.name,
                 "price": p.price,
-                "product_shipping_cost": product_shipping_cost
+                "product_shipping_cost": product_shipping_cost,
             }
 
         currency = products[0].config.currency or "sat"
@@ -424,7 +424,9 @@ class PartialOrder(BaseModel):
 
             products_cost += item.quantity * price
 
-            items_receipts.append(f"""[{prod["name"]}:  {item.quantity} x ({prod["price"]} + {prod["product_shipping_cost"]}) = {item.quantity * price} {currency}] """)
+            items_receipts.append(
+                f"""[{prod["name"]}:  {item.quantity} x ({prod["price"]} + {prod["product_shipping_cost"]}) = {item.quantity * price} {currency}] """
+            )
 
         receipt = "; ".join(items_receipts)
         receipt += f"[Products cost: {products_cost} {currency}] [Stall shipping cost: {stall_shipping_cost} {currency}]; "
