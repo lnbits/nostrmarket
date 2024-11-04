@@ -1,5 +1,4 @@
 const merchant = async () => {
-
   const nostr = window.NostrTools
 
   window.app = Vue.createApp({
