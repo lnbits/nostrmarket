@@ -2,10 +2,9 @@ import asyncio
 import json
 from typing import List, Optional, Tuple
 
-from loguru import logger
-
 from lnbits.bolt11 import decode
-from lnbits.core.services import websocket_updater, create_invoice, get_wallet
+from lnbits.core.services import create_invoice, get_wallet, websocket_updater
+from loguru import logger
 
 from . import nostr_client
 from .crud import (

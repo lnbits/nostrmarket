@@ -167,7 +167,7 @@ async def m003_update_direct_message_type(db):
 
 
 async def m004_add_merchant_timestamp(db):
-    await db.execute(f"ALTER TABLE nostrmarket.merchants ADD COLUMN time TIMESTAMP;")
+    await db.execute("ALTER TABLE nostrmarket.merchants ADD COLUMN time TIMESTAMP;")
 
 
 async def m005_update_product_activation(db):

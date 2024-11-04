@@ -5,9 +5,8 @@ from enum import Enum
 from sqlite3 import Row
 from typing import Any, List, Optional, Tuple
 
-from pydantic import BaseModel
-
 from lnbits.utils.exchange_rates import btc_price, fiat_amount_as_satoshis
+from pydantic import BaseModel
 
 from .helpers import (
     decrypt_message,

@@ -1,7 +1,6 @@
 import base64
-import json
 import secrets
-from typing import Any, Optional, Tuple
+from typing import Optional
 
 import secp256k1
 from bech32 import bech32_decode, convertbits

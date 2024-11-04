@@ -4,8 +4,6 @@ from typing import List, Optional
 
 from fastapi import Depends
 from fastapi.exceptions import HTTPException
-from loguru import logger
-
 from lnbits.core.services import websocket_updater
 from lnbits.decorators import (
     WalletTypeInfo,
@@ -14,6 +12,7 @@ from lnbits.decorators import (
     require_invoice_key,
 )
 from lnbits.utils.exchange_rates import currencies
+from loguru import logger
 
 from . import nostr_client, nostrmarket_ext
 from .crud import (
@@ -81,9 +80,9 @@ from .models import (
     Zone,
 )
 from .services import (
-    reply_to_structured_dm,
     build_order_with_payment,
     create_or_update_order_from_dm,
+    reply_to_structured_dm,
     resubscribe_to_all_merchants,
     sign_and_send_to_nostr,
     subscribe_to_all_merchants,
@@ -908,7 +907,7 @@ async def api_restore_orders(
                 )
             except Exception as e:
                 logger.debug(
-                    f"Failed to restore order from event '{dm.event_id}': '{str(e)}'."
+                    f"Failed to restore order from event '{dm.event_id}': '{e!s}'."
                 )
 
     except AssertionError as ex:
@@ -997,7 +996,7 @@ async def api_get_messages(
 ) -> List[DirectMessage]:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
-        assert merchant, f"Merchant cannot be found"
+        assert merchant, "Merchant cannot be found"
 
         messages = await get_direct_messages(merchant.id, public_key)
         await update_customer_no_unread_messages(merchant.id, public_key)
@@ -1021,7 +1020,7 @@ async def api_create_message(
 ) -> DirectMessage:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
-        assert merchant, f"Merchant cannot be found"
+        assert merchant, "Merchant cannot be found"
 
         dm_event = merchant.build_dm_event(data.message, data.public_key)
         data.event_id = dm_event.id
@@ -1053,7 +1052,7 @@ async def api_get_customers(
 ) -> List[Customer]:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
-        assert merchant, f"Merchant cannot be found"
+        assert merchant, "Merchant cannot be found"
         return await get_customers(merchant.id)
 
     except AssertionError as ex:

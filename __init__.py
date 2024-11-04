@@ -1,11 +1,10 @@
 import asyncio
 
 from fastapi import APIRouter
-from loguru import logger
-
 from lnbits.db import Database
 from lnbits.helpers import template_renderer
 from lnbits.tasks import create_permanent_unique_task
+from loguru import logger
 
 from .nostr.nostr_client import NostrClient
 
@@ -31,7 +30,6 @@ nostr_client: NostrClient = NostrClient()
 from .tasks import wait_for_nostr_events, wait_for_paid_invoices
 from .views import *  # noqa
 from .views_api import *  # noqa
-
 
 scheduled_tasks: list[asyncio.Task] = []
 
