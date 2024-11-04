@@ -16,7 +16,7 @@ async function directMessages(path) {
     computed: {
       messagesAsJson: function () {
         return this.messages.map(m => {
-          const dateFrom =  moment(m.event_created_at * 1000).fromNow()
+          const dateFrom = moment(m.event_created_at * 1000).fromNow()
           try {
             const message = JSON.parse(m.message)
             return {
@@ -46,11 +46,11 @@ async function directMessages(path) {
         showAddPublicKey: false,
         newPublicKey: null,
         showRawMessage: false,
-        rawMessage: null,
+        rawMessage: null
       }
     },
     methods: {
-      sendMessage: async function () { },
+      sendMessage: async function () {},
       buildCustomerLabel: function (c) {
         let label = `${c.profile.name || 'unknown'} ${c.profile.about || ''}`
         if (c.unread_messages) {
@@ -67,7 +67,7 @@ async function directMessages(path) {
           return
         }
         try {
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'GET',
             '/nostrmarket/api/v1/message/' + pubkey,
             this.inkey
@@ -81,7 +81,7 @@ async function directMessages(path) {
       },
       getCustomers: async function () {
         try {
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'GET',
             '/nostrmarket/api/v1/customer',
             this.inkey
@@ -95,7 +95,7 @@ async function directMessages(path) {
 
       sendDirectMesage: async function () {
         try {
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'POST',
             '/nostrmarket/api/v1/message',
             this.adminkey,
@@ -113,7 +113,7 @@ async function directMessages(path) {
       },
       addPublicKey: async function () {
         try {
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'POST',
             '/nostrmarket/api/v1/customer',
             this.adminkey,
@@ -141,7 +141,7 @@ async function directMessages(path) {
         this.getCustomersDebounced()
       },
       showOrderDetails: function (orderId, eventId) {
-        this.$emit('order-selected', { orderId, eventId })
+        this.$emit('order-selected', {orderId, eventId})
       },
       showClientOrders: function () {
         this.$emit('customer-selected', this.activePublicKey)

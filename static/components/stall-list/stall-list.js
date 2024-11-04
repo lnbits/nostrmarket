@@ -86,11 +86,10 @@ async function stallList(path) {
         } else {
           await this.createStall(stallData)
         }
-
       },
       createStall: async function (stall) {
         try {
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'POST',
             '/nostrmarket/api/v1/stall',
             this.adminkey,
@@ -110,7 +109,7 @@ async function stallList(path) {
       restoreStall: async function (stallData) {
         try {
           stallData.pending = false
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'PUT',
             `/nostrmarket/api/v1/stall/${stallData.id}`,
             this.adminkey,
@@ -154,7 +153,7 @@ async function stallList(path) {
       },
       getCurrencies: async function () {
         try {
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'GET',
             '/nostrmarket/api/v1/currencies',
             this.inkey
@@ -168,12 +167,12 @@ async function stallList(path) {
       },
       getStalls: async function (pending = false) {
         try {
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'GET',
             `/nostrmarket/api/v1/stall?pending=${pending}`,
             this.inkey
           )
-          return data.map(s => ({ ...s, expanded: false }))
+          return data.map(s => ({...s, expanded: false}))
         } catch (error) {
           LNbits.utils.notifyApiError(error)
         }
@@ -181,7 +180,7 @@ async function stallList(path) {
       },
       getZones: async function () {
         try {
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'GET',
             '/nostrmarket/api/v1/zone',
             this.inkey
@@ -252,7 +251,7 @@ async function stallList(path) {
       customerSelectedForOrder: function (customerPubkey) {
         this.$emit('customer-selected-for-order', customerPubkey)
       },
-      shortLabel(value = ''){
+      shortLabel(value = '') {
         if (value.length <= 64) return value
         return value.substring(0, 60) + '...'
       }

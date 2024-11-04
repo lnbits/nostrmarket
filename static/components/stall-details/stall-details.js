@@ -88,13 +88,13 @@ async function stallDetails(path) {
       mapStall: function (stall) {
         stall.shipping_zones.forEach(
           z =>
-          (z.label = z.name
-            ? `${z.name} (${z.countries.join(', ')})`
-            : z.countries.join(', '))
+            (z.label = z.name
+              ? `${z.name} (${z.countries.join(', ')})`
+              : z.countries.join(', '))
         )
         return stall
       },
-      newEmtpyProductData: function() {
+      newEmtpyProductData: function () {
         return {
           id: null,
           name: '',
@@ -108,13 +108,17 @@ async function stallDetails(path) {
             description: '',
             use_autoreply: false,
             autoreply_message: '',
-            shipping: (this.stall.shipping_zones || []).map(z => ({id: z.id, name: z.name, cost: 0}))
+            shipping: (this.stall.shipping_zones || []).map(z => ({
+              id: z.id,
+              name: z.name,
+              cost: 0
+            }))
           }
         }
       },
       getStall: async function () {
         try {
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'GET',
             '/nostrmarket/api/v1/stall/' + this.stallId,
             this.inkey
@@ -126,7 +130,7 @@ async function stallDetails(path) {
       },
       updateStall: async function () {
         try {
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'PUT',
             '/nostrmarket/api/v1/stall/' + this.stallId,
             this.adminkey,
@@ -191,7 +195,7 @@ async function stallDetails(path) {
       },
       getProducts: async function (pending = false) {
         try {
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'GET',
             `/nostrmarket/api/v1/stall/product/${this.stall.id}?pending=${pending}`,
             this.inkey
@@ -223,7 +227,7 @@ async function stallDetails(path) {
       },
       updateProduct: async function (product) {
         try {
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'PATCH',
             '/nostrmarket/api/v1/product/' + product.id,
             this.adminkey,
@@ -247,7 +251,7 @@ async function stallDetails(path) {
       },
       createProduct: async function (payload) {
         try {
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'POST',
             '/nostrmarket/api/v1/product',
             this.adminkey,
@@ -266,13 +270,17 @@ async function stallDetails(path) {
       },
       editProduct: async function (product) {
         const emptyShipping = this.newEmtpyProductData().config.shipping
-        this.productDialog.data = { ...product }
-        this.productDialog.data.config.shipping = emptyShipping.map(shippingZone => {
-          const existingShippingCost = (product.config.shipping || []).find(ps => ps.id === shippingZone.id)
-          shippingZone.cost = existingShippingCost?.cost || 0
-          return shippingZone
-        })
-        
+        this.productDialog.data = {...product}
+        this.productDialog.data.config.shipping = emptyShipping.map(
+          shippingZone => {
+            const existingShippingCost = (product.config.shipping || []).find(
+              ps => ps.id === shippingZone.id
+            )
+            shippingZone.cost = existingShippingCost?.cost || 0
+            return shippingZone
+          }
+        )
+
         this.productDialog.showDialog = true
       },
       deleteProduct: async function (productId) {
@@ -312,7 +320,7 @@ async function stallDetails(path) {
         await this.showNewProductDialog(pendingProduct)
       },
       restoreAllPendingProducts: async function () {
-        for (const p of this.pendingProducts){
+        for (const p of this.pendingProducts) {
           p.pending = false
           await this.updateProduct(p)
         }
@@ -320,7 +328,7 @@ async function stallDetails(path) {
       customerSelectedForOrder: function (customerPubkey) {
         this.$emit('customer-selected-for-order', customerPubkey)
       },
-      shortLabel(value = ''){
+      shortLabel(value = '') {
         if (value.length <= 44) return value
         return value.substring(0, 40) + '...'
       }

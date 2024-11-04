@@ -67,29 +67,27 @@ const merchant = async () => {
           this.$q.notify({
             timeout: 5000,
             type: 'warning',
-            message: "Cannot fetch merchant!"
+            message: 'Cannot fetch merchant!'
           })
           return
         }
-        const message = merchant.config.active ?
-          'New orders will not be processed. Are you sure you want to deactivate?' :
-          merchant.config.restore_in_progress ?
-            'Merchant restore  from nostr in progress. Please wait!! ' +
-            'Activating now can lead to duplicate order processing. Click "OK" if you want to activate anyway?' :
-            'Are you sure you want activate this merchant?'
+        const message = merchant.config.active
+          ? 'New orders will not be processed. Are you sure you want to deactivate?'
+          : merchant.config.restore_in_progress
+            ? 'Merchant restore  from nostr in progress. Please wait!! ' +
+              'Activating now can lead to duplicate order processing. Click "OK" if you want to activate anyway?'
+            : 'Are you sure you want activate this merchant?'
 
-        LNbits.utils
-          .confirmDialog(message)
-          .onOk(async () => {
-            await this.toggleMerchant()
-          })
+        LNbits.utils.confirmDialog(message).onOk(async () => {
+          await this.toggleMerchant()
+        })
       },
       toggleMerchant: async function () {
         try {
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'PUT',
             `/nostrmarket/api/v1/merchant/${this.merchant.id}/toggle`,
-            this.g.user.wallets[0].adminkey,
+            this.g.user.wallets[0].adminkey
           )
           const state = data.config.active ? 'activated' : 'disabled'
           this.merchant = data
@@ -117,7 +115,7 @@ const merchant = async () => {
             public_key: pubkey,
             config: {}
           }
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'POST',
             '/nostrmarket/api/v1/merchant',
             this.g.user.wallets[0].adminkey,
@@ -135,7 +133,7 @@ const merchant = async () => {
       },
       getMerchant: async function () {
         try {
-          const { data } = await LNbits.api.request(
+          const {data} = await LNbits.api.request(
             'GET',
             '/nostrmarket/api/v1/merchant',
             this.g.user.wallets[0].inkey
@@ -153,7 +151,10 @@ const merchant = async () => {
         this.orderPubkey = customerPubkey
       },
       showOrderDetails: async function (orderData) {
-        await this.$refs.orderListRef.orderSelected(orderData.orderId, orderData.eventId)
+        await this.$refs.orderListRef.orderSelected(
+          orderData.orderId,
+          orderData.eventId
+        )
       },
       waitForNotifications: async function () {
         if (!this.merchant) return
@@ -171,7 +172,7 @@ const merchant = async () => {
                 type: 'positive',
                 message: 'New Order'
               })
-              
+
               await this.$refs.directMessagesRef.handleNewMessage(data)
               return
             }
@@ -179,7 +180,7 @@ const merchant = async () => {
               await this.$refs.directMessagesRef.handleNewMessage(data)
               await this.$refs.orderListRef.addOrder(data)
               return
-            } 
+            }
             if (data.type === 'dm:2') {
               const orderStatus = JSON.parse(data.dm.message)
               this.$q.notify({
@@ -192,14 +193,13 @@ const merchant = async () => {
               }
               await this.$refs.directMessagesRef.handleNewMessage(data)
               return
-            } 
-             if (data.type === 'dm:-1') {
+            }
+            if (data.type === 'dm:-1') {
               await this.$refs.directMessagesRef.handleNewMessage(data)
             }
             // order paid
             // order shipped
           }
-
         } catch (error) {
           this.$q.notify({
             timeout: 5000,
@@ -230,7 +230,10 @@ const merchant = async () => {
     created: async function () {
       await this.getMerchant()
       setInterval(async () => {
-        if (!this.wsConnection || this.wsConnection.readyState !== WebSocket.OPEN) {
+        if (
+          !this.wsConnection ||
+          this.wsConnection.readyState !== WebSocket.OPEN
+        ) {
           await this.waitForNotifications()
         }
       }, 1000)

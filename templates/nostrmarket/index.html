@@ -18,14 +18,17 @@
             </div>
             <div class="col-6">
               <q-toggle
-              @input="toggleMerchantState()"
-              size="md"
-              checked-icon="check"
-              v-model="merchant.config.active"
-              color="primary"
-              unchecked-icon="clear"
-              class="float-left"
-            /> <span v-text="merchant.config.active ? 'Accepting Orders': 'Orders Paused'"></span>
+                @input="toggleMerchantState()"
+                size="md"
+                checked-icon="check"
+                v-model="merchant.config.active"
+                color="primary"
+                unchecked-icon="clear"
+                class="float-left"
+              />
+              <span
+                v-text="merchant.config.active ? 'Accepting Orders': 'Orders Paused'"
+              ></span>
             </div>
             <div class="col-2">
               <shipping-zones
