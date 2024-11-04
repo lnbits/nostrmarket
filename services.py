@@ -75,7 +75,9 @@ async def create_new_order(
     await create_order(merchant.id, order)
 
     return PaymentRequest(
-        id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)], message=receipt
+        id=data.id,
+        payment_options=[PaymentOption(type="ln", link=invoice)],
+        message=receipt,
     )
 
 
@@ -92,9 +94,7 @@ async def build_order_with_payment(
     product_cost_sat, shipping_cost_sat = await data.costs_in_sats(
         products, shipping_zone.id, shipping_zone.cost
     )
-    receipt = data.receipt(
-        products, shipping_zone.id, shipping_zone.cost
-    )
+    receipt = data.receipt(products, shipping_zone.id, shipping_zone.cost)
 
     wallet_id = await get_wallet_for_product(data.items[0].product_id)
     assert wallet_id, "Missing wallet for order `{data.id}`"
@@ -233,6 +233,7 @@ async def update_products_for_order(
         await update_product(merchant.id, product)
 
     return True, "ok"
+
 
 async def autoreply_for_products_in_order(
     merchant: Merchant, order: Order
@@ -387,9 +388,11 @@ async def extract_customer_order_from_dm(
         merchant_public_key=merchant_pubkey,
         shipping_id=json_data.get("shipping_id", "None"),
         items=order_items,
-        contact=OrderContact(**json_data.get("contact"))
-        if json_data.get("contact")
-        else None,
+        contact=(
+            OrderContact(**json_data.get("contact"))
+            if json_data.get("contact")
+            else None
+        ),
         address=json_data.get("address"),
         stall_id=products[0].stall_id if len(products) else "None",
         invoice_id="None",
@@ -570,7 +573,11 @@ async def _handle_new_order(
     except Exception as e:
         logger.debug(e)
         payment_req = await create_new_failed_order(
-            merchant_id, merchant_public_key, dm, json_data, "Order received, but cannot be processed. Please contact merchant."
+            merchant_id,
+            merchant_public_key,
+            dm,
+            json_data,
+            "Order received, but cannot be processed. Please contact merchant.",
         )
 
     response = {
@@ -594,11 +601,13 @@ async def create_new_failed_order(
     await create_order(merchant_id, order)
     return PaymentRequest(id=order.id, message=fail_message, payment_options=[])
 
+
 async def resubscribe_to_all_merchants():
     await nostr_client.unsubscribe_merchants()
     # give some time for the message to propagate
     asyncio.sleep(1)
     await subscribe_to_all_merchants()
+
 
 async def subscribe_to_all_merchants():
     ids = await get_merchants_ids_with_pubkeys()
@@ -608,7 +617,9 @@ async def subscribe_to_all_merchants():
     last_stall_time = await get_last_stall_update_time()
     last_prod_time = await get_last_product_update_time()
 
-    await nostr_client.subscribe_merchants(public_keys, last_dm_time, last_stall_time, last_prod_time, 0)
+    await nostr_client.subscribe_merchants(
+        public_keys, last_dm_time, last_stall_time, last_prod_time, 0
+    )
 
 
 async def _handle_new_customer(event: NostrEvent, merchant: Merchant):

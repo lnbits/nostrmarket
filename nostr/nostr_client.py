@@ -30,7 +30,6 @@ class NostrClient:
     async def connect_to_nostrclient_ws(self) -> WebSocketApp:
         logger.debug(f"Connecting to websockets for 'nostrclient' extension...")
 
-
         relay_endpoint = encrypt_internal_message("relay")
         on_open, on_message, on_error, on_close = self._ws_handlers()
         ws = WebSocketApp(
@@ -62,13 +61,11 @@ class NostrClient:
                 logger.warning(ex)
                 await asyncio.sleep(60)
 
-
     async def get_event(self):
         value = await self.recieve_event_queue.get()
         if isinstance(value, ValueError):
             raise value
         return value
-
 
     async def publish_nostr_event(self, e: NostrEvent):
         await self.send_req_queue.put(["EVENT", e.dict()])

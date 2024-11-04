@@ -196,6 +196,7 @@ async def api_delete_merchant(
     finally:
         await subscribe_to_all_merchants()
 
+
 @nostrmarket_ext.put("/api/v1/merchant/{merchant_id}/nostr")
 async def api_republish_merchant(
     merchant_id: str,
@@ -220,6 +221,7 @@ async def api_republish_merchant(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot republish to nostr",
         )
+
 
 @nostrmarket_ext.get("/api/v1/merchant/{merchant_id}/nostr")
 async def api_refresh_merchant(
@@ -955,7 +957,9 @@ async def api_reissue_order_invoice(
             **order_update,
         )
         payment_req = PaymentRequest(
-            id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)], message=receipt
+            id=data.id,
+            payment_options=[PaymentOption(type="ln", link=invoice)],
+            message=receipt,
         )
         response = {
             "type": DirectMessageType.PAYMENT_REQUEST.value,
