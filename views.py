@@ -1,4 +1,3 @@
-
 from fastapi import Depends, Request
 from fastapi.templating import Jinja2Templates
 from lnbits.core.models import User

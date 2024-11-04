@@ -29,7 +29,7 @@ class Nostrable:
         pass
 
 
-######################################## MERCHANT ########################################
+######################################## MERCHANT ######################################
 
 
 class MerchantProfile(BaseModel):
@@ -55,8 +55,8 @@ class Merchant(PartialMerchant, Nostrable):
     id: str
     time: Optional[int] = 0
 
-    def sign_hash(self, hash: bytes) -> str:
-        return sign_message_hash(self.private_key, hash)
+    def sign_hash(self, hash_: bytes) -> str:
+        return sign_message_hash(self.private_key, hash_)
 
     def decrypt_message(self, encrypted_message: str, public_key: str) -> str:
         encryption_key = get_shared_secret(self.private_key, public_key)
@@ -211,7 +211,7 @@ class Stall(PartialStall, Nostrable):
         return stall
 
 
-######################################## PRODUCTS ########################################
+######################################## PRODUCTS ######################################
 
 
 class ProductShippingCost(BaseModel):
@@ -424,11 +424,16 @@ class PartialOrder(BaseModel):
             products_cost += item.quantity * price
 
             items_receipts.append(
-                f"""[{prod["name"]}:  {item.quantity} x ({prod["price"]} + {prod["product_shipping_cost"]}) = {item.quantity * price} {currency}] """
+                f"""[{prod["name"]}:  {item.quantity} x ({prod["price"]}"""
+                f""" + {prod["product_shipping_cost"]})"""
+                f""" = {item.quantity * price} {currency}] """
             )
 
         receipt = "; ".join(items_receipts)
-        receipt += f"[Products cost: {products_cost} {currency}] [Stall shipping cost: {stall_shipping_cost} {currency}]; "
+        receipt += (
+            f"[Products cost: {products_cost} {currency}] "
+            f"[Stall shipping cost: {stall_shipping_cost} {currency}]; "
+        )
         receipt += f"[Total: {products_cost + stall_shipping_cost} {currency}]"
 
         return receipt
@@ -475,7 +480,7 @@ class PaymentRequest(BaseModel):
     payment_options: List[PaymentOption]
 
 
-######################################## MESSAGE ########################################
+######################################## MESSAGE #######################################
 
 
 class DirectMessageType(Enum):
@@ -517,7 +522,7 @@ class DirectMessage(PartialDirectMessage):
         return dm
 
 
-######################################## CUSTOMERS ########################################
+######################################## CUSTOMERS #####################################
 
 
 class CustomerProfile(BaseModel):

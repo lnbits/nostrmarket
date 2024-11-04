@@ -253,7 +253,7 @@ async def autoreply_for_products_in_order(
 async def send_dm(
     merchant: Merchant,
     other_pubkey: str,
-    type: str,
+    type_: str,
     dm_content: str,
 ):
     dm_event = merchant.build_dm_event(dm_content, other_pubkey)
@@ -263,7 +263,7 @@ async def send_dm(
         event_created_at=dm_event.created_at,
         message=dm_content,
         public_key=other_pubkey,
-        type=type,
+        type=type_,
     )
     dm_reply = await create_direct_message(merchant.id, dm)
 
@@ -296,7 +296,8 @@ async def compute_products_new_quantity(
             return (
                 False,
                 [],
-                f"Quantity not sufficient for product: '{p.name}' ({p.id}). Required '{required_quantity}' but only have '{p.quantity}'.",
+                f"Quantity not sufficient for product: '{p.name}' ({p.id})."
+                f" Required '{required_quantity}' but only have '{p.quantity}'.",
             )
 
         p.quantity -= required_quantity
@@ -306,9 +307,9 @@ async def compute_products_new_quantity(
 
 async def process_nostr_message(msg: str):
     try:
-        type, *rest = json.loads(msg)
+        type_, *rest = json.loads(msg)
 
-        if type.upper() == "EVENT":
+        if type_.upper() == "EVENT":
             _, event = rest
             event = NostrEvent(**event)
             if event.kind == 0:
@@ -328,11 +329,11 @@ async def process_nostr_message(msg: str):
 async def create_or_update_order_from_dm(
     merchant_id: str, merchant_pubkey: str, dm: DirectMessage
 ):
-    type, json_data = PartialDirectMessage.parse_message(dm.message)
+    type_, json_data = PartialDirectMessage.parse_message(dm.message)
     if "id" not in json_data:
         return
 
-    if type == DirectMessageType.CUSTOMER_ORDER:
+    if type_ == DirectMessageType.CUSTOMER_ORDER:
         order = await extract_customer_order_from_dm(
             merchant_id, merchant_pubkey, dm, json_data
         )
@@ -348,7 +349,7 @@ async def create_or_update_order_from_dm(
             )
         return
 
-    if type == DirectMessageType.PAYMENT_REQUEST:
+    if type_ == DirectMessageType.PAYMENT_REQUEST:
         payment_request = PaymentRequest(**json_data)
         pr = next(
             (o.link for o in payment_request.payment_options if o.type == "ln"), None
@@ -363,7 +364,7 @@ async def create_or_update_order_from_dm(
         )
         return
 
-    if type == DirectMessageType.ORDER_PAID_OR_SHIPPED:
+    if type_ == DirectMessageType.ORDER_PAID_OR_SHIPPED:
         order_update = OrderStatusUpdate(**json_data)
         if order_update.paid:
             await update_order_paid_status(order_update.id, True)
@@ -463,14 +464,14 @@ async def _handle_outgoing_dms(
     event: NostrEvent, merchant: Merchant, clear_text_msg: str
 ):
     sent_to = event.tag_values("p")
-    type, _ = PartialDirectMessage.parse_message(clear_text_msg)
+    type_, _ = PartialDirectMessage.parse_message(clear_text_msg)
     if len(sent_to) != 0:
         dm = PartialDirectMessage(
             event_id=event.id,
             event_created_at=event.created_at,
             message=clear_text_msg,
             public_key=sent_to[0],
-            type=type.value,
+            type=type_.value,
         )
         await create_direct_message(merchant.id, dm)
 
