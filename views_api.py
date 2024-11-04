@@ -89,7 +89,7 @@ from .services import (
     update_merchant_to_nostr,
 )
 
-######################################## MERCHANT ########################################
+######################################## MERCHANT ######################################
 
 
 @nostrmarket_ext.post("/api/v1/merchant")
@@ -127,13 +127,13 @@ async def api_create_merchant(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create merchant",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.get("/api/v1/merchant")
@@ -157,7 +157,7 @@ async def api_get_merchant(
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get merchant",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.delete("/api/v1/merchant/{merchant_id}")
@@ -185,13 +185,13 @@ async def api_delete_merchant(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get merchant",
-        )
+        ) from ex
     finally:
         await subscribe_to_all_merchants()
 
@@ -213,13 +213,13 @@ async def api_republish_merchant(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot republish to nostr",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.get("/api/v1/merchant/{merchant_id}/nostr")
@@ -238,13 +238,13 @@ async def api_refresh_merchant(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot refresh from nostr",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.put("/api/v1/merchant/{merchant_id}/toggle")
@@ -265,17 +265,17 @@ async def api_toggle_merchant(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get merchant",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.delete("/api/v1/merchant/{merchant_id}/nostr")
-async def api_delete_merchant(
+async def api_delete_merchant_on_nostr(
     merchant_id: str,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ):
@@ -291,13 +291,13 @@ async def api_delete_merchant(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get merchant",
-        )
+        ) from ex
 
 
 ######################################## ZONES ########################################
@@ -313,13 +313,13 @@ async def api_get_zones(wallet: WalletTypeInfo = Depends(get_key_type)) -> List[
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get zone",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.post("/api/v1/zone")
@@ -335,13 +335,13 @@ async def api_create_zone(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create zone",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.patch("/api/v1/zone/{zone_id}")
@@ -366,15 +366,14 @@ async def api_update_zone(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
-    except HTTPException as ex:
-        raise ex
+        ) from ex
+
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot update zone",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.delete("/api/v1/zone/{zone_id}")
@@ -395,13 +394,13 @@ async def api_delete_zone(zone_id, wallet: WalletTypeInfo = Depends(require_admi
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot delete zone",
-        )
+        ) from ex
 
 
 ######################################## STALLS ########################################
@@ -431,13 +430,13 @@ async def api_create_stall(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create stall",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.put("/api/v1/stall/{stall_id}")
@@ -460,19 +459,18 @@ async def api_update_stall(
         await update_stall(merchant.id, stall)
 
         return stall
-    except HTTPException as ex:
-        raise ex
+
     except (ValueError, AssertionError) as ex:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot update stall",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.get("/api/v1/stall/{stall_id}")
@@ -491,7 +489,7 @@ async def api_get_stall(stall_id: str, wallet: WalletTypeInfo = Depends(get_key_
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except HTTPException as ex:
         raise ex
     except Exception as ex:
@@ -499,7 +497,7 @@ async def api_get_stall(stall_id: str, wallet: WalletTypeInfo = Depends(get_key_
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get stall",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.get("/api/v1/stall")
@@ -515,13 +513,13 @@ async def api_get_stalls(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get stalls",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.get("/api/v1/stall/product/{stall_id}")
@@ -539,13 +537,13 @@ async def api_get_stall_products(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get stall products",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.get("/api/v1/stall/order/{stall_id}")
@@ -567,13 +565,13 @@ async def api_get_stall_orders(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get stall products",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.delete("/api/v1/stall/{stall_id}")
@@ -601,18 +599,16 @@ async def api_delete_stall(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
-    except HTTPException as ex:
-        raise ex
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot delete stall",
-        )
+        ) from ex
 
 
-######################################## PRODUCTS ########################################
+######################################## PRODUCTS ######################################
 
 
 @nostrmarket_ext.post("/api/v1/product")
@@ -640,13 +636,13 @@ async def api_create_product(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create product",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.patch("/api/v1/product/{product_id}")
@@ -676,13 +672,13 @@ async def api_update_product(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot update product",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.get("/api/v1/product/{product_id}")
@@ -700,13 +696,13 @@ async def api_get_product(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get product",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.delete("/api/v1/product/{product_id}")
@@ -732,15 +728,13 @@ async def api_delete_product(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
-    except HTTPException as ex:
-        raise ex
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot delete product",
-        )
+        ) from ex
 
 
 ######################################## ORDERS ########################################
@@ -765,15 +759,13 @@ async def api_get_order(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
-    except HTTPException as ex:
-        raise ex
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get order",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.get("/api/v1/order")
@@ -795,13 +787,13 @@ async def api_get_orders(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get orders",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.patch("/api/v1/order/{order_id}")
@@ -853,13 +845,13 @@ async def api_update_order_status(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot update order",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.put("/api/v1/order/restore/{event_id}")
@@ -882,13 +874,13 @@ async def api_restore_order(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot restore order",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.put("/api/v1/orders/restore")
@@ -914,13 +906,13 @@ async def api_restore_orders(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot restore orders",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.put("/api/v1/order/reissue")
@@ -978,16 +970,16 @@ async def api_reissue_order_invoice(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot reissue order invoice",
-        )
+        ) from ex
 
 
-######################################## DIRECT MESSAGES ########################################
+######################################## DIRECT MESSAGES ###############################
 
 
 @nostrmarket_ext.get("/api/v1/message/{public_key}")
@@ -1005,13 +997,13 @@ async def api_get_messages(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get direct message",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.post("/api/v1/message")
@@ -1034,16 +1026,16 @@ async def api_create_message(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create message",
-        )
+        ) from ex
 
 
-######################################## CUSTOMERS ########################################
+######################################## CUSTOMERS #####################################
 
 
 @nostrmarket_ext.get("/api/v1/customer")
@@ -1059,13 +1051,13 @@ async def api_get_customers(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create message",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.post("/api/v1/customer")
@@ -1095,13 +1087,13 @@ async def api_create_customer(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create customer",
-        )
+        ) from ex
 
 
 ######################################## OTHER ########################################
