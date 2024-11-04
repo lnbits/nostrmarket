@@ -1,21 +1,11 @@
 const merchant = async () => {
-  Vue.component(VueQrcode.name, VueQrcode)
-
-  await keyPair('static/components/key-pair/key-pair.html')
-  await shippingZones('static/components/shipping-zones/shipping-zones.html')
-  await stallDetails('static/components/stall-details/stall-details.html')
-  await stallList('static/components/stall-list/stall-list.html')
-  await orderList('static/components/order-list/order-list.html')
-  await directMessages('static/components/direct-messages/direct-messages.html')
-  await merchantDetails(
-    'static/components/merchant-details/merchant-details.html'
-  )
+  // window.app.component(VueQrcode.name, VueQrcode)
 
   const nostr = window.NostrTools
 
-  new Vue({
+  window.app = Vue.createApp({
     el: '#vue',
-    mixins: [windowMixin],
+    mixins: [window.windowMixin],
     data: function () {
       return {
         merchant: {},
@@ -239,6 +229,16 @@ const merchant = async () => {
       }, 1000)
     }
   })
+
+  await keyPair('static/components/key-pair/key-pair.html')
+  await shippingZones('static/components/shipping-zones/shipping-zones.html')
+  await stallDetails('static/components/stall-details/stall-details.html')
+  await stallList('static/components/stall-list/stall-list.html')
+  await orderList('static/components/order-list/order-list.html')
+  await directMessages('static/components/direct-messages/direct-messages.html')
+  await merchantDetails(
+    'static/components/merchant-details/merchant-details.html'
+  )
 }
 
 merchant()

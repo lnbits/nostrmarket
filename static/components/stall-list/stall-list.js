@@ -1,6 +1,6 @@
 async function stallList(path) {
   const template = await loadTemplateAsync(path)
-  Vue.component('stall-list', {
+  window.app.component('stall-list', {
     name: 'stall-list',
     template,
 

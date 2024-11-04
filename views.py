@@ -13,7 +13,7 @@ templates = Jinja2Templates(directory="templates")
 async def index(request: Request, user: User = Depends(check_user_exists)):
     return nostrmarket_renderer().TemplateResponse(
         "nostrmarket/index.html",
-        {"request": request, "user": user.dict()},
+        {"request": request, "user": user.json()},
     )
 
 

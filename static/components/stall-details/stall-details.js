@@ -1,7 +1,7 @@
 async function stallDetails(path) {
   const template = await loadTemplateAsync(path)
 
-  Vue.component('stall-details', {
+  window.app.component('stall-details', {
     name: 'stall-details',
     template,
 

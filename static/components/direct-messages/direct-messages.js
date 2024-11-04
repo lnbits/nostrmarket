@@ -1,6 +1,6 @@
 async function directMessages(path) {
   const template = await loadTemplateAsync(path)
-  Vue.component('direct-messages', {
+  window.app.component('direct-messages', {
     name: 'direct-messages',
     props: ['active-chat-customer', 'merchant-id', 'adminkey', 'inkey'],
     template,

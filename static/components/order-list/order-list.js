@@ -1,6 +1,6 @@
 async function orderList(path) {
   const template = await loadTemplateAsync(path)
-  Vue.component('order-list', {
+  window.app.component('order-list', {
     name: 'order-list',
     props: ['stall-id', 'customer-pubkey-filter', 'adminkey', 'inkey'],
     template,

@@ -7,7 +7,6 @@ from fastapi.exceptions import HTTPException
 from lnbits.core.services import websocket_updater
 from lnbits.decorators import (
     WalletTypeInfo,
-    get_key_type,
     require_admin_key,
     require_invoice_key,
 )
@@ -304,7 +303,9 @@ async def api_delete_merchant_on_nostr(
 
 
 @nostrmarket_ext.get("/api/v1/zone")
-async def api_get_zones(wallet: WalletTypeInfo = Depends(get_key_type)) -> List[Zone]:
+async def api_get_zones(
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
+) -> List[Zone]:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
@@ -474,7 +475,9 @@ async def api_update_stall(
 
 
 @nostrmarket_ext.get("/api/v1/stall/{stall_id}")
-async def api_get_stall(stall_id: str, wallet: WalletTypeInfo = Depends(get_key_type)):
+async def api_get_stall(
+    stall_id: str, wallet: WalletTypeInfo = Depends(require_invoice_key)
+):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
@@ -502,7 +505,8 @@ async def api_get_stall(stall_id: str, wallet: WalletTypeInfo = Depends(get_key_
 
 @nostrmarket_ext.get("/api/v1/stall")
 async def api_get_stalls(
-    pending: Optional[bool] = False, wallet: WalletTypeInfo = Depends(get_key_type)
+    pending: Optional[bool] = False,
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
 ):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
@@ -773,7 +777,7 @@ async def api_get_orders(
     paid: Optional[bool] = None,
     shipped: Optional[bool] = None,
     pubkey: Optional[str] = None,
-    wallet: WalletTypeInfo = Depends(get_key_type),
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
 ):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
@@ -984,7 +988,7 @@ async def api_reissue_order_invoice(
 
 @nostrmarket_ext.get("/api/v1/message/{public_key}")
 async def api_get_messages(
-    public_key: str, wallet: WalletTypeInfo = Depends(get_key_type)
+    public_key: str, wallet: WalletTypeInfo = Depends(require_invoice_key)
 ) -> List[DirectMessage]:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
@@ -1040,7 +1044,7 @@ async def api_create_message(
 
 @nostrmarket_ext.get("/api/v1/customer")
 async def api_get_customers(
-    wallet: WalletTypeInfo = Depends(get_key_type),
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
 ) -> List[Customer]:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)

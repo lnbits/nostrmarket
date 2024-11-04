@@ -21,15 +21,16 @@ from .models import (
     Zone,
 )
 
-######################################## MERCHANT ########################################
+######################################## MERCHANT ######################################
 
 
 async def create_merchant(user_id: str, m: PartialMerchant) -> Merchant:
     merchant_id = urlsafe_short_hash()
     await db.execute(
         """
-        INSERT INTO nostrmarket.merchants (user_id, id, private_key, public_key, meta)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO nostrmarket.merchants 
+        (user_id = :user_id, id = :id, private_key = :private_key, public_key = :public_key, meta = :meta)
+        VALUES (:user_id, :id, :private_key, :public_key, :meta)
         """,
         (user_id, merchant_id, m.private_key, m.public_key, json.dumps(dict(m.config))),
     )

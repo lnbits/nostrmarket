@@ -1,6 +1,6 @@
 async function keyPair(path) {
   const template = await loadTemplateAsync(path)
-  Vue.component('key-pair', {
+  window.app.component('key-pair', {
     name: 'key-pair',
     template,
 

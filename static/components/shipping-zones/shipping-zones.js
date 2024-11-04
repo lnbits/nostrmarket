@@ -1,6 +1,6 @@
 async function shippingZones(path) {
   const template = await loadTemplateAsync(path)
-  Vue.component('shipping-zones', {
+  window.app.component('shipping-zones', {
     name: 'shipping-zones',
     props: ['adminkey', 'inkey'],
     template,
