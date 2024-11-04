@@ -1,5 +1,5 @@
 import json
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from lnbits.helpers import urlsafe_short_hash
 
@@ -29,13 +29,7 @@ async def create_merchant(user_id: str, m: PartialMerchant) -> Merchant:
     await db.execute(
         """
         INSERT INTO nostrmarket.merchants
-        (
-            user_id = :user_id,
-            id = :id,
-            private_key = :private_key,
-            public_key = :public_key,
-            meta = :meta
-        )
+               (user_id, id, private_key, public_key, meta)
         VALUES (:user_id, :id, :private_key, :public_key, :meta)
         """,
         {
@@ -96,12 +90,12 @@ async def get_merchant_by_pubkey(public_key: str) -> Optional[Merchant]:
     return Merchant.from_row(row) if row else None
 
 
-async def get_merchants_ids_with_pubkeys() -> List[str]:
+async def get_merchants_ids_with_pubkeys() -> List[Tuple[str, str]]:
     rows = await db.fetchall(
         """SELECT id, public_key FROM nostrmarket.merchants""",
     )
 
-    return [(row[0], row[1]) for row in rows]
+    return [(row["id"], row["public_key"]) for row in rows]
 
 
 async def get_merchant_for_user(user_id: str) -> Optional[Merchant]:

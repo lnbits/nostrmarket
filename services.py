@@ -606,7 +606,7 @@ async def create_new_failed_order(
 async def resubscribe_to_all_merchants():
     await nostr_client.unsubscribe_merchants()
     # give some time for the message to propagate
-    asyncio.sleep(1)
+    await asyncio.sleep(1)
     await subscribe_to_all_merchants()
 
 
