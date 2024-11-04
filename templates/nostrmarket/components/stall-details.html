@@ -156,10 +156,10 @@
             <q-table
               flat
               dense
-              :data="products"
+              :rows="products"
               row-key="id"
               :columns="productsTable.columns"
-              :pagination.sync="productsTable.pagination"
+              v-model:pagination="productsTable.pagination"
               :filter="productsFilter"
             >
               <template v-slot:body="props">

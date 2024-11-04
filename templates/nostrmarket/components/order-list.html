@@ -63,7 +63,7 @@
         :rows="orders"
         row-key="id"
         :columns="ordersTable.columns"
-        :pagination.sync="ordersTable.pagination"
+        v-model:pagination="ordersTable.pagination"
         :filter="filter"
       >
         <template v-slot:body="props">

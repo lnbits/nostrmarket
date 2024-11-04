@@ -11,7 +11,7 @@ window.app.component('key-pair', {
   methods: {
     copyText: function (text, message, position) {
       var notify = this.$q.notify
-      Quasar.utils.copyToClipboard(text).then(function () {
+      Quasar.copyToClipboard(text).then(function () {
         notify({
           message: message || 'Copied to clipboard!',
           position: position || 'bottom'

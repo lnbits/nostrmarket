@@ -120,7 +120,7 @@ window.app.component('order-list', {
       return value.substring(0, 5) + '...' + value.substring(value.length - 5)
     },
     formatDate: function (value) {
-      return Quasar.utils.date.formatDate(
+      return Quasar.date.formatDate(
         new Date(value * 1000),
         'YYYY-MM-DD HH:mm'
       )

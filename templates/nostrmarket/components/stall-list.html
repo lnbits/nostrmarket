@@ -46,7 +46,7 @@
     :rows="stalls"
     row-key="id"
     :columns="stallsTable.columns"
-    :pagination.sync="stallsTable.pagination"
+    v-model:pagination="stallsTable.pagination"
     :filter="filter"
   >
     <template v-slot:body="props">
