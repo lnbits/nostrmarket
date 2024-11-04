@@ -235,15 +235,37 @@
   }
 </style>
 
+<template id="key-pair"
+  >{% include("nostrmarket/components/key-pair.html") %}</template
+>
+<template id="shipping-zones"
+  >{% include("nostrmarket/components/shipping-zones.html") %}</template
+>
+<template id="stall-details"
+  >{% include("nostrmarket/components/stall-details.html") %}</template
+>
+<template id="stall-list"
+  >{% include("nostrmarket/components/stall-list.html") %}</template
+>
+<template id="order-list"
+  >{% include("nostrmarket/components/order-list.html") %}</template
+><template id="direct-messages"
+  >{% include("nostrmarket/components/direct-messages.html") %}</template
+>
+
+<template id="merchant-details"
+  >{% include("nostrmarket/components/merchant-details.html") %}</template
+>
+
 <script src="{{ url_for('nostrmarket_static', path='js/nostr.bundle.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/utils.js') }}"></script>
-<script src="{{ url_for('nostrmarket_static', path='components/key-pair/key-pair.js') }}"></script>
-<script src="{{ url_for('nostrmarket_static', path='components/shipping-zones/shipping-zones.js') }}"></script>
-<script src="{{ url_for('nostrmarket_static', path='components/stall-details/stall-details.js') }}"></script>
-<script src="{{ url_for('nostrmarket_static', path='components/stall-list/stall-list.js') }}"></script>
-<script src="{{ url_for('nostrmarket_static', path='components/order-list/order-list.js') }}"></script>
-<script src="{{ url_for('nostrmarket_static', path='components/direct-messages/direct-messages.js') }}"></script>
-<script src="{{ url_for('nostrmarket_static', path='components/merchant-details/merchant-details.js') }}"></script>
+<script src="{{ static_url_for('nostrmarket/static', 'components/key-pair.js') }}"></script>
+<script src="{{ static_url_for('nostrmarket/static', 'components/shipping-zones.js') }}"></script>
+<script src="{{ static_url_for('nostrmarket/static', 'components/stall-details.js') }}"></script>
+<script src="{{ static_url_for('nostrmarket/static', 'components/stall-list.js') }}"></script>
+<script src="{{ static_url_for('nostrmarket/static', 'components/order-list.js') }}"></script>
+<script src="{{ static_url_for('nostrmarket/static', 'components/direct-messages.js') }}"></script>
+<script src="{{ static_url_for('nostrmarket/static', 'components/merchant-details.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/index.js') }}"></script>
 
 {% endblock %}
