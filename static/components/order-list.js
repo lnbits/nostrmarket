@@ -120,10 +120,7 @@ window.app.component('order-list', {
       return value.substring(0, 5) + '...' + value.substring(value.length - 5)
     },
     formatDate: function (value) {
-      return Quasar.date.formatDate(
-        new Date(value * 1000),
-        'YYYY-MM-DD HH:mm'
-      )
+      return Quasar.date.formatDate(new Date(value * 1000), 'YYYY-MM-DD HH:mm')
     },
     satBtc(val, showUnit = true) {
       return satOrBtc(val, showUnit, true)
