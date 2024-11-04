@@ -134,7 +134,11 @@ async def create_zone(merchant_id: str, data: PartialZone) -> Zone:
 
 async def update_zone(merchant_id: str, z: Zone) -> Optional[Zone]:
     await db.execute(
-        "UPDATE nostrmarket.zones SET name = ?, cost = ?, regions = ?  WHERE id = ? AND merchant_id = ?",
+        """
+        UPDATE nostrmarket.zones
+        SET name = ?, cost = ?, regions = ?
+        WHERE id = ? AND merchant_id = ?
+        """,
         (z.name, z.cost, json.dumps(z.countries), z.id, merchant_id),
     )
     return await get_zone(merchant_id, z.id)
@@ -322,7 +326,9 @@ async def update_product(merchant_id: str, product: Product) -> Product:
 
     await db.execute(
         """
-        UPDATE nostrmarket.products set name = ?, price = ?, quantity = ?,  active = ?, pending = ?, event_id =?, event_created_at = ?, image_urls = ?, category_list = ?, meta = ?
+        UPDATE nostrmarket.products
+        SET name = ?, price = ?, quantity = ?,  active = ?, pending = ?, event_id =?,
+        event_created_at = ?, image_urls = ?, category_list = ?, meta = ?
         WHERE merchant_id = ? AND id = ?
         """,
         (
@@ -375,7 +381,10 @@ async def get_products(
     merchant_id: str, stall_id: str, pending: Optional[bool] = False
 ) -> List[Product]:
     rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.products WHERE merchant_id = ? AND stall_id = ? AND pending = ?",
+        """
+        SELECT * FROM nostrmarket.products
+        WHERE merchant_id = ? AND stall_id = ? AND pending = ?
+        """,
         (merchant_id, stall_id, pending),
     )
     return [Product.from_row(row) for row in rows]
