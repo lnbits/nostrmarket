@@ -100,10 +100,10 @@ async def api_create_merchant(
 
     try:
         merchant = await get_merchant_by_pubkey(data.public_key)
-        assert merchant == None, "A merchant already uses this public key"
+        assert merchant is None, "A merchant already uses this public key"
 
         merchant = await get_merchant_for_user(wallet.wallet.user)
-        assert merchant == None, "A merchant already exists for this user"
+        assert merchant is None, "A merchant already exists for this user"
 
         merchant = await create_merchant(wallet.wallet.user, data)
 
@@ -810,7 +810,7 @@ async def api_update_order_status(
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Order:
     try:
-        assert data.shipped != None, "Shipped value is required for order"
+        assert data.shipped is not None, "Shipped value is required for order"
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found for order {data.id}"
 
@@ -1082,7 +1082,7 @@ async def api_create_customer(
         assert merchant.id == data.merchant_id, "Invalid merchant id for user"
 
         existing_customer = await get_customer(merchant.id, pubkey)
-        assert existing_customer == None, "This public key already exists"
+        assert existing_customer is None, "This public key already exists"
 
         customer = await create_customer(
             merchant.id, Customer(merchant_id=merchant.id, public_key=pubkey)

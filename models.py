@@ -267,7 +267,7 @@ class Product(PartialProduct, Nostrable):
                 pubkey=pubkey,
                 created_at=round(time.time()),
                 kind=30018,
-                tags=[["d", self.id]] + categories,
+                tags=[["d", self.id], *categories],
                 content=json.dumps(content, separators=(",", ":"), ensure_ascii=False),
             )
             event.id = event.event_id
