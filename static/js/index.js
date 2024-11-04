@@ -1,5 +1,4 @@
 const merchant = async () => {
-  // window.app.component(VueQrcode.name, VueQrcode)
 
   const nostr = window.NostrTools
 
