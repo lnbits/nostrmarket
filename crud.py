@@ -271,9 +271,9 @@ async def get_last_stall_update_time() -> int:
             SELECT event_created_at FROM nostrmarket.stalls
             ORDER BY event_created_at DESC LIMIT 1
         """,
-        (),
+        {},
     )
-    return row[0] or 0 if row else 0
+    return row["event_created_at"] or 0 if row else 0
 
 
 async def update_stall(merchant_id: str, stall: Stall) -> Optional[Stall]:
@@ -463,14 +463,14 @@ async def get_products_by_ids(
 async def get_wallet_for_product(product_id: str) -> Optional[str]:
     row = await db.fetchone(
         """
-        SELECT s.wallet FROM nostrmarket.products p
+        SELECT s.wallet as wallet FROM nostrmarket.products p
         INNER JOIN nostrmarket.stalls s
         ON p.stall_id = s.id
         WHERE p.id = :product_id AND p.pending = false AND s.pending = false
        """,
         {"product_id": product_id},
     )
-    return row[0] if row else None
+    return row["wallet"] if row else None
 
 
 async def get_last_product_update_time() -> int:
@@ -479,9 +479,9 @@ async def get_last_product_update_time() -> int:
             SELECT event_created_at FROM nostrmarket.products
             ORDER BY event_created_at DESC LIMIT 1
         """,
-        (),
+        {},
     )
-    return row[0] or 0 if row else 0
+    return row["event_created_at"] or 0 if row else 0
 
 
 async def delete_product(merchant_id: str, product_id: str) -> None:
@@ -789,7 +789,7 @@ async def get_last_direct_messages_time(merchant_id: str) -> int:
         """,
         {"merchant_id": merchant_id},
     )
-    return row[0] if row else 0
+    return row["time"] if row else 0
 
 
 async def get_last_direct_messages_created_at() -> int:
@@ -798,9 +798,9 @@ async def get_last_direct_messages_created_at() -> int:
             SELECT event_created_at FROM nostrmarket.direct_messages
             ORDER BY event_created_at DESC LIMIT 1
         """,
-        (),
+        {},
     )
-    return row[0] if row else 0
+    return row["event_created_at"] if row else 0
 
 
 async def delete_merchant_direct_messages(merchant_id: str) -> None:
