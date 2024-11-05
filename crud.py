@@ -427,6 +427,7 @@ async def get_product(merchant_id: str, product_id: str) -> Optional[Product]:
             "id": product_id,
         },
     )
+    # TODO: remove from_row
     return Product.from_row(row) if row else None
 
 
@@ -448,14 +449,20 @@ async def get_products_by_ids(
     merchant_id: str, product_ids: List[str]
 ) -> List[Product]:
     # todo: revisit
-    q = ",".join(["?"] * len(product_ids))
+
+    keys = []
+    values = {"merchant_id": merchant_id}
+    for i, v in enumerate(product_ids):
+        key = f"p_{i}"
+        values[key] = v
+        keys.append(f":{key}")
     rows = await db.fetchall(
         f"""
             SELECT id, stall_id, name, price, quantity, active, category_list, meta
             FROM nostrmarket.products
-            WHERE merchant_id = ? AND pending = false AND id IN ({q})
+            WHERE merchant_id = :merchant_id AND pending = false AND id IN ({", ".join(keys)})
         """,
-        (merchant_id, *product_ids),
+        values,
     )
     return [Product.from_row(row) for row in rows]
 
@@ -596,21 +603,23 @@ async def get_order_by_event_id(merchant_id: str, event_id: str) -> Optional[Ord
 
 
 async def get_orders(merchant_id: str, **kwargs) -> List[Order]:
-    # TODO: revisit
     q = " AND ".join(
-        [f"{field[0]} = ?" for field in kwargs.items() if field[1] is not None]
+        [f"{field[0]} = :{field[0]}" for field in kwargs.items() if field[1] is not None]
     )
-    values = ()
-    if q:
-        q = f"AND {q}"
-        values = (v for v in kwargs.values() if v is not None)
+    values = {"merchant_id": merchant_id}
+    for field in kwargs.items():
+        if field[1] is  None:
+            continue
+        values[field[0]] = field[1]
+    
+
     rows = await db.fetchall(
         f"""
         SELECT * FROM nostrmarket.orders
-        WHERE merchant_id = ? {q}
+        WHERE merchant_id = :merchant_id {q}
         ORDER BY event_created_at DESC
         """,
-        (merchant_id, *values),
+        values,
     )
     return [Order.from_row(row) for row in rows]
 
@@ -618,33 +627,41 @@ async def get_orders(merchant_id: str, **kwargs) -> List[Order]:
 async def get_orders_for_stall(
     merchant_id: str, stall_id: str, **kwargs
 ) -> List[Order]:
-    # TODO: revisit
     q = " AND ".join(
-        [f"{field[0]} = ?" for field in kwargs.items() if field[1] is not None]
+        [f"{field[0]} = :{field[0]}" for field in kwargs.items() if field[1] is not None]
     )
-    values = ()
-    if q:
-        q = f"AND {q}"
-        values = (v for v in kwargs.values() if v is not None)
+    values = {"merchant_id": merchant_id, "stall_id": stall_id}
+    for field in kwargs.items():
+        if field[1] is  None:
+            continue
+        values[field[0]] = field[1]
+    
     rows = await db.fetchall(
         f"""
             SELECT * FROM nostrmarket.orders
-            WHERE merchant_id = ? AND stall_id = ? {q}
+            WHERE merchant_id = :merchant_id AND stall_id = :stall_id {q}
             ORDER BY time DESC
         """,
-        (merchant_id, stall_id, *values),
+        values,
     )
     return [Order.from_row(row) for row in rows]
 
 
 async def update_order(merchant_id: str, order_id: str, **kwargs) -> Optional[Order]:
-    # TODO: revisit
-    q = ", ".join([f"{field[0]} = ?" for field in kwargs.items()])
+    q = ", ".join(
+        [f"{field[0]} = :{field[0]}" for field in kwargs.items() if field[1] is not None]
+    )
+    values = {"merchant_id": merchant_id, "id": order_id}
+    for field in kwargs.items():
+        if field[1] is  None:
+            continue
+        values[field[0]] = field[1]
     await db.execute(
         f"""
-            UPDATE nostrmarket.orders SET {q} WHERE merchant_id = ? and id = ?
+            UPDATE nostrmarket.orders 
+            SET {q} WHERE merchant_id = :merchant_id and id = :id
         """,
-        (*kwargs.values(), merchant_id, order_id),
+        values,
     )
 
     return await get_order(merchant_id, order_id)

@@ -18,7 +18,7 @@
             </div>
             <div class="col-6">
               <q-toggle
-                @input="toggleMerchantState()"
+                @update:model-value="toggleMerchantState()"
                 size="md"
                 checked-icon="check"
                 v-model="merchant.config.active"

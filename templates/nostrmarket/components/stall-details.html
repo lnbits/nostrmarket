@@ -184,7 +184,7 @@
                   </q-td>
                   <q-td auto-width>
                     <q-toggle
-                      @input="updateProduct({ ...props.row, active: props.row.active })"
+                      @update:model-value="updateProduct({ ...props.row, active: props.row.active })"
                       size="xs"
                       checked-icon="check"
                       v-model="props.row.active"

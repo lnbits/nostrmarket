@@ -494,12 +494,12 @@ class DirectMessageType(Enum):
 
 class PartialDirectMessage(BaseModel):
     event_id: Optional[str]
-    event_created_at: Optional[int]
+    event_created_at: Optional[int] = None
     message: str
     public_key: str
     type: int = DirectMessageType.PLAIN_TEXT.value
     incoming: bool = False
-    time: Optional[int]
+    time: Optional[int] = None
 
     @classmethod
     def parse_message(cls, msg) -> Tuple[DirectMessageType, Optional[Any]]:
@@ -533,8 +533,8 @@ class CustomerProfile(BaseModel):
 class Customer(BaseModel):
     merchant_id: str
     public_key: str
-    event_created_at: Optional[int]
-    profile: Optional[CustomerProfile]
+    event_created_at: Optional[int] = None
+    profile: Optional[CustomerProfile] = None
     unread_messages: int = 0
 
     @classmethod
