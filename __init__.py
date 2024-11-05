@@ -27,7 +27,7 @@ def nostrmarket_renderer():
 nostr_client: NostrClient = NostrClient()
 
 
-from .tasks import wait_for_nostr_events, wait_for_paid_invoices
+from .tasks import wait_for_nostr_events, wait_for_paid_invoices  # noqa
 from .views import *  # noqa
 from .views_api import *  # noqa
 
