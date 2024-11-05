@@ -24,6 +24,7 @@ build-backend = "poetry.core.masonry.api"
 exclude = "(nostr/*)"
 [[tool.mypy.overrides]]
 module = [
+  "secp256k1.*",
   "embit.*",
   "lnbits.*",
   "lnurl.*",

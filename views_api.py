@@ -143,11 +143,12 @@ async def api_get_merchant(
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         if not merchant:
-            return
+            return None
 
         merchant = await touch_merchant(wallet.wallet.user, merchant.id)
+        assert merchant
         last_dm_time = await get_last_direct_messages_time(merchant.id)
-
+        assert merchant.time
         merchant.config.restore_in_progress = (merchant.time - last_dm_time) < 30
 
         return merchant

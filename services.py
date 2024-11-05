@@ -228,6 +228,7 @@ async def update_products_for_order(
 
     for p in products:
         product = await update_product_quantity(p.id, p.quantity)
+        assert product
         event = await sign_and_send_to_nostr(merchant, product)
         product.event_id = event.id
         await update_product(merchant.id, product)
@@ -235,18 +236,19 @@ async def update_products_for_order(
     return True, "ok"
 
 
-async def autoreply_for_products_in_order(
-    merchant: Merchant, order: Order
-) -> Tuple[bool, str]:
+async def autoreply_for_products_in_order(merchant: Merchant, order: Order):
     product_ids = [i.product_id for i in order.items]
 
     products = await get_products_by_ids(merchant.id, product_ids)
     products_with_autoreply = [p for p in products if p.config.use_autoreply]
 
     for p in products_with_autoreply:
-        dm_content = p.config.autoreply_message
+        dm_content = p.config.autoreply_message or ""
         await send_dm(
-            merchant, order.public_key, DirectMessageType.PLAIN_TEXT.value, dm_content
+            merchant,
+            order.public_key,
+            DirectMessageType.PLAIN_TEXT.value,
+            dm_content,
         )
         await asyncio.sleep(1)  # do not send all autoreplies at once
 
@@ -254,7 +256,7 @@ async def autoreply_for_products_in_order(
 async def send_dm(
     merchant: Merchant,
     other_pubkey: str,
-    type_: str,
+    type_: int,
     dm_content: str,
 ):
     dm_event = merchant.build_dm_event(dm_content, other_pubkey)
@@ -331,7 +333,7 @@ async def create_or_update_order_from_dm(
     merchant_id: str, merchant_pubkey: str, dm: DirectMessage
 ):
     type_, json_data = PartialDirectMessage.parse_message(dm.message)
-    if "id" not in json_data:
+    if not json_data or "id" not in json_data:
         return
 
     if type_ == DirectMessageType.CUSTOMER_ORDER:
@@ -358,10 +360,11 @@ async def create_or_update_order_from_dm(
         if not pr:
             return
         invoice = decode(pr)
+        total = invoice.amount_msat / 1000 if invoice.amount_msat else 0
         await update_order(
             merchant_id,
             payment_request.id,
-            **{"total": invoice.amount_msat / 1000, "invoice_id": invoice.payment_hash},
+            **{"total": total, "invoice_id": invoice.payment_hash},
         )
         return
 

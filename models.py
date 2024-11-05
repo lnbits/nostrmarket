@@ -33,13 +33,13 @@ class Nostrable:
 
 
 class MerchantProfile(BaseModel):
-    name: Optional[str]
-    about: Optional[str]
-    picture: Optional[str]
+    name: Optional[str] = None
+    about: Optional[str] = None
+    picture: Optional[str] = None
 
 
 class MerchantConfig(MerchantProfile):
-    event_id: Optional[str]
+    event_id: Optional[str] = None
     sync_from_nostr = False
     active: bool = False
     restore_in_progress: Optional[bool] = False
@@ -123,8 +123,8 @@ class Merchant(PartialMerchant, Nostrable):
 
 ######################################## ZONES ########################################
 class PartialZone(BaseModel):
-    id: Optional[str]
-    name: Optional[str]
+    id: Optional[str] = None
+    name: Optional[str] = None
     currency: str
     cost: float
     countries: List[str] = []
@@ -144,12 +144,12 @@ class Zone(PartialZone):
 
 
 class StallConfig(BaseModel):
-    image_url: Optional[str]
-    description: Optional[str]
+    image_url: Optional[str] = None
+    description: Optional[str] = None
 
 
 class PartialStall(BaseModel):
-    id: Optional[str]
+    id: Optional[str] = None
     wallet: str
     name: str
     currency: str = "sat"
@@ -158,8 +158,8 @@ class PartialStall(BaseModel):
     pending: bool = False
 
     """Last published nostr event for this Stall"""
-    event_id: Optional[str]
-    event_created_at: Optional[int]
+    event_id: Optional[str] = None
+    event_created_at: Optional[int] = None
 
     def validate_stall(self):
         for z in self.shipping_zones:
@@ -196,7 +196,7 @@ class Stall(PartialStall, Nostrable):
             pubkey=pubkey,
             created_at=round(time.time()),
             kind=5,
-            tags=[["e", self.event_id]],
+            tags=[["e", self.event_id or ""]],
             content=f"Stall '{self.name}' deleted",
         )
         delete_event.id = delete_event.event_id
@@ -220,15 +220,15 @@ class ProductShippingCost(BaseModel):
 
 
 class ProductConfig(BaseModel):
-    description: Optional[str]
-    currency: Optional[str]
+    description: Optional[str] = None
+    currency: Optional[str] = None
     use_autoreply: Optional[bool] = False
-    autoreply_message: Optional[str]
-    shipping: Optional[List[ProductShippingCost]] = []
+    autoreply_message: Optional[str] = None
+    shipping: List[ProductShippingCost] = []
 
 
 class PartialProduct(BaseModel):
-    id: Optional[str]
+    id: Optional[str] = None
     stall_id: str
     name: str
     categories: List[str] = []
@@ -240,8 +240,8 @@ class PartialProduct(BaseModel):
     config: ProductConfig = ProductConfig()
 
     """Last published nostr event for this Product"""
-    event_id: Optional[str]
-    event_created_at: Optional[int]
+    event_id: Optional[str] = None
+    event_created_at: Optional[int] = None
 
 
 class Product(PartialProduct, Nostrable):
@@ -281,7 +281,7 @@ class Product(PartialProduct, Nostrable):
             pubkey=pubkey,
             created_at=round(time.time()),
             kind=5,
-            tags=[["e", self.event_id]],
+            tags=[["e", self.event_id or ""]],
             content=f"Product '{self.name}' deleted",
         )
         delete_event.id = delete_event.event_id
@@ -302,6 +302,10 @@ class ProductOverview(BaseModel):
     name: str
     price: float
 
+    @classmethod
+    def from_product(cls, p: Product) -> "ProductOverview":
+        return ProductOverview(id=p.id, name=p.name, price=p.price)
+
 
 ######################################## ORDERS ########################################
 
@@ -312,9 +316,9 @@ class OrderItem(BaseModel):
 
 
 class OrderContact(BaseModel):
-    nostr: Optional[str]
-    phone: Optional[str]
-    email: Optional[str]
+    nostr: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
 
 
 class OrderExtra(BaseModel):
@@ -323,27 +327,33 @@ class OrderExtra(BaseModel):
     btc_price: str
     shipping_cost: float = 0
     shipping_cost_sat: float = 0
-    fail_message: Optional[str]
+    fail_message: Optional[str] = None
 
     @classmethod
     async def from_products(cls, products: List[Product]):
         currency = products[0].config.currency if len(products) else "sat"
         exchange_rate = (
-            (await btc_price(currency)) if currency and currency != "sat" else 1
+            await btc_price(currency) if currency and currency != "sat" else 1
         )
-        return OrderExtra(products=products, currency=currency, btc_price=exchange_rate)
+
+        products_overview = [ProductOverview.from_product(p) for p in products]
+        return OrderExtra(
+            products=products_overview,
+            currency=currency or "sat",
+            btc_price=str(exchange_rate),
+        )
 
 
 class PartialOrder(BaseModel):
     id: str
-    event_id: Optional[str]
-    event_created_at: Optional[int]
+    event_id: Optional[str] = None
+    event_created_at: Optional[int] = None
     public_key: str
     merchant_public_key: str
     shipping_id: str
     items: List[OrderItem]
-    contact: Optional[OrderContact]
-    address: Optional[str]
+    contact: Optional[OrderContact] = None
+    address: Optional[str] = None
 
     def validate_order(self):
         assert len(self.items) != 0, f"Order has no items. Order: '{self.id}'"
@@ -384,8 +394,8 @@ class PartialOrder(BaseModel):
         product_cost: float = 0  # todo
         for item in self.items:
             assert item.quantity > 0, "Quantity cannot be negative"
-            price = product_prices[item.product_id]["price"]
-            currency = product_prices[item.product_id]["currency"]
+            price = float(product_prices[item.product_id]["price"])
+            currency = str(product_prices[item.product_id]["currency"])
             if currency != "sat":
                 price = await fiat_amount_as_satoshis(price, currency)
             product_cost += item.quantity * price
@@ -445,7 +455,7 @@ class Order(PartialOrder):
     total: float
     paid: bool = False
     shipped: bool = False
-    time: Optional[int]
+    time: Optional[int] = None
     extra: OrderExtra
 
     @classmethod
@@ -459,9 +469,9 @@ class Order(PartialOrder):
 
 class OrderStatusUpdate(BaseModel):
     id: str
-    message: Optional[str]
-    paid: Optional[bool]
-    shipped: Optional[bool]
+    message: Optional[str] = None
+    paid: Optional[bool] = False
+    shipped: Optional[bool] = None
 
 
 class OrderReissue(BaseModel):
@@ -476,7 +486,7 @@ class PaymentOption(BaseModel):
 
 class PaymentRequest(BaseModel):
     id: str
-    message: Optional[str]
+    message: Optional[str] = None
     payment_options: List[PaymentOption]
 
 
@@ -493,7 +503,7 @@ class DirectMessageType(Enum):
 
 
 class PartialDirectMessage(BaseModel):
-    event_id: Optional[str]
+    event_id: Optional[str] = None
     event_created_at: Optional[int] = None
     message: str
     public_key: str
@@ -526,8 +536,8 @@ class DirectMessage(PartialDirectMessage):
 
 
 class CustomerProfile(BaseModel):
-    name: Optional[str]
-    about: Optional[str]
+    name: Optional[str] = None
+    about: Optional[str] = None
 
 
 class Customer(BaseModel):

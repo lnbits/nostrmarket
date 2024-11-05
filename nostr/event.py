@@ -13,7 +13,7 @@ class NostrEvent(BaseModel):
     kind: int
     tags: List[List[str]] = []
     content: str = ""
-    sig: Optional[str]
+    sig: Optional[str] = None
 
     def serialize(self) -> List:
         return [0, self.pubkey, self.created_at, self.kind, self.tags, self.content]
