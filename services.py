@@ -106,7 +106,7 @@ async def build_order_with_payment(
     if not success:
         raise ValueError(message)
 
-    payment_hash, invoice = await create_invoice(
+    payment = await create_invoice(
         wallet_id=wallet_id,
         amount=round(product_cost_sat + shipping_cost_sat),
         memo=f"Order '{data.id}' for pubkey '{data.public_key}'",
@@ -124,12 +124,12 @@ async def build_order_with_payment(
     order = Order(
         **data.dict(),
         stall_id=products[0].stall_id,
-        invoice_id=payment_hash,
+        invoice_id=payment.payment_hash,
         total=product_cost_sat + shipping_cost_sat,
         extra=extra,
     )
 
-    return order, invoice, receipt
+    return order, payment.bolt11, receipt
 
 
 async def update_merchant_to_nostr(

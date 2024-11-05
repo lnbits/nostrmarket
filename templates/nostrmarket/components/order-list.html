@@ -106,7 +106,7 @@
             <q-td key="shipped" :props="props">
               <q-checkbox
                 v-model="props.row.shipped"
-                @input="showShipOrderDialog(props.row)"
+                @update:model-value="showShipOrderDialog(props.row)"
                 :label="props.row.shipped ? 'Yes' : 'No'"
                 size="sm"
               ></q-checkbox>

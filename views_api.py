@@ -862,7 +862,7 @@ async def api_update_order_status(
 async def api_restore_order(
     event_id: str,
     wallet: WalletTypeInfo = Depends(require_admin_key),
-) -> Order:
+) -> Optional[Order]:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"

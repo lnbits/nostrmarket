@@ -460,7 +460,8 @@ async def get_products_by_ids(
         f"""
             SELECT id, stall_id, name, price, quantity, active, category_list, meta
             FROM nostrmarket.products
-            WHERE merchant_id = :merchant_id AND pending = false AND id IN ({", ".join(keys)})
+            WHERE merchant_id = :merchant_id
+                  AND pending = false AND id IN ({", ".join(keys)})
         """,
         values,
     )
@@ -604,14 +605,17 @@ async def get_order_by_event_id(merchant_id: str, event_id: str) -> Optional[Ord
 
 async def get_orders(merchant_id: str, **kwargs) -> List[Order]:
     q = " AND ".join(
-        [f"{field[0]} = :{field[0]}" for field in kwargs.items() if field[1] is not None]
+        [
+            f"{field[0]} = :{field[0]}"
+            for field in kwargs.items()
+            if field[1] is not None
+        ]
     )
     values = {"merchant_id": merchant_id}
     for field in kwargs.items():
-        if field[1] is  None:
+        if field[1] is None:
             continue
         values[field[0]] = field[1]
-    
 
     rows = await db.fetchall(
         f"""
@@ -628,14 +632,18 @@ async def get_orders_for_stall(
     merchant_id: str, stall_id: str, **kwargs
 ) -> List[Order]:
     q = " AND ".join(
-        [f"{field[0]} = :{field[0]}" for field in kwargs.items() if field[1] is not None]
+        [
+            f"{field[0]} = :{field[0]}"
+            for field in kwargs.items()
+            if field[1] is not None
+        ]
     )
     values = {"merchant_id": merchant_id, "stall_id": stall_id}
     for field in kwargs.items():
-        if field[1] is  None:
+        if field[1] is None:
             continue
         values[field[0]] = field[1]
-    
+
     rows = await db.fetchall(
         f"""
             SELECT * FROM nostrmarket.orders
@@ -649,16 +657,20 @@ async def get_orders_for_stall(
 
 async def update_order(merchant_id: str, order_id: str, **kwargs) -> Optional[Order]:
     q = ", ".join(
-        [f"{field[0]} = :{field[0]}" for field in kwargs.items() if field[1] is not None]
+        [
+            f"{field[0]} = :{field[0]}"
+            for field in kwargs.items()
+            if field[1] is not None
+        ]
     )
     values = {"merchant_id": merchant_id, "id": order_id}
     for field in kwargs.items():
-        if field[1] is  None:
+        if field[1] is None:
             continue
         values[field[0]] = field[1]
     await db.execute(
         f"""
-            UPDATE nostrmarket.orders 
+            UPDATE nostrmarket.orders
             SET {q} WHERE merchant_id = :merchant_id and id = :id
         """,
         values,

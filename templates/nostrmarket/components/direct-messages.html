@@ -57,7 +57,6 @@
               v-for="(dm, index) in messagesAsJson"
               :key="index"
               :name="dm.incoming ? 'customer': 'me'"
-              :text="dm.isJson ? [] : [dm.message]"
               :sent="!dm.incoming"
               :stamp="dm.dateFrom"
               :bg-color="dm.incoming ? 'white' : 'light-green-2'"
@@ -92,6 +91,7 @@
                   >...</q-badge
                 >
               </div>
+              <div v-else><span v-text="dm.message"></span></div>
             </q-chat-message>
           </div>
         </div>
