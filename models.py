@@ -2,7 +2,6 @@ import json
 import time
 from abc import abstractmethod
 from enum import Enum
-from sqlite3 import Row
 from typing import Any, List, Optional, Tuple
 
 from lnbits.utils.exchange_rates import btc_price, fiat_amount_as_satoshis
@@ -81,8 +80,8 @@ class Merchant(PartialMerchant, Nostrable):
         return event
 
     @classmethod
-    def from_row(cls, row: Row) -> "Merchant":
-        merchant = cls(**dict(row))
+    def from_row(cls, row: dict) -> "Merchant":
+        merchant = cls(**row)
         merchant.config = MerchantConfig(**json.loads(row["meta"]))
         return merchant
 
@@ -134,8 +133,8 @@ class Zone(PartialZone):
     id: str
 
     @classmethod
-    def from_row(cls, row: Row) -> "Zone":
-        zone = cls(**dict(row))
+    def from_row(cls, row: dict) -> "Zone":
+        zone = cls(**row)
         zone.countries = json.loads(row["regions"])
         return zone
 
@@ -204,8 +203,8 @@ class Stall(PartialStall, Nostrable):
         return delete_event
 
     @classmethod
-    def from_row(cls, row: Row) -> "Stall":
-        stall = cls(**dict(row))
+    def from_row(cls, row: dict) -> "Stall":
+        stall = cls(**row)
         stall.config = StallConfig(**json.loads(row["meta"]))
         stall.shipping_zones = [Zone(**z) for z in json.loads(row["zones"])]
         return stall
@@ -289,8 +288,8 @@ class Product(PartialProduct, Nostrable):
         return delete_event
 
     @classmethod
-    def from_row(cls, row: Row) -> "Product":
-        product = cls(**dict(row))
+    def from_row(cls, row: dict) -> "Product":
+        product = cls(**row)
         product.config = ProductConfig(**json.loads(row["meta"]))
         product.images = json.loads(row["image_urls"]) if "image_urls" in row else []
         product.categories = json.loads(row["category_list"])
@@ -459,11 +458,11 @@ class Order(PartialOrder):
     extra: OrderExtra
 
     @classmethod
-    def from_row(cls, row: Row) -> "Order":
+    def from_row(cls, row: dict) -> "Order":
         contact = OrderContact(**json.loads(row["contact_data"]))
         extra = OrderExtra(**json.loads(row["extra_data"]))
         items = [OrderItem(**z) for z in json.loads(row["order_items"])]
-        order = cls(**dict(row), contact=contact, items=items, extra=extra)
+        order = cls(**row, contact=contact, items=items, extra=extra)
         return order
 
 
@@ -527,9 +526,8 @@ class DirectMessage(PartialDirectMessage):
     id: str
 
     @classmethod
-    def from_row(cls, row: Row) -> "DirectMessage":
-        dm = cls(**dict(row))
-        return dm
+    def from_row(cls, row: dict) -> "DirectMessage":
+        return cls(**row)
 
 
 ######################################## CUSTOMERS #####################################
@@ -548,8 +546,8 @@ class Customer(BaseModel):
     unread_messages: int = 0
 
     @classmethod
-    def from_row(cls, row: Row) -> "Customer":
-        customer = cls(**dict(row))
+    def from_row(cls, row: dict) -> "Customer":
+        customer = cls(**row)
         customer.profile = (
             CustomerProfile(**json.loads(row["meta"])) if "meta" in row else None
         )
