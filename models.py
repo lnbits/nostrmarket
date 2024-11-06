@@ -300,6 +300,7 @@ class ProductOverview(BaseModel):
     id: str
     name: str
     price: float
+    product_shipping_cost: Optional[float] = None
 
     @classmethod
     def from_product(cls, p: Product) -> "ProductOverview":
@@ -393,7 +394,7 @@ class PartialOrder(BaseModel):
         product_cost: float = 0  # todo
         for item in self.items:
             assert item.quantity > 0, "Quantity cannot be negative"
-            price = float(product_prices[item.product_id]["price"])
+            price = float(str(product_prices[item.product_id]["price"]))
             currency = str(product_prices[item.product_id]["currency"])
             if currency != "sat":
                 price = await fiat_amount_as_satoshis(price, currency)
@@ -412,29 +413,30 @@ class PartialOrder(BaseModel):
         if len(products) == 0:
             return "[No Products]"
         receipt = ""
-        product_prices = {}
+        product_prices: dict[str, ProductOverview] = {}
         for p in products:
             product_shipping_cost = next(
                 (s.cost for s in p.config.shipping if s.id == shipping_id), 0
             )
-            product_prices[p.id] = {
-                "name": p.name,
-                "price": p.price,
-                "product_shipping_cost": product_shipping_cost,
-            }
+            product_prices[p.id] = ProductOverview(
+                id=p.id,
+                name=p.name,
+                price=p.price,
+                product_shipping_cost=product_shipping_cost,
+            )
 
         currency = products[0].config.currency or "sat"
         products_cost: float = 0  # todo
         items_receipts = []
         for item in self.items:
             prod = product_prices[item.product_id]
-            price = prod["price"] + prod["product_shipping_cost"]
+            price = prod.price + (prod.product_shipping_cost or 0)
 
             products_cost += item.quantity * price
 
             items_receipts.append(
-                f"""[{prod["name"]}:  {item.quantity} x ({prod["price"]}"""
-                f""" + {prod["product_shipping_cost"]})"""
+                f"""[{prod.name}:  {item.quantity} x ({prod.price}"""
+                f""" + {prod.product_shipping_cost})"""
                 f""" = {item.quantity * price} {currency}] """
             )
 
