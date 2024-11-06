@@ -1,0 +1,466 @@
+<div>
+  <q-tabs v-model="tab" no-caps class="bg-dark text-white shadow-2">
+    <q-tab name="info" label="Stall Info"></q-tab>
+    <q-tab name="products" label="Products"></q-tab>
+    <q-tab name="orders" label="Orders"></q-tab>
+  </q-tabs>
+  <q-tab-panels v-model="tab">
+    <q-tab-panel name="info">
+      <div v-if="stall">
+        <div class="row items-center no-wrap q-mb-md">
+          <div class="col-3 q-pr-lg">ID:</div>
+          <div class="col-6 col-sm-8 q-pr-lg">
+            <q-input
+              filled
+              dense
+              readonly
+              disabled
+              v-model.trim="stall.id"
+              type="text"
+            ></q-input>
+          </div>
+          <div class="col-3 col-sm-1"></div>
+        </div>
+        <div class="row items-center no-wrap q-mb-md">
+          <div class="col-3 q-pr-lg">Name:</div>
+          <div class="col-6 col-sm-8 q-pr-lg">
+            <q-input
+              filled
+              dense
+              v-model.trim="stall.name"
+              type="text"
+            ></q-input>
+          </div>
+          <div class="col-3 col-sm-1"></div>
+        </div>
+        <div class="row items-center no-wrap q-mb-md">
+          <div class="col-3 q-pr-lg">Description:</div>
+          <div class="col-6 col-sm-8 q-pr-lg">
+            <q-input
+              filled
+              dense
+              v-model.trim="stall.config.description"
+              type="textarea"
+              rows="3"
+              label="Description"
+            ></q-input>
+          </div>
+          <div class="col-3 col-sm-1"></div>
+        </div>
+        <div class="row items-center no-wrap q-mb-md">
+          <div class="col-3 q-pr-lg">Wallet:</div>
+          <div class="col-6 col-sm-8 q-pr-lg">
+            <q-select
+              filled
+              dense
+              emit-value
+              v-model="stall.wallet"
+              :options="walletOptions"
+              label="Wallet *"
+            >
+            </q-select>
+          </div>
+          <div class="col-3 col-sm-1"></div>
+        </div>
+        <div class="row items-center no-wrap q-mb-md">
+          <div class="col-3 q-pr-lg">Currency:</div>
+          <div class="col-6 col-sm-8 q-pr-lg">
+            <q-select
+              filled
+              dense
+              v-model="stall.currency"
+              type="text"
+              label="Unit"
+              :options="currencies"
+            ></q-select>
+          </div>
+          <div class="col-3 col-sm-1"></div>
+        </div>
+        <div class="row items-center no-wrap q-mb-md">
+          <div class="col-3 q-pr-lg">Shipping Zones:</div>
+          <div class="col-6 col-sm-8 q-pr-lg">
+            <q-select
+              :options="filteredZoneOptions"
+              filled
+              dense
+              multiple
+              v-model.trim="stall.shipping_zones"
+              label="Shipping Zones"
+            ></q-select>
+          </div>
+          <div class="col-3 col-sm-1"></div>
+        </div>
+      </div>
+      <div class="row items-center q-mt-xl">
+        <div class="col-6 q-pr-lg">
+          <q-btn
+            outline
+            unelevated
+            class="float-left"
+            color="primary"
+            @click="updateStall()"
+            >Update Stall</q-btn
+          >
+        </div>
+        <div class="col-6">
+          <q-btn
+            outline
+            unelevated
+            icon="cancel"
+            class="float-right"
+            @click="deleteStall()"
+            >Delete Stall</q-btn
+          >
+        </div>
+      </div>
+    </q-tab-panel>
+    <q-tab-panel name="products">
+      <div v-if="stall">
+        <div class="row items-center no-wrap q-mb-md">
+          <div class="col-3 q-pr-lg">
+            <q-btn-dropdown
+              @click="showNewProductDialog()"
+              outline
+              unelevated
+              split
+              class="float-left"
+              color="primary"
+              label="New Product"
+            >
+              <q-item @click="showNewProductDialog()" clickable v-close-popup>
+                <q-item-section>
+                  <q-item-label>New Product</q-item-label>
+                  <q-item-label caption>Create a new product</q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item
+                @click="openSelectPendingProductDialog"
+                clickable
+                v-close-popup
+              >
+                <q-item-section>
+                  <q-item-label>Restore Product</q-item-label>
+                  <q-item-label caption
+                    >Restore existing product from Nostr</q-item-label
+                  >
+                </q-item-section>
+              </q-item>
+            </q-btn-dropdown>
+          </div>
+          <div class="col-6 col-sm-8 q-pr-lg"></div>
+          <div class="col-3 col-sm-1"></div>
+        </div>
+
+        <div class="row items-center no-wrap q-mb-md">
+          <div class="col-12">
+            <q-table
+              flat
+              dense
+              :rows="products"
+              row-key="id"
+              :columns="productsTable.columns"
+              v-model:pagination="productsTable.pagination"
+              :filter="productsFilter"
+            >
+              <template v-slot:body="props">
+                <q-tr :props="props">
+                  <q-td auto-width>
+                    <q-btn
+                      size="sm"
+                      color="grey"
+                      dense
+                      @click="deleteProduct(props.row.id)"
+                      icon="delete"
+                    />
+                  </q-td>
+                  <q-td auto-width>
+                    <q-btn
+                      size="sm"
+                      color="primary"
+                      dense
+                      @click="editProduct(props.row)"
+                      icon="edit"
+                    />
+                  </q-td>
+                  <q-td auto-width>
+                    <q-toggle
+                      @update:model-value="updateProduct({ ...props.row, active: !props.row.active })"
+                      size="xs"
+                      checked-icon="check"
+                      v-model="props.row.active"
+                      color="green"
+                      unchecked-icon="clear"
+                    />
+                  </q-td>
+
+                  <q-td key="id" :props="props"
+                    ><span v-text="props.row.id"></span>
+                  </q-td>
+                  <q-td key="name" :props="props">
+                    <span v-text="shortLabel(props.row.name)"></span>
+                  </q-td>
+                  <q-td key="price" :props="props"
+                    ><span v-text="props.row.price"></span>
+                  </q-td>
+                  <q-td key="quantity" :props="props">
+                    <span v-text="props.row.quantity"></span>
+                  </q-td>
+                </q-tr>
+              </template>
+            </q-table>
+          </div>
+        </div>
+      </div>
+    </q-tab-panel>
+    <q-tab-panel name="orders">
+      <div v-if="stall">
+        <order-list
+          :adminkey="adminkey"
+          :inkey="inkey"
+          :stall-id="stallId"
+          @customer-selected="customerSelectedForOrder"
+        ></order-list>
+      </div>
+    </q-tab-panel>
+  </q-tab-panels>
+  <q-dialog v-model="productDialog.showDialog" position="top">
+    <q-card
+      v-if="stall && productDialog.data"
+      class="q-pa-lg q-pt-xl"
+      style="width: 500px"
+    >
+      <q-form @submit="sendProductFormData" class="q-gutter-md">
+        <q-input
+          filled
+          dense
+          v-model.trim="productDialog.data.name"
+          label="Name"
+        ></q-input>
+
+        <q-input
+          filled
+          dense
+          v-model.trim="productDialog.data.config.description"
+          label="Description"
+        ></q-input>
+
+        <div class="row q-mb-sm">
+          <div class="col">
+            <q-input
+              filled
+              dense
+              v-model.number="productDialog.data.price"
+              type="number"
+              :label="'Price (' + stall.currency + ') *'"
+              :step="stall.currency != 'sat' ? '0.01' : '1'"
+              :mask="stall.currency != 'sat' ? '#.##' : '#'"
+              fill-mask="0"
+              reverse-fill-mask
+            ></q-input>
+          </div>
+          <div class="col q-ml-md">
+            <q-input
+              filled
+              dense
+              v-model.number="productDialog.data.quantity"
+              type="number"
+              label="Quantity"
+            ></q-input>
+          </div>
+        </div>
+
+        <q-expansion-item
+          group="advanced"
+          label="Categories"
+          caption="Add tags to producsts, make them easy to search."
+        >
+          <div class="q-pl-sm q-pt-sm">
+            <q-select
+              filled
+              multiple
+              dense
+              emit-value
+              v-model.trim="productDialog.data.categories"
+              use-input
+              use-chips
+              multiple
+              hide-dropdown-icon
+              input-debounce="0"
+              new-value-mode="add-unique"
+              label="Categories (Hit Enter to add)"
+              placeholder="crafts,robots,etc"
+            ></q-select>
+          </div>
+        </q-expansion-item>
+
+        <q-expansion-item
+          group="advanced"
+          label="Images"
+          caption="Add images for product."
+        >
+          <div class="q-pl-sm q-pt-sm">
+            <q-input
+              filled
+              dense
+              v-model.trim="productDialog.data.image"
+              @keydown.enter="addProductImage"
+              type="url"
+              label="Image URL"
+            >
+              <q-btn @click="addProductImage" dense flat icon="add"></q-btn
+            ></q-input>
+
+            <q-chip
+              v-for="imageUrl in productDialog.data.images"
+              :key="imageUrl"
+              removable
+              @remove="removeProductImage(imageUrl)"
+              color="primary"
+              text-color="white"
+            >
+              <span v-text="imageUrl.split('/').pop()"></span>
+            </q-chip>
+          </div>
+        </q-expansion-item>
+
+        <q-expansion-item
+          group="advanced"
+          label="Custom Shipping Cost"
+          caption="Configure custom shipping costs for this product"
+        >
+          <div
+            v-for="zone of productDialog.data.config.shipping"
+            class="row q-mb-sm q-ml-lg q-mt-sm"
+          >
+            <div class="col">
+              <span v-text="zone.name"></span>
+            </div>
+            <div class="col q-pr-md">
+              <q-input
+                v-model="zone.cost"
+                filled
+                dense
+                type="number"
+                label="Extra cost"
+              >
+              </q-input>
+            </div>
+          </div>
+        </q-expansion-item>
+        <q-expansion-item
+          group="advanced"
+          label="Autoreply"
+          caption="Autoreply when paid"
+        >
+          <q-card>
+            <q-card-section>
+              <div class="row q-mb-sm">
+                <div class="col">
+                  <q-checkbox
+                    v-model="productDialog.data.config.use_autoreply"
+                    dense
+                    label="Send a direct message when paid"
+                    class="q-ml-sm"
+                  />
+                </div>
+              </div>
+
+              <div class="row q-mb-sm q-ml-sm">
+                <div class="col">
+                  <q-input
+                    v-model="productDialog.data.config.autoreply_message"
+                    filled
+                    dense
+                    type="textarea"
+                    rows="5"
+                    label="Autoreply message"
+                    hint="It can include link to a digital asset"
+                  >
+                  </q-input>
+                </div>
+              </div>
+            </q-card-section>
+          </q-card>
+        </q-expansion-item>
+
+        <div class="row q-mt-lg">
+          <q-btn
+            v-if="productDialog.data.id"
+            type="submit"
+            :label="productDialog.data.pending ? 'Restore Product' : 'Update Product'"
+            unelevated
+            color="primary"
+          ></q-btn>
+
+          <q-btn
+            v-else
+            unelevated
+            color="primary"
+            :disable="!productDialog.data.price
+                || !productDialog.data.name
+                || !productDialog.data.quantity"
+            type="submit"
+            >Create Product</q-btn
+          >
+
+          <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+            >Cancel</q-btn
+          >
+        </div>
+      </q-form>
+    </q-card>
+  </q-dialog>
+  <q-dialog v-model="productDialog.showRestore" position="top">
+    <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+      <div v-if="pendingProducts && pendingProducts.length" class="row q-mt-lg">
+        <q-item
+          v-for="pendingProduct of pendingProducts"
+          :key="pendingProduct.id"
+          tag="label"
+          class="full-width"
+          v-ripple
+        >
+          <q-item-section>
+            <q-item-label
+              ><span v-text="pendingProduct.name"></span
+            ></q-item-label>
+            <q-item-label caption
+              ><span v-text="pendingProduct.config?.description"></span
+            ></q-item-label>
+          </q-item-section>
+
+          <q-item-section class="q-pl-xl float-right">
+            <q-btn
+              @click="openRestoreProductDialog(pendingProduct)"
+              v-close-popup
+              flat
+              color="green"
+              class="q-ml-auto float-right"
+              >Restore</q-btn
+            >
+          </q-item-section>
+          <q-item-section class="float-right">
+            <q-btn
+              @click="deleteProduct(pendingProduct.id)"
+              v-close-popup
+              color="red"
+              class="q-ml-auto float-right"
+              icon="cancel"
+            ></q-btn>
+          </q-item-section>
+        </q-item>
+      </div>
+      <div v-else>There are no products to be restored.</div>
+      <div class="row q-mt-lg">
+        <q-btn
+          @click="restoreAllPendingProducts"
+          v-close-popup
+          flat
+          color="green"
+          >Restore All</q-btn
+        >
+        <q-btn v-close-popup flat color="grey" class="q-ml-auto">Close</q-btn>
+      </div>
+    </q-card>
+  </q-dialog>
+</div>

@@ -1,0 +1,169 @@
+<div>
+  <q-card>
+    <q-card-section>
+      <div class="row">
+        <div class="col-2">
+          <h6 class="text-subtitle1 q-my-none">Messages</h6>
+        </div>
+        <div class="col-4">
+          <q-badge v-if="unreadMessages" color="primary" outline
+            ><span v-text="unreadMessages"></span>&nbsp; new</q-badge
+          >
+        </div>
+        <div class="col-6">
+          <q-btn
+            v-if="activePublicKey"
+            @click="showClientOrders"
+            unelevated
+            outline
+            class="float-right"
+            >Client Orders</q-btn
+          >
+        </div>
+      </div>
+    </q-card-section>
+    <q-card-section class="q-pa-none">
+      <q-separator></q-separator>
+    </q-card-section>
+    <q-card-section>
+      <div class="row">
+        <div class="col-10">
+          <q-select
+            v-model="activePublicKey"
+            :options="customers.map(c => ({label: buildCustomerLabel(c), value: c.public_key}))"
+            label="Select Customer"
+            emit-value
+            @input="selectActiveCustomer()"
+          >
+          </q-select>
+        </div>
+        <div class="col-2">
+          <q-btn
+            label="Add"
+            color="primary"
+            class="float-right q-mt-md"
+            @click="showAddPublicKey = true"
+          >
+            <q-tooltip> Add a public key to chat with </q-tooltip>
+          </q-btn>
+        </div>
+      </div>
+    </q-card-section>
+    <q-card-section>
+      <div class="chat-container" ref="chatCard">
+        <div class="chat-box">
+          <div class="chat-messages" style="height: 45vh">
+            <q-chat-message
+              v-for="(dm, index) in messagesAsJson"
+              :key="index"
+              :name="dm.incoming ? 'customer': 'me'"
+              :sent="!dm.incoming"
+              :stamp="dm.dateFrom"
+              :bg-color="dm.incoming ? 'white' : 'light-green-2'"
+              :class="'chat-mesage-index-'+index"
+            >
+              <div v-if="dm.isJson">
+                <div v-if="dm.message.type === 0">
+                  <strong>New order:</strong>
+                </div>
+                <div v-else-if="dm.message.type === 1">
+                  <strong>Reply sent for order: </strong>
+                </div>
+                <div v-else-if="dm.message.type === 2">
+                  <q-badge v-if="dm.message.paid" color="green">Paid </q-badge>
+                  <q-badge v-if="dm.message.shipped" color="green"
+                    >Shipped
+                  </q-badge>
+                </div>
+                <div>
+                  <span v-text="dm.message.message"></span>
+                  <q-badge color="orange">
+                    <span
+                      v-text="dm.message.id"
+                      @click="showOrderDetails(dm.message.id, dm.event_id)"
+                      class="cursor-pointer"
+                    ></span>
+                  </q-badge>
+                </div>
+                <q-badge
+                  @click="showMessageRawData(index)"
+                  class="cursor-pointer"
+                  >...</q-badge
+                >
+              </div>
+              <div v-else><span v-text="dm.message"></span></div>
+            </q-chat-message>
+          </div>
+        </div>
+        <q-card-section>
+          <q-form @submit="sendDirectMesage" class="full-width chat-input">
+            <q-input
+              ref="newMessage"
+              v-model="newMessage"
+              placeholder="Message"
+              class="full-width"
+              dense
+              outlined
+            >
+              <template>
+                <q-btn
+                  round
+                  dense
+                  flat
+                  type="submit"
+                  icon="send"
+                  color="primary"
+                />
+              </template>
+            </q-input>
+          </q-form>
+        </q-card-section>
+      </div>
+    </q-card-section>
+  </q-card>
+  <div>
+    <q-dialog v-model="showAddPublicKey" position="top">
+      <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+        <q-form @submit="addPublicKey" class="q-gutter-md">
+          <q-input
+            filled
+            dense
+            v-model.trim="newPublicKey"
+            label="Public Key (hex or nsec)"
+          ></q-input>
+          <div class="row q-mt-lg">
+            <q-btn
+              unelevated
+              color="primary"
+              :disable="!newPublicKey"
+              type="submit"
+              >Add</q-btn
+            >
+            <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+              >Cancel</q-btn
+            >
+          </div>
+        </q-form>
+      </q-card>
+    </q-dialog>
+    <q-dialog v-model="showRawMessage" position="top">
+      <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+        <q-form>
+          <q-input
+            filled
+            dense
+            type="textarea"
+            rows="20"
+            v-model.trim="rawMessage"
+            label="Raw Data"
+          ></q-input>
+          <div class="row q-mt-lg">
+            <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+              >Close</q-btn
+            >
+          </div>
+        </q-form>
+      </q-card>
+    </q-dialog>
+  </div>
+</div>

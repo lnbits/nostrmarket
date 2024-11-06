@@ -1,10 +1,9 @@
-from asyncio import Queue
 import asyncio
-
-from loguru import logger
+from asyncio import Queue
 
 from lnbits.core.models import Payment
 from lnbits.tasks import register_invoice_listener
+from loguru import logger
 
 from .nostr.nostr_client import NostrClient
 from .services import (

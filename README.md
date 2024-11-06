@@ -1,6 +1,6 @@
 # Nostr Market ([NIP-15](https://github.com/nostr-protocol/nips/blob/master/15.md)) - <small>[LNbits](https://github.com/lnbits/lnbits) extension</small>
-<small>For more about LNBits extension check [this tutorial](https://github.com/lnbits/lnbits/wiki/LNbits-Extensions).</small>
 
+<small>For more about LNBits extension check [this tutorial](https://github.com/lnbits/lnbits/wiki/LNbits-Extensions).</small>
 
 **Demo at Nostrica <a href="https://www.youtube.com/live/2NueacYJovA?feature=share&t=6846">here</a>**.
 
@@ -8,14 +8,14 @@
 
 > The concepts around resilience in Diagon Alley helped influence the creation of the NOSTR protocol, now we get to build Diagon Alley on NOSTR!
 
-
 ## Prerequisites
+
 This extension uses the LNbits [nostrclient](https://github.com/lnbits/nostrclient) extension, an extension that makes _nostrfying_ other extensions easy.
 ![image](https://user-images.githubusercontent.com/2951406/236773044-81d3f30b-1ce7-4c5d-bdaf-b4a80ddddc58.png)
+
 - before you continue, please make sure that [nostrclient](https://github.com/lnbits/nostrclient) extension is installed, activated and correctly configured.
 - [nostrclient](https://github.com/lnbits/nostrclient) is usually installed as admin-only extension, so if you do not have admin access please ask an admin to confirm that [nostrclient](https://github.com/lnbits/nostrclient) is OK.
 - see the [Troubleshoot](https://github.com/lnbits/nostrclient#troubleshoot) section for more details on how to check the health of `nostrclient` extension
-
 
 ## Create, or import, a merchant account
 
@@ -97,35 +97,39 @@ Make sure to add your `merchant` public key to the list:
 ![image](https://user-images.githubusercontent.com/2951406/236787686-0e300c0a-eb5d-4490-aa70-568738ac78f4.png)
 
 ### Styling
+
 In order to create a customized Marketplace, we use `naddr` as defined in [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md#shareable-identifiers-with-extra-metadata). You must create an event (kind: `30019`) that has all the custom properties, including merchants and relays, of your marketplace. Start by going to the marketplace page:
 ![vanilla market](https://i.imgur.com/nCaMh1N.png)
 
-You'll need to Login, and head over to *Marketplace Info*. Optionally import some merchants and relays, that will be included in the event. Click on *Edit* and fill out your marketplace custom info:
+You'll need to Login, and head over to _Marketplace Info_. Optionally import some merchants and relays, that will be included in the event. Click on _Edit_ and fill out your marketplace custom info:
 ![edit](https://i.imgur.com/wEuHuN9.png)
 
 Fill in the optional fields:
+
 - Add a name to the Marketplace
 - Add a small description
 - Add a logo image URL
 - Add a banner image URL (max height: 250px)
-- Choose a theme 
+- Choose a theme
 
-By clicking *Publish*, a `kind: 30019` event will be sent to the defined relays containing all the information about your custom Marketplace. On the left drawer, a button with *Copy Naddr* will show up.
+By clicking _Publish_, a `kind: 30019` event will be sent to the defined relays containing all the information about your custom Marketplace. On the left drawer, a button with _Copy Naddr_ will show up.
 ![copy naddr](https://i.imgur.com/VuNIMVf.png)
 
-You can then share your Marketplace, with the merchants and relays, banner, and style by using that Nostr identifier. The URL for the marketplace will be for example: `https://legend.lnbits.com/nostrmarket/market?naddr=naddr1qqfy6ctjddjhgurvv93k....`, you need to include the URL parameter `naddr=<your naddr>`. When a user visits that URL, the client will get the `30019` event and configure the Marketplace to what you defined. In the example bellow, a couple of merchants, relays, `autumn` theme, name (*Veggies Market*) and a header banner:
+You can then share your Marketplace, with the merchants and relays, banner, and style by using that Nostr identifier. The URL for the marketplace will be for example: `https://legend.lnbits.com/nostrmarket/market?naddr=naddr1qqfy6ctjddjhgurvv93k....`, you need to include the URL parameter `naddr=<your naddr>`. When a user visits that URL, the client will get the `30019` event and configure the Marketplace to what you defined. In the example bellow, a couple of merchants, relays, `autumn` theme, name (_Veggies Market_) and a header banner:
 ![final](https://i.imgur.com/EYG7vYS.png)
 
 The nostr event is a replaceable event, so you can change it to what you like and publish a new one to replace a previous one. For example adding a new merchant, or remove, change theme, add more relays,e tc...
 
-
 ## Troubleshoot
+
 ### Check communication with Nostr
+
 In order to test that the integration with Nostr is working fine, one can add an `npub` to the chat box and check that DMs are working as expected:
 
 https://user-images.githubusercontent.com/2951406/236777983-259f81d8-136f-48b3-bb73-80749819b5f9.mov
 
 ### Restart connection to Nostr
+
 If the communication with Nostr is not working then an admin user can `Restart` the Nostr connection.
 
 Merchants can afterwards re-publish their products.
@@ -133,8 +137,8 @@ Merchants can afterwards re-publish their products.
 https://user-images.githubusercontent.com/2951406/236778651-7ada9f6d-07a1-491c-ac9c-55530326c32a.mp4
 
 ### Check Nostrclient extension
-- see the [Troubleshoot](https://github.com/lnbits/nostrclient#troubleshoot) section for more details on how to check the health of `nostrclient` extension
 
+- see the [Troubleshoot](https://github.com/lnbits/nostrclient#troubleshoot) section for more details on how to check the health of `nostrclient` extension
 
 ## Aditional info
 

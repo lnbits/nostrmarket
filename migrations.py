@@ -1,5 +1,4 @@
 async def m001_initial(db):
-
     """
     Initial merchants table.
     """
@@ -121,7 +120,10 @@ async def m001_initial(db):
         Create indexes for message fetching
         """
         await db.execute(
-            "CREATE INDEX idx_messages_timestamp ON nostrmarket.direct_messages (time DESC)"
+            """
+            CREATE INDEX idx_messages_timestamp
+            ON nostrmarket.direct_messages (time DESC)
+            """
         )
         await db.execute(
             "CREATE INDEX idx_event_id ON nostrmarket.direct_messages (event_id)"
@@ -142,23 +144,26 @@ async def m001_initial(db):
         """
     )
 
+
 async def m002_update_stall_and_product(db):
     await db.execute(
-        "ALTER TABLE nostrmarket.stalls ADD COLUMN pending BOOLEAN NOT NULL DEFAULT false;"
+        """
+            ALTER TABLE nostrmarket.stalls
+            ADD COLUMN pending BOOLEAN NOT NULL DEFAULT false;
+        """
     )
-    await db.execute(
-        "ALTER TABLE nostrmarket.stalls ADD COLUMN event_id TEXT;"
-    )
+    await db.execute("ALTER TABLE nostrmarket.stalls ADD COLUMN event_id TEXT;")
     await db.execute(
         "ALTER TABLE nostrmarket.stalls ADD COLUMN event_created_at INTEGER;"
     )
 
     await db.execute(
-        "ALTER TABLE nostrmarket.products ADD COLUMN pending BOOLEAN NOT NULL DEFAULT false;"
+        """
+            ALTER TABLE nostrmarket.products
+            ADD COLUMN pending BOOLEAN NOT NULL DEFAULT false;
+        """
     )
-    await db.execute(
-        "ALTER TABLE nostrmarket.products ADD COLUMN event_id TEXT;"
-    )
+    await db.execute("ALTER TABLE nostrmarket.products ADD COLUMN event_id TEXT;")
     await db.execute(
         "ALTER TABLE nostrmarket.products ADD COLUMN event_created_at INTEGER;"
     )
@@ -166,15 +171,21 @@ async def m002_update_stall_and_product(db):
 
 async def m003_update_direct_message_type(db):
     await db.execute(
-        "ALTER TABLE nostrmarket.direct_messages ADD COLUMN type INTEGER NOT NULL DEFAULT -1;"
+        """
+        ALTER TABLE nostrmarket.direct_messages
+        ADD COLUMN type INTEGER NOT NULL DEFAULT -1;
+        """
     )
 
+
 async def m004_add_merchant_timestamp(db):
-    await db.execute(
-        f"ALTER TABLE nostrmarket.merchants ADD COLUMN time TIMESTAMP;"
-    )
+    await db.execute("ALTER TABLE nostrmarket.merchants ADD COLUMN time TIMESTAMP;")
+
 
 async def m005_update_product_activation(db):
     await db.execute(
-        "ALTER TABLE nostrmarket.products ADD COLUMN active BOOLEAN NOT NULL DEFAULT true;"
+        """
+        ALTER TABLE nostrmarket.products
+        ADD COLUMN active BOOLEAN NOT NULL DEFAULT true;
+        """
     )

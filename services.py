@@ -2,10 +2,10 @@ import asyncio
 import json
 from typing import List, Optional, Tuple
 
-from loguru import logger
-
 from lnbits.bolt11 import decode
-from lnbits.core.services import websocket_updater, create_invoice, get_wallet
+from lnbits.core.crud import get_wallet
+from lnbits.core.services import create_invoice, websocket_updater
+from loguru import logger
 
 from . import nostr_client
 from .crud import (
@@ -75,7 +75,9 @@ async def create_new_order(
     await create_order(merchant.id, order)
 
     return PaymentRequest(
-        id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)], message=receipt
+        id=data.id,
+        payment_options=[PaymentOption(type="ln", link=invoice)],
+        message=receipt,
     )
 
 
@@ -89,12 +91,11 @@ async def build_order_with_payment(
     shipping_zone = await get_zone(merchant_id, data.shipping_id)
     assert shipping_zone, f"Shipping zone not found for order '{data.id}'"
 
+    assert shipping_zone.id
     product_cost_sat, shipping_cost_sat = await data.costs_in_sats(
         products, shipping_zone.id, shipping_zone.cost
     )
-    receipt = data.receipt(
-        products, shipping_zone.id, shipping_zone.cost
-    )
+    receipt = data.receipt(products, shipping_zone.id, shipping_zone.cost)
 
     wallet_id = await get_wallet_for_product(data.items[0].product_id)
     assert wallet_id, "Missing wallet for order `{data.id}`"
@@ -106,7 +107,7 @@ async def build_order_with_payment(
     if not success:
         raise ValueError(message)
 
-    payment_hash, invoice = await create_invoice(
+    payment = await create_invoice(
         wallet_id=wallet_id,
         amount=round(product_cost_sat + shipping_cost_sat),
         memo=f"Order '{data.id}' for pubkey '{data.public_key}'",
@@ -124,19 +125,21 @@ async def build_order_with_payment(
     order = Order(
         **data.dict(),
         stall_id=products[0].stall_id,
-        invoice_id=payment_hash,
+        invoice_id=payment.payment_hash,
         total=product_cost_sat + shipping_cost_sat,
         extra=extra,
     )
 
-    return order, invoice, receipt
+    return order, payment.bolt11, receipt
 
 
 async def update_merchant_to_nostr(
     merchant: Merchant, delete_merchant=False
 ) -> Merchant:
     stalls = await get_stalls(merchant.id)
+    event: Optional[NostrEvent] = None
     for stall in stalls:
+        assert stall.id
         products = await get_products(merchant.id, stall.id)
         for product in products:
             event = await sign_and_send_to_nostr(merchant, product, delete_merchant)
@@ -150,6 +153,7 @@ async def update_merchant_to_nostr(
     if delete_merchant:
         # merchant profile updates not supported yet
         event = await sign_and_send_to_nostr(merchant, merchant, delete_merchant)
+    assert event
     merchant.config.event_id = event.id
     return merchant
 
@@ -227,25 +231,29 @@ async def update_products_for_order(
         return success, message
 
     for p in products:
+        assert p.id
         product = await update_product_quantity(p.id, p.quantity)
+        assert product
         event = await sign_and_send_to_nostr(merchant, product)
         product.event_id = event.id
         await update_product(merchant.id, product)
 
     return True, "ok"
 
-async def autoreply_for_products_in_order(
-    merchant: Merchant, order: Order
-) -> Tuple[bool, str]:
+
+async def autoreply_for_products_in_order(merchant: Merchant, order: Order):
     product_ids = [i.product_id for i in order.items]
 
     products = await get_products_by_ids(merchant.id, product_ids)
     products_with_autoreply = [p for p in products if p.config.use_autoreply]
 
     for p in products_with_autoreply:
-        dm_content = p.config.autoreply_message
+        dm_content = p.config.autoreply_message or ""
         await send_dm(
-            merchant, order.public_key, DirectMessageType.PLAIN_TEXT.value, dm_content
+            merchant,
+            order.public_key,
+            DirectMessageType.PLAIN_TEXT.value,
+            dm_content,
         )
         await asyncio.sleep(1)  # do not send all autoreplies at once
 
@@ -253,7 +261,7 @@ async def autoreply_for_products_in_order(
 async def send_dm(
     merchant: Merchant,
     other_pubkey: str,
-    type: str,
+    type_: int,
     dm_content: str,
 ):
     dm_event = merchant.build_dm_event(dm_content, other_pubkey)
@@ -263,7 +271,7 @@ async def send_dm(
         event_created_at=dm_event.created_at,
         message=dm_content,
         public_key=other_pubkey,
-        type=type,
+        type=type_,
     )
     dm_reply = await create_direct_message(merchant.id, dm)
 
@@ -296,7 +304,8 @@ async def compute_products_new_quantity(
             return (
                 False,
                 [],
-                f"Quantity not sufficient for product: '{p.name}' ({p.id}). Required '{required_quantity}' but only have '{p.quantity}'.",
+                f"Quantity not sufficient for product: '{p.name}' ({p.id})."
+                f" Required '{required_quantity}' but only have '{p.quantity}'.",
             )
 
         p.quantity -= required_quantity
@@ -306,9 +315,9 @@ async def compute_products_new_quantity(
 
 async def process_nostr_message(msg: str):
     try:
-        type, *rest = json.loads(msg)
+        type_, *rest = json.loads(msg)
 
-        if type.upper() == "EVENT":
+        if type_.upper() == "EVENT":
             _, event = rest
             event = NostrEvent(**event)
             if event.kind == 0:
@@ -328,11 +337,11 @@ async def process_nostr_message(msg: str):
 async def create_or_update_order_from_dm(
     merchant_id: str, merchant_pubkey: str, dm: DirectMessage
 ):
-    type, json_data = PartialDirectMessage.parse_message(dm.message)
-    if "id" not in json_data:
+    type_, json_data = PartialDirectMessage.parse_message(dm.message)
+    if not json_data or "id" not in json_data:
         return
 
-    if type == DirectMessageType.CUSTOMER_ORDER:
+    if type_ == DirectMessageType.CUSTOMER_ORDER:
         order = await extract_customer_order_from_dm(
             merchant_id, merchant_pubkey, dm, json_data
         )
@@ -348,7 +357,7 @@ async def create_or_update_order_from_dm(
             )
         return
 
-    if type == DirectMessageType.PAYMENT_REQUEST:
+    if type_ == DirectMessageType.PAYMENT_REQUEST:
         payment_request = PaymentRequest(**json_data)
         pr = next(
             (o.link for o in payment_request.payment_options if o.type == "ln"), None
@@ -356,14 +365,15 @@ async def create_or_update_order_from_dm(
         if not pr:
             return
         invoice = decode(pr)
+        total = invoice.amount_msat / 1000 if invoice.amount_msat else 0
         await update_order(
             merchant_id,
             payment_request.id,
-            **{"total": invoice.amount_msat / 1000, "invoice_id": invoice.payment_hash},
+            **{"total": total, "invoice_id": invoice.payment_hash},
         )
         return
 
-    if type == DirectMessageType.ORDER_PAID_OR_SHIPPED:
+    if type_ == DirectMessageType.ORDER_PAID_OR_SHIPPED:
         order_update = OrderStatusUpdate(**json_data)
         if order_update.paid:
             await update_order_paid_status(order_update.id, True)
@@ -380,16 +390,18 @@ async def extract_customer_order_from_dm(
     )
     extra = await OrderExtra.from_products(products)
     order = Order(
-        id=json_data.get("id"),
+        id=str(json_data.get("id")),
         event_id=dm.event_id,
         event_created_at=dm.event_created_at,
         public_key=dm.public_key,
         merchant_public_key=merchant_pubkey,
         shipping_id=json_data.get("shipping_id", "None"),
         items=order_items,
-        contact=OrderContact(**json_data.get("contact"))
-        if json_data.get("contact")
-        else None,
+        contact=(
+            OrderContact(**json_data.get("contact", {}))
+            if json_data.get("contact")
+            else None
+        ),
         address=json_data.get("address"),
         stall_id=products[0].stall_id if len(products) else "None",
         invoice_id="None",
@@ -406,12 +418,9 @@ async def _handle_nip04_message(event: NostrEvent):
 
     if not merchant:
         p_tags = event.tag_values("p")
-        merchant_public_key = p_tags[0] if len(p_tags) else None
-        merchant = (
-            await get_merchant_by_pubkey(merchant_public_key)
-            if merchant_public_key
-            else None
-        )
+        if len(p_tags) and p_tags[0]:
+            merchant_public_key = p_tags[0]
+            merchant = await get_merchant_by_pubkey(merchant_public_key)
 
     assert merchant, f"Merchant not found for public key '{merchant_public_key}'"
 
@@ -461,21 +470,21 @@ async def _handle_outgoing_dms(
     event: NostrEvent, merchant: Merchant, clear_text_msg: str
 ):
     sent_to = event.tag_values("p")
-    type, _ = PartialDirectMessage.parse_message(clear_text_msg)
+    type_, _ = PartialDirectMessage.parse_message(clear_text_msg)
     if len(sent_to) != 0:
         dm = PartialDirectMessage(
             event_id=event.id,
             event_created_at=event.created_at,
             message=clear_text_msg,
             public_key=sent_to[0],
-            type=type.value,
+            type=type_.value,
         )
         await create_direct_message(merchant.id, dm)
 
 
 async def _handle_incoming_structured_dm(
     merchant: Merchant, dm: DirectMessage, json_data: dict
-) -> Tuple[DirectMessageType, str]:
+) -> Tuple[DirectMessageType, Optional[str]]:
     try:
         if dm.type == DirectMessageType.CUSTOMER_ORDER.value and merchant.config.active:
             json_resp = await _handle_new_order(
@@ -487,7 +496,7 @@ async def _handle_incoming_structured_dm(
     except Exception as ex:
         logger.warning(ex)
 
-    return None, None
+    return DirectMessageType.PLAIN_TEXT, None
 
 
 async def _persist_dm(
@@ -570,9 +579,13 @@ async def _handle_new_order(
     except Exception as e:
         logger.debug(e)
         payment_req = await create_new_failed_order(
-            merchant_id, merchant_public_key, dm, json_data, "Order received, but cannot be processed. Please contact merchant."
+            merchant_id,
+            merchant_public_key,
+            dm,
+            json_data,
+            "Order received, but cannot be processed. Please contact merchant.",
         )
-
+    assert payment_req
     response = {
         "type": DirectMessageType.PAYMENT_REQUEST.value,
         **payment_req.dict(),
@@ -594,11 +607,13 @@ async def create_new_failed_order(
     await create_order(merchant_id, order)
     return PaymentRequest(id=order.id, message=fail_message, payment_options=[])
 
+
 async def resubscribe_to_all_merchants():
     await nostr_client.unsubscribe_merchants()
     # give some time for the message to propagate
-    asyncio.sleep(1)
+    await asyncio.sleep(1)
     await subscribe_to_all_merchants()
+
 
 async def subscribe_to_all_merchants():
     ids = await get_merchants_ids_with_pubkeys()
@@ -608,7 +623,9 @@ async def subscribe_to_all_merchants():
     last_stall_time = await get_last_stall_update_time()
     last_prod_time = await get_last_product_update_time()
 
-    await nostr_client.subscribe_merchants(public_keys, last_dm_time, last_stall_time, last_prod_time, 0)
+    await nostr_client.subscribe_merchants(
+        public_keys, last_dm_time, last_stall_time, last_prod_time, 0
+    )
 
 
 async def _handle_new_customer(event: NostrEvent, merchant: Merchant):

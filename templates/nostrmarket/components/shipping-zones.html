@@ -22,12 +22,13 @@
         @click="openZoneDialog(zone)"
       >
         <q-item-section>
-          <q-item-label>{{zone.name}}</q-item-label>
-          <q-item-label caption>{{zone.countries.join(", ")}}</q-item-label>
+          <q-item-label><span v-text="zone.name"></span></q-item-label>
+          <q-item-label caption
+            ><span v-text="zone.countries.join('', '')"></span
+          ></q-item-label>
         </q-item-section>
-      </q-item>
-    </q-list></q-btn-dropdown
-  >
+      </q-item> </q-list
+  ></q-btn-dropdown>
 
   <q-dialog v-model="zoneDialog.showDialog" position="top">
     <q-card class="q-pa-lg q-pt-xl" style="width: 500px">

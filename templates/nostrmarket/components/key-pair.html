@@ -13,11 +13,11 @@
     <div class="col-6">
       <div class="text-center q-mb-lg cursor-pointer">
         <q-responsive :ratio="1" class="q-mx-xl" @click="copyText(publicKey)">
-          <qrcode
+          <lnbits-qrcode
             :value="publicKey"
             :options="{width: 250}"
             class="rounded-borders"
-          ></qrcode>
+          ></lnbits-qrcode>
         </q-responsive>
         <small><span v-text="publicKey"></span><br />Click to copy</small>
       </div>
@@ -30,11 +30,7 @@
             class="q-mx-xl"
             @click="copyText(privateKey)"
           >
-            <qrcode
-              :value="privateKey"
-              :options="{width: 250}"
-              class="rounded-borders"
-            ></qrcode>
+            <lnbits-qrcode :value="privateKey"></lnbits-qrcode>
           </q-responsive>
           <small><span v-text="privateKey"></span><br />Click to copy</small>
         </div>

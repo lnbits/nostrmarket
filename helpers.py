@@ -1,7 +1,6 @@
 import base64
-import json
 import secrets
-from typing import Any, Optional, Tuple
+from typing import Optional
 
 import secp256k1
 from bech32 import bech32_decode, convertbits
@@ -44,12 +43,14 @@ def encrypt_message(message: str, encryption_key, iv: Optional[bytes] = None) ->
     encryptor = cipher.encryptor()
     encrypted_message = encryptor.update(padded_data) + encryptor.finalize()
 
-    return f"{base64.b64encode(encrypted_message).decode()}?iv={base64.b64encode(iv).decode()}"
+    base64_message = base64.b64encode(encrypted_message).decode()
+    base64_iv = base64.b64encode(iv).decode()
+    return f"{base64_message}?iv={base64_iv}"
 
 
-def sign_message_hash(private_key: str, hash: bytes) -> str:
+def sign_message_hash(private_key: str, hash_: bytes) -> str:
     privkey = secp256k1.PrivateKey(bytes.fromhex(private_key))
-    sig = privkey.schnorr_sign(hash, None, raw=True)
+    sig = privkey.schnorr_sign(hash_, None, raw=True)
     return sig.hex()
 
 
