@@ -385,7 +385,7 @@ async def extract_customer_order_from_dm(
     )
     extra = await OrderExtra.from_products(products)
     order = Order(
-        id=json_data.get("id"),
+        id=str(json_data.get("id")),
         event_id=dm.event_id,
         event_created_at=dm.event_created_at,
         public_key=dm.public_key,
@@ -393,7 +393,7 @@ async def extract_customer_order_from_dm(
         shipping_id=json_data.get("shipping_id", "None"),
         items=order_items,
         contact=(
-            OrderContact(**json_data.get("contact"))
+            OrderContact(**json_data.get("contact", {}))
             if json_data.get("contact")
             else None
         ),
@@ -413,12 +413,9 @@ async def _handle_nip04_message(event: NostrEvent):
 
     if not merchant:
         p_tags = event.tag_values("p")
-        merchant_public_key = p_tags[0] if len(p_tags) else None
-        merchant = (
-            await get_merchant_by_pubkey(merchant_public_key)
-            if merchant_public_key
-            else None
-        )
+        if len(p_tags) and p_tags[0]:
+            merchant_public_key = p_tags[0]
+            merchant = await get_merchant_by_pubkey(merchant_public_key)
 
     assert merchant, f"Merchant not found for public key '{merchant_public_key}'"
 
@@ -482,7 +479,7 @@ async def _handle_outgoing_dms(
 
 async def _handle_incoming_structured_dm(
     merchant: Merchant, dm: DirectMessage, json_data: dict
-) -> Tuple[DirectMessageType, str]:
+) -> Tuple[DirectMessageType, Optional[str]]:
     try:
         if dm.type == DirectMessageType.CUSTOMER_ORDER.value and merchant.config.active:
             json_resp = await _handle_new_order(
@@ -494,7 +491,7 @@ async def _handle_incoming_structured_dm(
     except Exception as ex:
         logger.warning(ex)
 
-    return None, None
+    return DirectMessageType.PLAIN_TEXT, None
 
 
 async def _persist_dm(
@@ -583,7 +580,7 @@ async def _handle_new_order(
             json_data,
             "Order received, but cannot be processed. Please contact merchant.",
         )
-
+    assert payment_req
     response = {
         "type": DirectMessageType.PAYMENT_REQUEST.value,
         **payment_req.dict(),

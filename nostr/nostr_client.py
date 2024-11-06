@@ -116,7 +116,7 @@ class NostrClient:
 
         asyncio.create_task(unsubscribe_with_delay(subscription_id, duration))
 
-    async def user_profile_temp_subscribe(self, public_key: str, duration=5) -> List:
+    async def user_profile_temp_subscribe(self, public_key: str, duration=5):
         try:
             profile_filter = [{"kinds": [0], "authors": [public_key]}]
             subscription_id = "profile-" + urlsafe_short_hash()[:32]
