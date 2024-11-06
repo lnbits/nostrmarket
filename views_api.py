@@ -69,9 +69,6 @@ from .models import (
     PartialDirectMessage,
     PartialMerchant,
     PartialOrder,
-    PartialProduct,
-    PartialStall,
-    PartialZone,
     PaymentOption,
     PaymentRequest,
     Product,
@@ -108,7 +105,7 @@ async def api_create_merchant(
 
         await create_zone(
             merchant.id,
-            PartialZone(
+            Zone(
                 id=f"online-{merchant.public_key}",
                 name="Online",
                 currency="sat",
@@ -326,7 +323,7 @@ async def api_get_zones(
 
 @nostrmarket_ext.post("/api/v1/zone")
 async def api_create_zone(
-    data: PartialZone, wallet: WalletTypeInfo = Depends(require_admin_key)
+    data: Zone, wallet: WalletTypeInfo = Depends(require_admin_key)
 ):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
@@ -410,7 +407,7 @@ async def api_delete_zone(zone_id, wallet: WalletTypeInfo = Depends(require_admi
 
 @nostrmarket_ext.post("/api/v1/stall")
 async def api_create_stall(
-    data: PartialStall,
+    data: Stall,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Stall:
     try:
@@ -618,7 +615,7 @@ async def api_delete_stall(
 
 @nostrmarket_ext.post("/api/v1/product")
 async def api_create_product(
-    data: PartialProduct,
+    data: Product,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Product:
     try:

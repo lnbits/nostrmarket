@@ -2,12 +2,12 @@ import asyncio
 import json
 from asyncio import Queue
 from threading import Thread
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 from loguru import logger
 from websocket import WebSocketApp
 
-from lnbits.app import settings
+from lnbits.settings import settings
 from lnbits.helpers import encrypt_internal_message, urlsafe_short_hash
 
 from .event import NostrEvent
@@ -17,7 +17,7 @@ class NostrClient:
     def __init__(self):
         self.recieve_event_queue: Queue = Queue()
         self.send_req_queue: Queue = Queue()
-        self.ws: WebSocketApp = None
+        self.ws: Optional[WebSocketApp] = None
         self.subscription_id = "nostrmarket-" + urlsafe_short_hash()[:32]
         self.running = False
 
@@ -56,6 +56,7 @@ class NostrClient:
                     await asyncio.sleep(5)
 
                 req = await self.send_req_queue.get()
+                assert self.ws
                 self.ws.send(json.dumps(req))
             except Exception as ex:
                 logger.warning(ex)

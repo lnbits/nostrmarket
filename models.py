@@ -121,16 +121,12 @@ class Merchant(PartialMerchant, Nostrable):
 
 
 ######################################## ZONES ########################################
-class PartialZone(BaseModel):
+class Zone(BaseModel):
     id: Optional[str] = None
     name: Optional[str] = None
     currency: str
     cost: float
     countries: List[str] = []
-
-
-class Zone(PartialZone):
-    id: str
 
     @classmethod
     def from_row(cls, row: dict) -> "Zone":
@@ -147,7 +143,7 @@ class StallConfig(BaseModel):
     description: Optional[str] = None
 
 
-class PartialStall(BaseModel):
+class Stall(BaseModel, Nostrable):
     id: Optional[str] = None
     wallet: str
     name: str
@@ -167,10 +163,6 @@ class PartialStall(BaseModel):
                     f"Sipping zone '{z.name}' has different currency than stall."
                 )
 
-
-class Stall(PartialStall, Nostrable):
-    id: str
-
     def to_nostr_event(self, pubkey: str) -> NostrEvent:
         content = {
             "id": self.id,
@@ -179,6 +171,7 @@ class Stall(PartialStall, Nostrable):
             "currency": self.currency,
             "shipping": [dict(z) for z in self.shipping_zones],
         }
+        assert self.id
         event = NostrEvent(
             pubkey=pubkey,
             created_at=round(time.time()),
@@ -226,7 +219,7 @@ class ProductConfig(BaseModel):
     shipping: List[ProductShippingCost] = []
 
 
-class PartialProduct(BaseModel):
+class Product(BaseModel, Nostrable):
     id: Optional[str] = None
     stall_id: str
     name: str
@@ -241,10 +234,6 @@ class PartialProduct(BaseModel):
     """Last published nostr event for this Product"""
     event_id: Optional[str] = None
     event_created_at: Optional[int] = None
-
-
-class Product(PartialProduct, Nostrable):
-    id: str
 
     def to_nostr_event(self, pubkey: str) -> NostrEvent:
         content = {
@@ -261,6 +250,7 @@ class Product(PartialProduct, Nostrable):
         }
         categories = [["t", tag] for tag in self.categories]
 
+        assert self.id
         if self.active:
             event = NostrEvent(
                 pubkey=pubkey,
@@ -304,6 +294,7 @@ class ProductOverview(BaseModel):
 
     @classmethod
     def from_product(cls, p: Product) -> "ProductOverview":
+        assert p.id
         return ProductOverview(id=p.id, name=p.name, price=p.price)
 
 
@@ -392,6 +383,7 @@ class PartialOrder(BaseModel):
             }
 
         product_cost: float = 0  # todo
+        currency = "sat"
         for item in self.items:
             assert item.quantity > 0, "Quantity cannot be negative"
             price = float(str(product_prices[item.product_id]["price"]))
@@ -418,6 +410,7 @@ class PartialOrder(BaseModel):
             product_shipping_cost = next(
                 (s.cost for s in p.config.shipping if s.id == shipping_id), 0
             )
+            assert p.id
             product_prices[p.id] = ProductOverview(
                 id=p.id,
                 name=p.name,

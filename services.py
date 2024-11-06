@@ -91,6 +91,7 @@ async def build_order_with_payment(
     shipping_zone = await get_zone(merchant_id, data.shipping_id)
     assert shipping_zone, f"Shipping zone not found for order '{data.id}'"
 
+    assert shipping_zone.id
     product_cost_sat, shipping_cost_sat = await data.costs_in_sats(
         products, shipping_zone.id, shipping_zone.cost
     )
@@ -136,7 +137,9 @@ async def update_merchant_to_nostr(
     merchant: Merchant, delete_merchant=False
 ) -> Merchant:
     stalls = await get_stalls(merchant.id)
+    event: Optional[NostrEvent] = None
     for stall in stalls:
+        assert stall.id
         products = await get_products(merchant.id, stall.id)
         for product in products:
             event = await sign_and_send_to_nostr(merchant, product, delete_merchant)
@@ -150,6 +153,7 @@ async def update_merchant_to_nostr(
     if delete_merchant:
         # merchant profile updates not supported yet
         event = await sign_and_send_to_nostr(merchant, merchant, delete_merchant)
+    assert event
     merchant.config.event_id = event.id
     return merchant
 
@@ -227,6 +231,7 @@ async def update_products_for_order(
         return success, message
 
     for p in products:
+        assert p.id
         product = await update_product_quantity(p.id, p.quantity)
         assert product
         event = await sign_and_send_to_nostr(merchant, product)

@@ -41,7 +41,7 @@ class NostrEvent(BaseModel):
                 f"Invalid public key: '{self.pubkey}' for event '{self.id}'"
             )
 
-        valid_signature = pub_key.schnorr_verify(
+        valid_signature = self.sig and pub_key.schnorr_verify(
             bytes.fromhex(event_id), bytes.fromhex(self.sig), None, raw=True
         )
         if not valid_signature:

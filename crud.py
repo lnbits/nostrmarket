@@ -13,9 +13,6 @@ from .models import (
     Order,
     PartialDirectMessage,
     PartialMerchant,
-    PartialProduct,
-    PartialStall,
-    PartialZone,
     Product,
     Stall,
     Zone,
@@ -119,7 +116,7 @@ async def delete_merchant(merchant_id: str) -> None:
 ######################################## ZONES ########################################
 
 
-async def create_zone(merchant_id: str, data: PartialZone) -> Zone:
+async def create_zone(merchant_id: str, data: Zone) -> Zone:
     zone_id = data.id or urlsafe_short_hash()
     await db.execute(
         """
@@ -156,6 +153,7 @@ async def update_zone(merchant_id: str, z: Zone) -> Optional[Zone]:
             "merchant_id": merchant_id,
         },
     )
+    assert z.id
     return await get_zone(merchant_id, z.id)
 
 
@@ -199,7 +197,7 @@ async def delete_merchant_zones(merchant_id: str) -> None:
 ######################################## STALL ########################################
 
 
-async def create_stall(merchant_id: str, data: PartialStall) -> Stall:
+async def create_stall(merchant_id: str, data: Stall) -> Stall:
     stall_id = data.id or urlsafe_short_hash()
 
     await db.execute(
@@ -301,6 +299,7 @@ async def update_stall(merchant_id: str, stall: Stall) -> Optional[Stall]:
             "id": stall.id,
         },
     )
+    assert stall.id
     return await get_stall(merchant_id, stall.id)
 
 
@@ -327,7 +326,7 @@ async def delete_merchant_stalls(merchant_id: str) -> None:
 ######################################## PRODUCTS ######################################
 
 
-async def create_product(merchant_id: str, data: PartialProduct) -> Product:
+async def create_product(merchant_id: str, data: Product) -> Product:
     product_id = data.id or urlsafe_short_hash()
 
     await db.execute(
@@ -368,7 +367,7 @@ async def create_product(merchant_id: str, data: PartialProduct) -> Product:
 
 
 async def update_product(merchant_id: str, product: Product) -> Product:
-
+    assert product.id
     await db.execute(
         """
         UPDATE nostrmarket.products
