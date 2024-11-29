@@ -23,7 +23,7 @@ function imgSizeFit(img, maxWidth = 1024, maxHeight = 768) {
     maxWidth / img.naturalWidth,
     maxHeight / img.naturalHeight
   )
-  return { width: img.naturalWidth * ratio, height: img.naturalHeight * ratio }
+  return {width: img.naturalWidth * ratio, height: img.naturalHeight * ratio}
 }
 
 async function hash(string) {
@@ -125,7 +125,7 @@ function isValidImageUrl(string) {
 function isValidKey(key, prefix = 'n') {
   try {
     if (key && key.startsWith(prefix)) {
-      let { _, data } = NostrTools.nip19.decode(key)
+      let {_, data} = NostrTools.nip19.decode(key)
       key = data
     }
     return isValidKeyHex(key)

@@ -1,0 +1,215 @@
+<div>
+  <div class="row items-center no-wrap q-mb-md">
+    <div class="col q-pr-lg">
+      <q-btn-dropdown
+        @click="openCreateStallDialog()"
+        outline
+        unelevated
+        split
+        class="float-left"
+        color="primary"
+        label="New Stall (Store)"
+      >
+        <q-item @click="openCreateStallDialog()" clickable v-close-popup>
+          <q-item-section>
+            <q-item-label>New Stall</q-item-label>
+            <q-item-label caption>Create a new stall</q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-item @click="openSelectPendingStallDialog" clickable v-close-popup>
+          <q-item-section>
+            <q-item-label>Restore Stall</q-item-label>
+            <q-item-label caption
+              >Restore existing stall from Nostr</q-item-label
+            >
+          </q-item-section>
+        </q-item>
+      </q-btn-dropdown>
+      <q-input
+        borderless
+        dense
+        debounce="300"
+        v-model="filter"
+        placeholder="Search"
+        class="float-right"
+      >
+        <template v-slot:append>
+          <q-icon name="search"></q-icon>
+        </template>
+      </q-input>
+    </div>
+  </div>
+
+  <q-table
+    flat
+    dense
+    :rows="stalls"
+    row-key="id"
+    :columns="stallsTable.columns"
+    v-model:pagination="stallsTable.pagination"
+    :filter="filter"
+  >
+    <template v-slot:body="props">
+      <q-tr :props="props">
+        <q-td auto-width>
+          <q-btn
+            size="sm"
+            color="primary"
+            round
+            dense
+            @click="props.row.expanded= !props.row.expanded"
+            :icon="props.row.expanded? 'remove' : 'add'"
+          />
+        </q-td>
+
+     
+        <q-td key="id" :props="props"
+          ><span v-text="shortLabel(props.row.name)"></span
+        ></q-td>
+        <q-td key="currency" :props="props"
+          ><span v-text="props.row.currency"></span>
+        </q-td>
+        <q-td key="description" :props="props">
+          <span v-text="shortLabel(props.row.config.description)"></span>
+        </q-td>
+        <q-td key="shippingZones" :props="props">
+          <div>
+            <span
+              v-text="shortLabel(props.row.shipping_zones.filter(z => !!z.name).map(z => z.name).join(', '))"
+            ></span>
+          </div>
+        </q-td>
+      </q-tr>
+      <q-tr v-if="props.row.expanded" :props="props">
+        <q-td colspan="100%">
+          <div class="row items-center q-mb-lg">
+            <div class="col-12">
+              <stall-details
+                :stall-id="props.row.id"
+                :adminkey="adminkey"
+                :inkey="inkey"
+                :wallet-options="walletOptions"
+                :zone-options="zoneOptions"
+                :currencies="currencies"
+                @stall-deleted="handleStallDeleted"
+                @stall-updated="handleStallUpdated"
+                @customer-selected-for-order="customerSelectedForOrder"
+              ></stall-details>
+            </div>
+          </div>
+        </q-td>
+      </q-tr>
+    </template>
+  </q-table>
+
+  <div>
+    <q-dialog v-model="stallDialog.show" position="top">
+      <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+        <q-form @submit="sendStallFormData" class="q-gutter-md">
+          <q-input
+            filled
+            dense
+            v-model.trim="stallDialog.data.name"
+            label="Name"
+          ></q-input>
+          <q-input
+            filled
+            dense
+            v-model.trim="stallDialog.data.description"
+            type="textarea"
+            rows="3"
+            label="Description"
+          ></q-input>
+          <q-select
+            filled
+            dense
+            emit-value
+            v-model="stallDialog.data.wallet"
+            :options="walletOptions"
+            label="Wallet *"
+          >
+          </q-select>
+          <q-select
+            filled
+            dense
+            v-model="stallDialog.data.currency"
+            type="text"
+            label="Unit"
+            :options="currencies"
+          ></q-select>
+          <q-select
+            :options="filteredZoneOptions"
+            filled
+            dense
+            multiple
+            v-model.trim="stallDialog.data.shippingZones"
+            label="Shipping Zones"
+          ></q-select>
+
+          <div class="row q-mt-lg">
+            <q-btn
+              unelevated
+              color="primary"
+              :disable="!stallDialog.data.name 
+              || !stallDialog.data.currency 
+              || !stallDialog.data.wallet 
+              || !stallDialog.data.shippingZones 
+              || !stallDialog.data.shippingZones.length"
+              type="submit"
+              :label="stallDialog.data.id ? 'Restore Stall' : 'Create Stall'"
+            ></q-btn>
+            <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+              >Cancel</q-btn
+            >
+          </div>
+        </q-form>
+      </q-card>
+    </q-dialog>
+    <q-dialog v-model="stallDialog.showRestore" position="top">
+      <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+        <div v-if="pendingStalls && pendingStalls.length" class="row q-mt-lg">
+          <q-item
+            v-for="pendingStall of pendingStalls"
+            :key="pendingStall.id"
+            tag="label"
+            class="full-width"
+            v-ripple
+          >
+            <q-item-section>
+              <q-item-label
+                ><span v-text="pendingStall.name"></span
+              ></q-item-label>
+              <q-item-label caption
+                ><span v-text="pendingStall.config?.description"></span
+              ></q-item-label>
+            </q-item-section>
+
+            <q-item-section class="q-pl-xl float-right">
+              <q-btn
+                @click="openRestoreStallDialog(pendingStall)"
+                v-close-popup
+                flat
+                color="green"
+                class="q-ml-auto float-right"
+                >Restore</q-btn
+              >
+            </q-item-section>
+            <q-item-section class="float-right">
+              <q-btn
+                @click="deleteStall(pendingStall)"
+                v-close-popup
+                color="red"
+                class="q-ml-auto float-right"
+                icon="cancel"
+              ></q-btn>
+            </q-item-section>
+          </q-item>
+        </div>
+        <div v-else>There are no stalls to be restored.</div>
+        <div class="row q-mt-lg">
+          <q-btn v-close-popup flat color="grey" class="q-ml-auto">Close</q-btn>
+        </div>
+      </q-card>
+    </q-dialog>
+  </div>
+</div>

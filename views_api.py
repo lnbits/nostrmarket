@@ -4,16 +4,14 @@ from typing import List, Optional
 
 from fastapi import Depends
 from fastapi.exceptions import HTTPException
-from loguru import logger
-
 from lnbits.core.services import websocket_updater
 from lnbits.decorators import (
     WalletTypeInfo,
-    get_key_type,
     require_admin_key,
     require_invoice_key,
 )
 from lnbits.utils.exchange_rates import currencies
+from loguru import logger
 
 from . import nostr_client, nostrmarket_ext
 from .crud import (
@@ -71,9 +69,6 @@ from .models import (
     PartialDirectMessage,
     PartialMerchant,
     PartialOrder,
-    PartialProduct,
-    PartialStall,
-    PartialZone,
     PaymentOption,
     PaymentRequest,
     Product,
@@ -81,16 +76,16 @@ from .models import (
     Zone,
 )
 from .services import (
-    reply_to_structured_dm,
     build_order_with_payment,
     create_or_update_order_from_dm,
+    reply_to_structured_dm,
     resubscribe_to_all_merchants,
     sign_and_send_to_nostr,
     subscribe_to_all_merchants,
     update_merchant_to_nostr,
 )
 
-######################################## MERCHANT ########################################
+######################################## MERCHANT ######################################
 
 
 @nostrmarket_ext.post("/api/v1/merchant")
@@ -101,16 +96,16 @@ async def api_create_merchant(
 
     try:
         merchant = await get_merchant_by_pubkey(data.public_key)
-        assert merchant == None, "A merchant already uses this public key"
+        assert merchant is None, "A merchant already uses this public key"
 
         merchant = await get_merchant_for_user(wallet.wallet.user)
-        assert merchant == None, "A merchant already exists for this user"
+        assert merchant is None, "A merchant already exists for this user"
 
         merchant = await create_merchant(wallet.wallet.user, data)
 
         await create_zone(
             merchant.id,
-            PartialZone(
+            Zone(
                 id=f"online-{merchant.public_key}",
                 name="Online",
                 currency="sat",
@@ -128,13 +123,13 @@ async def api_create_merchant(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create merchant",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.get("/api/v1/merchant")
@@ -145,11 +140,12 @@ async def api_get_merchant(
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         if not merchant:
-            return
+            return None
 
         merchant = await touch_merchant(wallet.wallet.user, merchant.id)
+        assert merchant
         last_dm_time = await get_last_direct_messages_time(merchant.id)
-
+        assert merchant.time
         merchant.config.restore_in_progress = (merchant.time - last_dm_time) < 30
 
         return merchant
@@ -158,7 +154,7 @@ async def api_get_merchant(
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get merchant",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.delete("/api/v1/merchant/{merchant_id}")
@@ -186,15 +182,16 @@ async def api_delete_merchant(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get merchant",
-        )
+        ) from ex
     finally:
         await subscribe_to_all_merchants()
+
 
 @nostrmarket_ext.put("/api/v1/merchant/{merchant_id}/nostr")
 async def api_republish_merchant(
@@ -213,13 +210,14 @@ async def api_republish_merchant(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot republish to nostr",
-        )
+        ) from ex
+
 
 @nostrmarket_ext.get("/api/v1/merchant/{merchant_id}/nostr")
 async def api_refresh_merchant(
@@ -237,13 +235,13 @@ async def api_refresh_merchant(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot refresh from nostr",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.put("/api/v1/merchant/{merchant_id}/toggle")
@@ -264,17 +262,17 @@ async def api_toggle_merchant(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get merchant",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.delete("/api/v1/merchant/{merchant_id}/nostr")
-async def api_delete_merchant(
+async def api_delete_merchant_on_nostr(
     merchant_id: str,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ):
@@ -290,20 +288,22 @@ async def api_delete_merchant(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get merchant",
-        )
+        ) from ex
 
 
 ######################################## ZONES ########################################
 
 
 @nostrmarket_ext.get("/api/v1/zone")
-async def api_get_zones(wallet: WalletTypeInfo = Depends(get_key_type)) -> List[Zone]:
+async def api_get_zones(
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
+) -> List[Zone]:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
@@ -312,18 +312,18 @@ async def api_get_zones(wallet: WalletTypeInfo = Depends(get_key_type)) -> List[
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get zone",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.post("/api/v1/zone")
 async def api_create_zone(
-    data: PartialZone, wallet: WalletTypeInfo = Depends(require_admin_key)
+    data: Zone, wallet: WalletTypeInfo = Depends(require_admin_key)
 ):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
@@ -334,13 +334,13 @@ async def api_create_zone(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create zone",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.patch("/api/v1/zone/{zone_id}")
@@ -365,15 +365,14 @@ async def api_update_zone(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
-    except HTTPException as ex:
-        raise ex
+        ) from ex
+
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot update zone",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.delete("/api/v1/zone/{zone_id}")
@@ -394,13 +393,13 @@ async def api_delete_zone(zone_id, wallet: WalletTypeInfo = Depends(require_admi
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot delete zone",
-        )
+        ) from ex
 
 
 ######################################## STALLS ########################################
@@ -408,7 +407,7 @@ async def api_delete_zone(zone_id, wallet: WalletTypeInfo = Depends(require_admi
 
 @nostrmarket_ext.post("/api/v1/stall")
 async def api_create_stall(
-    data: PartialStall,
+    data: Stall,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Stall:
     try:
@@ -430,13 +429,13 @@ async def api_create_stall(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create stall",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.put("/api/v1/stall/{stall_id}")
@@ -459,23 +458,24 @@ async def api_update_stall(
         await update_stall(merchant.id, stall)
 
         return stall
-    except HTTPException as ex:
-        raise ex
+
     except (ValueError, AssertionError) as ex:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot update stall",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.get("/api/v1/stall/{stall_id}")
-async def api_get_stall(stall_id: str, wallet: WalletTypeInfo = Depends(get_key_type)):
+async def api_get_stall(
+    stall_id: str, wallet: WalletTypeInfo = Depends(require_invoice_key)
+):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
@@ -490,7 +490,7 @@ async def api_get_stall(stall_id: str, wallet: WalletTypeInfo = Depends(get_key_
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except HTTPException as ex:
         raise ex
     except Exception as ex:
@@ -498,12 +498,13 @@ async def api_get_stall(stall_id: str, wallet: WalletTypeInfo = Depends(get_key_
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get stall",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.get("/api/v1/stall")
 async def api_get_stalls(
-    pending: Optional[bool] = False, wallet: WalletTypeInfo = Depends(get_key_type)
+    pending: Optional[bool] = False,
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
 ):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
@@ -514,13 +515,13 @@ async def api_get_stalls(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get stalls",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.get("/api/v1/stall/product/{stall_id}")
@@ -538,13 +539,13 @@ async def api_get_stall_products(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get stall products",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.get("/api/v1/stall/order/{stall_id}")
@@ -566,13 +567,13 @@ async def api_get_stall_orders(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get stall products",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.delete("/api/v1/stall/{stall_id}")
@@ -600,23 +601,21 @@ async def api_delete_stall(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
-    except HTTPException as ex:
-        raise ex
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot delete stall",
-        )
+        ) from ex
 
 
-######################################## PRODUCTS ########################################
+######################################## PRODUCTS ######################################
 
 
 @nostrmarket_ext.post("/api/v1/product")
 async def api_create_product(
-    data: PartialProduct,
+    data: Product,
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Product:
     try:
@@ -639,13 +638,13 @@ async def api_create_product(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create product",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.patch("/api/v1/product/{product_id}")
@@ -675,13 +674,13 @@ async def api_update_product(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot update product",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.get("/api/v1/product/{product_id}")
@@ -699,13 +698,13 @@ async def api_get_product(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get product",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.delete("/api/v1/product/{product_id}")
@@ -731,15 +730,13 @@ async def api_delete_product(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
-    except HTTPException as ex:
-        raise ex
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot delete product",
-        )
+        ) from ex
 
 
 ######################################## ORDERS ########################################
@@ -764,15 +761,13 @@ async def api_get_order(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
-    except HTTPException as ex:
-        raise ex
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get order",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.get("/api/v1/order")
@@ -780,7 +775,7 @@ async def api_get_orders(
     paid: Optional[bool] = None,
     shipped: Optional[bool] = None,
     pubkey: Optional[str] = None,
-    wallet: WalletTypeInfo = Depends(get_key_type),
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
 ):
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
@@ -794,13 +789,13 @@ async def api_get_orders(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get orders",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.patch("/api/v1/order/{order_id}")
@@ -809,7 +804,7 @@ async def api_update_order_status(
     wallet: WalletTypeInfo = Depends(require_admin_key),
 ) -> Order:
     try:
-        assert data.shipped != None, "Shipped value is required for order"
+        assert data.shipped is not None, "Shipped value is required for order"
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found for order {data.id}"
 
@@ -852,20 +847,20 @@ async def api_update_order_status(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot update order",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.put("/api/v1/order/restore/{event_id}")
 async def api_restore_order(
     event_id: str,
     wallet: WalletTypeInfo = Depends(require_admin_key),
-) -> Order:
+) -> Optional[Order]:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
@@ -881,13 +876,13 @@ async def api_restore_order(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot restore order",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.put("/api/v1/orders/restore")
@@ -906,20 +901,20 @@ async def api_restore_orders(
                 )
             except Exception as e:
                 logger.debug(
-                    f"Failed to restore order from event '{dm.event_id}': '{str(e)}'."
+                    f"Failed to restore order from event '{dm.event_id}': '{e!s}'."
                 )
 
     except AssertionError as ex:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot restore orders",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.put("/api/v1/order/reissue")
@@ -955,7 +950,9 @@ async def api_reissue_order_invoice(
             **order_update,
         )
         payment_req = PaymentRequest(
-            id=data.id, payment_options=[PaymentOption(type="ln", link=invoice)], message=receipt
+            id=data.id,
+            payment_options=[PaymentOption(type="ln", link=invoice)],
+            message=receipt,
         )
         response = {
             "type": DirectMessageType.PAYMENT_REQUEST.value,
@@ -975,25 +972,25 @@ async def api_reissue_order_invoice(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot reissue order invoice",
-        )
+        ) from ex
 
 
-######################################## DIRECT MESSAGES ########################################
+######################################## DIRECT MESSAGES ###############################
 
 
 @nostrmarket_ext.get("/api/v1/message/{public_key}")
 async def api_get_messages(
-    public_key: str, wallet: WalletTypeInfo = Depends(get_key_type)
+    public_key: str, wallet: WalletTypeInfo = Depends(require_invoice_key)
 ) -> List[DirectMessage]:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
-        assert merchant, f"Merchant cannot be found"
+        assert merchant, "Merchant cannot be found"
 
         messages = await get_direct_messages(merchant.id, public_key)
         await update_customer_no_unread_messages(merchant.id, public_key)
@@ -1002,13 +999,13 @@ async def api_get_messages(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot get direct message",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.post("/api/v1/message")
@@ -1017,7 +1014,7 @@ async def api_create_message(
 ) -> DirectMessage:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
-        assert merchant, f"Merchant cannot be found"
+        assert merchant, "Merchant cannot be found"
 
         dm_event = merchant.build_dm_event(data.message, data.public_key)
         data.event_id = dm_event.id
@@ -1031,38 +1028,38 @@ async def api_create_message(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create message",
-        )
+        ) from ex
 
 
-######################################## CUSTOMERS ########################################
+######################################## CUSTOMERS #####################################
 
 
 @nostrmarket_ext.get("/api/v1/customer")
 async def api_get_customers(
-    wallet: WalletTypeInfo = Depends(get_key_type),
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
 ) -> List[Customer]:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
-        assert merchant, f"Merchant cannot be found"
+        assert merchant, "Merchant cannot be found"
         return await get_customers(merchant.id)
 
     except AssertionError as ex:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create message",
-        )
+        ) from ex
 
 
 @nostrmarket_ext.post("/api/v1/customer")
@@ -1079,7 +1076,7 @@ async def api_create_customer(
         assert merchant.id == data.merchant_id, "Invalid merchant id for user"
 
         existing_customer = await get_customer(merchant.id, pubkey)
-        assert existing_customer == None, "This public key already exists"
+        assert existing_customer is None, "This public key already exists"
 
         customer = await create_customer(
             merchant.id, Customer(merchant_id=merchant.id, public_key=pubkey)
@@ -1092,13 +1089,13 @@ async def api_create_customer(
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=str(ex),
-        )
+        ) from ex
     except Exception as ex:
         logger.warning(ex)
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create customer",
-        )
+        ) from ex
 
 
 ######################################## OTHER ########################################

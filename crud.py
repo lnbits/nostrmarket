@@ -1,5 +1,5 @@
 import json
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from lnbits.helpers import urlsafe_short_hash
 
@@ -13,25 +13,29 @@ from .models import (
     Order,
     PartialDirectMessage,
     PartialMerchant,
-    PartialProduct,
-    PartialStall,
-    PartialZone,
     Product,
     Stall,
     Zone,
 )
 
-######################################## MERCHANT ########################################
+######################################## MERCHANT ######################################
 
 
 async def create_merchant(user_id: str, m: PartialMerchant) -> Merchant:
     merchant_id = urlsafe_short_hash()
     await db.execute(
         """
-        INSERT INTO nostrmarket.merchants (user_id, id, private_key, public_key, meta)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO nostrmarket.merchants
+               (user_id, id, private_key, public_key, meta)
+        VALUES (:user_id, :id, :private_key, :public_key, :meta)
         """,
-        (user_id, merchant_id, m.private_key, m.public_key, json.dumps(dict(m.config))),
+        {
+            "user_id": user_id,
+            "id": merchant_id,
+            "private_key": m.private_key,
+            "public_key": m.public_key,
+            "meta": json.dumps(dict(m.config)),
+        },
     )
     merchant = await get_merchant(user_id, merchant_id)
     assert merchant, "Created merchant cannot be retrieved"
@@ -43,10 +47,10 @@ async def update_merchant(
 ) -> Optional[Merchant]:
     await db.execute(
         f"""
-            UPDATE nostrmarket.merchants SET meta = ?, time = {db.timestamp_now}
-            WHERE id = ? AND user_id = ?
+            UPDATE nostrmarket.merchants SET meta = :meta, time = {db.timestamp_now}
+            WHERE id = :id AND user_id = :user_id
         """,
-        (json.dumps(config.dict()), merchant_id, user_id),
+        {"meta": json.dumps(config.dict()), "id": merchant_id, "user_id": user_id},
     )
     return await get_merchant(user_id, merchant_id)
 
@@ -55,46 +59,46 @@ async def touch_merchant(user_id: str, merchant_id: str) -> Optional[Merchant]:
     await db.execute(
         f"""
             UPDATE nostrmarket.merchants SET time = {db.timestamp_now}
-            WHERE id = ? AND user_id = ?
+            WHERE id = :id AND user_id = :user_id
         """,
-        (merchant_id, user_id),
+        {"id": merchant_id, "user_id": user_id},
     )
     return await get_merchant(user_id, merchant_id)
 
 
 async def get_merchant(user_id: str, merchant_id: str) -> Optional[Merchant]:
-    row = await db.fetchone(
-        """SELECT * FROM nostrmarket.merchants WHERE user_id = ? AND id = ?""",
-        (
-            user_id,
-            merchant_id,
-        ),
+    row: dict = await db.fetchone(
+        """SELECT * FROM nostrmarket.merchants WHERE user_id = :user_id AND id = :id""",
+        {
+            "user_id": user_id,
+            "id": merchant_id,
+        },
     )
 
     return Merchant.from_row(row) if row else None
 
 
 async def get_merchant_by_pubkey(public_key: str) -> Optional[Merchant]:
-    row = await db.fetchone(
-        """SELECT * FROM nostrmarket.merchants WHERE public_key = ? """,
-        (public_key,),
+    row: dict = await db.fetchone(
+        """SELECT * FROM nostrmarket.merchants WHERE public_key = :public_key""",
+        {"public_key": public_key},
     )
 
     return Merchant.from_row(row) if row else None
 
 
-async def get_merchants_ids_with_pubkeys() -> List[str]:
-    rows = await db.fetchall(
+async def get_merchants_ids_with_pubkeys() -> List[Tuple[str, str]]:
+    rows: list[dict] = await db.fetchall(
         """SELECT id, public_key FROM nostrmarket.merchants""",
     )
 
-    return [(row[0], row[1]) for row in rows]
+    return [(row["id"], row["public_key"]) for row in rows]
 
 
 async def get_merchant_for_user(user_id: str) -> Optional[Merchant]:
-    row = await db.fetchone(
-        """SELECT * FROM nostrmarket.merchants WHERE user_id = ? """,
-        (user_id,),
+    row: dict = await db.fetchone(
+        """SELECT * FROM nostrmarket.merchants WHERE user_id = :user_id """,
+        {"user_id": user_id},
     )
 
     return Merchant.from_row(row) if row else None
@@ -102,29 +106,31 @@ async def get_merchant_for_user(user_id: str) -> Optional[Merchant]:
 
 async def delete_merchant(merchant_id: str) -> None:
     await db.execute(
-        "DELETE FROM nostrmarket.merchants WHERE id = ?",
-        (merchant_id,),
+        "DELETE FROM nostrmarket.merchants WHERE id = :id",
+        {
+            "id": merchant_id,
+        },
     )
 
 
 ######################################## ZONES ########################################
 
 
-async def create_zone(merchant_id: str, data: PartialZone) -> Zone:
+async def create_zone(merchant_id: str, data: Zone) -> Zone:
     zone_id = data.id or urlsafe_short_hash()
     await db.execute(
-        f"""
+        """
         INSERT INTO nostrmarket.zones (id, merchant_id, name, currency, cost, regions)
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (:id, :merchant_id, :name, :currency, :cost, :regions)
         """,
-        (
-            zone_id,
-            merchant_id,
-            data.name,
-            data.currency,
-            data.cost,
-            json.dumps(data.countries),
-        ),
+        {
+            "id": zone_id,
+            "merchant_id": merchant_id,
+            "name": data.name,
+            "currency": data.currency,
+            "cost": data.cost,
+            "regions": json.dumps(data.countries),
+        },
     )
 
     zone = await get_zone(merchant_id, zone_id)
@@ -134,26 +140,38 @@ async def create_zone(merchant_id: str, data: PartialZone) -> Zone:
 
 async def update_zone(merchant_id: str, z: Zone) -> Optional[Zone]:
     await db.execute(
-        f"UPDATE nostrmarket.zones SET name = ?, cost = ?, regions = ?  WHERE id = ? AND merchant_id = ?",
-        (z.name, z.cost, json.dumps(z.countries), z.id, merchant_id),
+        """
+        UPDATE nostrmarket.zones
+        SET name = :name, cost = :cost, regions = :regions
+        WHERE id = :id AND merchant_id = :merchant_id
+        """,
+        {
+            "name": z.name,
+            "cost": z.cost,
+            "regions": json.dumps(z.countries),
+            "id": z.id,
+            "merchant_id": merchant_id,
+        },
     )
+    assert z.id
     return await get_zone(merchant_id, z.id)
 
 
 async def get_zone(merchant_id: str, zone_id: str) -> Optional[Zone]:
-    row = await db.fetchone(
-        "SELECT * FROM nostrmarket.zones WHERE merchant_id = ? AND id = ?",
-        (
-            merchant_id,
-            zone_id,
-        ),
+    row: dict = await db.fetchone(
+        "SELECT * FROM nostrmarket.zones WHERE merchant_id = :merchant_id AND id = :id",
+        {
+            "merchant_id": merchant_id,
+            "id": zone_id,
+        },
     )
     return Zone.from_row(row) if row else None
 
 
 async def get_zones(merchant_id: str) -> List[Zone]:
-    rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.zones WHERE merchant_id = ?", (merchant_id,)
+    rows: list[dict] = await db.fetchall(
+        "SELECT * FROM nostrmarket.zones WHERE merchant_id = :merchant_id",
+        {"merchant_id": merchant_id},
     )
     return [Zone.from_row(row) for row in rows]
 
@@ -161,47 +179,55 @@ async def get_zones(merchant_id: str) -> List[Zone]:
 async def delete_zone(merchant_id: str, zone_id: str) -> None:
 
     await db.execute(
-        "DELETE FROM nostrmarket.zones WHERE merchant_id = ? AND id = ?",
-        (
-            merchant_id,
-            zone_id,
-        ),
+        "DELETE FROM nostrmarket.zones WHERE merchant_id = :merchant_id AND id = :id",
+        {
+            "merchant_id": merchant_id,
+            "id": zone_id,
+        },
     )
 
 
 async def delete_merchant_zones(merchant_id: str) -> None:
     await db.execute(
-        "DELETE FROM nostrmarket.zones WHERE merchant_id = ?", (merchant_id,)
+        "DELETE FROM nostrmarket.zones WHERE merchant_id = ?",
+        {"merchant_id": merchant_id},
     )
 
 
 ######################################## STALL ########################################
 
 
-async def create_stall(merchant_id: str, data: PartialStall) -> Stall:
+async def create_stall(merchant_id: str, data: Stall) -> Stall:
     stall_id = data.id or urlsafe_short_hash()
 
     await db.execute(
-        f"""
+        """
         INSERT INTO nostrmarket.stalls
-        (merchant_id, id,  wallet, name, currency, pending, event_id, event_created_at, zones, meta)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (
+            merchant_id, id,  wallet, name, currency,
+            pending, event_id, event_created_at, zones, meta
+        )
+        VALUES
+        (
+            :merchant_id, :id, :wallet, :name, :currency,
+            :pending, :event_id, :event_created_at, :zones, :meta
+        )
         ON CONFLICT(id) DO NOTHING
         """,
-        (
-            merchant_id,
-            stall_id,
-            data.wallet,
-            data.name,
-            data.currency,
-            data.pending,
-            data.event_id,
-            data.event_created_at,
-            json.dumps(
+        {
+            "merchant_id": merchant_id,
+            "id": stall_id,
+            "wallet": data.wallet,
+            "name": data.name,
+            "currency": data.currency,
+            "pending": data.pending,
+            "event_id": data.event_id,
+            "event_created_at": data.event_created_at,
+            "zones": json.dumps(
                 [z.dict() for z in data.shipping_zones]
             ),  # todo: cost is float. should be int for sats
-            json.dumps(data.config.dict()),
-        ),
+            "meta": json.dumps(data.config.dict()),
+        },
     )
 
     stall = await get_stall(merchant_id, stall_id)
@@ -210,107 +236,129 @@ async def create_stall(merchant_id: str, data: PartialStall) -> Stall:
 
 
 async def get_stall(merchant_id: str, stall_id: str) -> Optional[Stall]:
-    row = await db.fetchone(
-        "SELECT * FROM nostrmarket.stalls WHERE merchant_id = ? AND id = ?",
-        (
-            merchant_id,
-            stall_id,
-        ),
+    row: dict = await db.fetchone(
+        """
+        SELECT * FROM nostrmarket.stalls
+        WHERE merchant_id = :merchant_id AND id = :id
+        """,
+        {
+            "merchant_id": merchant_id,
+            "id": stall_id,
+        },
     )
     return Stall.from_row(row) if row else None
 
 
 async def get_stalls(merchant_id: str, pending: Optional[bool] = False) -> List[Stall]:
-    rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.stalls WHERE merchant_id = ? AND pending = ?",
-        (
-            merchant_id,
-            pending,
-        ),
+    rows: list[dict] = await db.fetchall(
+        """
+        SELECT * FROM nostrmarket.stalls
+        WHERE merchant_id = :merchant_id AND pending = :pending
+        """,
+        {
+            "merchant_id": merchant_id,
+            "pending": pending,
+        },
     )
     return [Stall.from_row(row) for row in rows]
 
 
 async def get_last_stall_update_time() -> int:
-    row = await db.fetchone(
+    row: dict = await db.fetchone(
         """
-            SELECT event_created_at FROM nostrmarket.stalls 
+            SELECT event_created_at FROM nostrmarket.stalls
             ORDER BY event_created_at DESC LIMIT 1
         """,
-        (),
+        {},
     )
-    return row[0] or 0 if row else 0
+    return row["event_created_at"] or 0 if row else 0
 
 
 async def update_stall(merchant_id: str, stall: Stall) -> Optional[Stall]:
     await db.execute(
-        f"""
-            UPDATE nostrmarket.stalls SET wallet = ?, name = ?, currency = ?, pending = ?, event_id = ?, event_created_at = ?, zones = ?, meta = ?
-            WHERE merchant_id = ? AND id = ?
+        """
+            UPDATE nostrmarket.stalls
+            SET wallet = :wallet, name = :name, currency = :currency,
+                pending = :pending, event_id = :event_id,
+                event_created_at = :event_created_at,
+                zones = :zones, meta = :meta
+            WHERE merchant_id = :merchant_id AND id = :id
         """,
-        (
-            stall.wallet,
-            stall.name,
-            stall.currency,
-            stall.pending,
-            stall.event_id,
-            stall.event_created_at,
-            json.dumps(
+        {
+            "wallet": stall.wallet,
+            "name": stall.name,
+            "currency": stall.currency,
+            "pending": stall.pending,
+            "event_id": stall.event_id,
+            "event_created_at": stall.event_created_at,
+            "zones": json.dumps(
                 [z.dict() for z in stall.shipping_zones]
             ),  # todo: cost is float. should be int for sats
-            json.dumps(stall.config.dict()),
-            merchant_id,
-            stall.id,
-        ),
+            "meta": json.dumps(stall.config.dict()),
+            "merchant_id": merchant_id,
+            "id": stall.id,
+        },
     )
+    assert stall.id
     return await get_stall(merchant_id, stall.id)
 
 
 async def delete_stall(merchant_id: str, stall_id: str) -> None:
     await db.execute(
-        "DELETE FROM nostrmarket.stalls WHERE merchant_id =? AND id = ?",
-        (
-            merchant_id,
-            stall_id,
-        ),
+        """
+            DELETE FROM nostrmarket.stalls
+            WHERE merchant_id = :merchant_id AND id = :id
+        """,
+        {
+            "merchant_id": merchant_id,
+            "id": stall_id,
+        },
     )
 
 
 async def delete_merchant_stalls(merchant_id: str) -> None:
     await db.execute(
-        "DELETE FROM nostrmarket.stalls WHERE merchant_id = ?",
-        (merchant_id,),
+        "DELETE FROM nostrmarket.stalls WHERE merchant_id = :merchant_id",
+        {"merchant_id": merchant_id},
     )
 
 
-######################################## PRODUCTS ########################################
+######################################## PRODUCTS ######################################
 
 
-async def create_product(merchant_id: str, data: PartialProduct) -> Product:
+async def create_product(merchant_id: str, data: Product) -> Product:
     product_id = data.id or urlsafe_short_hash()
 
     await db.execute(
-        f"""
-        INSERT INTO nostrmarket.products 
-        (merchant_id, id, stall_id, name, price, quantity, active, pending, event_id, event_created_at, image_urls, category_list, meta)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        INSERT INTO nostrmarket.products
+        (
+            merchant_id, id, stall_id, name, price, quantity,
+            active, pending, event_id, event_created_at,
+            image_urls, category_list, meta
+        )
+        VALUES (
+            :merchant_id, :id, :stall_id, :name, :price, :quantity,
+            :active, :pending, :event_id, :event_created_at,
+            :image_urls, :category_list, :meta
+        )
         ON CONFLICT(id) DO NOTHING
         """,
-        (
-            merchant_id,
-            product_id,
-            data.stall_id,
-            data.name,
-            data.price,
-            data.quantity,
-            data.active,
-            data.pending,
-            data.event_id,
-            data.event_created_at,
-            json.dumps(data.images),
-            json.dumps(data.categories),
-            json.dumps(data.config.dict()),
-        ),
+        {
+            "merchant_id": merchant_id,
+            "id": product_id,
+            "stall_id": data.stall_id,
+            "name": data.name,
+            "price": data.price,
+            "quantity": data.quantity,
+            "active": data.active,
+            "pending": data.pending,
+            "event_id": data.event_id,
+            "event_created_at": data.event_created_at,
+            "image_urls": json.dumps(data.images),
+            "category_list": json.dumps(data.categories),
+            "meta": json.dumps(data.config.dict()),
+        },
     )
     product = await get_product(merchant_id, product_id)
     assert product, "Newly created product couldn't be retrieved"
@@ -319,26 +367,30 @@ async def create_product(merchant_id: str, data: PartialProduct) -> Product:
 
 
 async def update_product(merchant_id: str, product: Product) -> Product:
-
+    assert product.id
     await db.execute(
-        f"""
-        UPDATE nostrmarket.products set name = ?, price = ?, quantity = ?,  active = ?, pending = ?, event_id =?, event_created_at = ?, image_urls = ?, category_list = ?, meta = ?
-        WHERE merchant_id = ? AND id = ?
+        """
+        UPDATE nostrmarket.products
+        SET name = :name, price = :price, quantity = :quantity,
+            active = :active, pending = :pending, event_id =:event_id,
+            event_created_at = :event_created_at, image_urls = :image_urls,
+            category_list = :category_list, meta = :meta
+        WHERE merchant_id = :merchant_id AND id = :id
         """,
-        (
-            product.name,
-            product.price,
-            product.quantity,
-            product.active,
-            product.pending,
-            product.event_id,
-            product.event_created_at,
-            json.dumps(product.images),
-            json.dumps(product.categories),
-            json.dumps(product.config.dict()),
-            merchant_id,
-            product.id,
-        ),
+        {
+            "name": product.name,
+            "price": product.price,
+            "quantity": product.quantity,
+            "active": product.active,
+            "pending": product.pending,
+            "event_id": product.event_id,
+            "event_created_at": product.event_created_at,
+            "image_urls": json.dumps(product.images),
+            "category_list": json.dumps(product.categories),
+            "meta": json.dumps(product.config.dict()),
+            "merchant_id": merchant_id,
+            "id": product.id,
+        },
     )
     updated_product = await get_product(merchant_id, product.id)
     assert updated_product, "Updated product couldn't be retrieved"
@@ -350,33 +402,44 @@ async def update_product_quantity(
     product_id: str, new_quantity: int
 ) -> Optional[Product]:
     await db.execute(
-        f"UPDATE nostrmarket.products SET quantity = ?  WHERE id = ?",
-        (new_quantity, product_id),
+        """
+            UPDATE nostrmarket.products SET quantity = :quantity
+            WHERE id = :id
+        """,
+        {"quantity": new_quantity, "id": product_id},
     )
-    row = await db.fetchone(
-        "SELECT * FROM nostrmarket.products WHERE id = ?",
-        (product_id,),
+    row: dict = await db.fetchone(
+        "SELECT * FROM nostrmarket.products WHERE id = :id",
+        {"id": product_id},
     )
     return Product.from_row(row) if row else None
 
 
 async def get_product(merchant_id: str, product_id: str) -> Optional[Product]:
-    row = await db.fetchone(
-        "SELECT * FROM nostrmarket.products WHERE merchant_id =? AND id = ?",
-        (
-            merchant_id,
-            product_id,
-        ),
+    row: dict = await db.fetchone(
+        """
+            SELECT * FROM nostrmarket.products
+            WHERE merchant_id = :merchant_id AND id = :id
+        """,
+        {
+            "merchant_id": merchant_id,
+            "id": product_id,
+        },
     )
+    # TODO: remove from_row
     return Product.from_row(row) if row else None
 
 
 async def get_products(
     merchant_id: str, stall_id: str, pending: Optional[bool] = False
 ) -> List[Product]:
-    rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.products WHERE merchant_id = ? AND stall_id = ? AND pending = ?",
-        (merchant_id, stall_id, pending),
+    rows: list[dict] = await db.fetchall(
+        """
+        SELECT * FROM nostrmarket.products
+        WHERE merchant_id = :merchant_id
+              AND stall_id = :stall_id AND pending = :pending
+        """,
+        {"merchant_id": merchant_id, "stall_id": stall_id, "pending": pending},
     )
     return [Product.from_row(row) for row in rows]
 
@@ -384,56 +447,67 @@ async def get_products(
 async def get_products_by_ids(
     merchant_id: str, product_ids: List[str]
 ) -> List[Product]:
-    q = ",".join(["?"] * len(product_ids))
-    rows = await db.fetchall(
+    # todo: revisit
+
+    keys = []
+    values = {"merchant_id": merchant_id}
+    for i, v in enumerate(product_ids):
+        key = f"p_{i}"
+        values[key] = v
+        keys.append(f":{key}")
+    rows: list[dict] = await db.fetchall(
         f"""
-            SELECT id, stall_id, name, price, quantity, active, category_list, meta  
-            FROM nostrmarket.products 
-            WHERE merchant_id = ? AND pending = false AND id IN ({q})
+            SELECT id, stall_id, name, price, quantity, active, category_list, meta
+            FROM nostrmarket.products
+            WHERE merchant_id = :merchant_id
+                  AND pending = false AND id IN ({", ".join(keys)})
         """,
-        (merchant_id, *product_ids),
+        values,
     )
     return [Product.from_row(row) for row in rows]
 
 
 async def get_wallet_for_product(product_id: str) -> Optional[str]:
-    row = await db.fetchone(
+    row: dict = await db.fetchone(
         """
-        SELECT s.wallet FROM nostrmarket.products p
+        SELECT s.wallet as wallet FROM nostrmarket.products p
         INNER JOIN nostrmarket.stalls s
         ON p.stall_id = s.id
-        WHERE p.id = ? AND p.pending = false AND s.pending = false
+        WHERE p.id = :product_id AND p.pending = false AND s.pending = false
        """,
-        (product_id,),
+        {"product_id": product_id},
     )
-    return row[0] if row else None
+    return row["wallet"] if row else None
 
 
 async def get_last_product_update_time() -> int:
-    row = await db.fetchone(
+    row: dict = await db.fetchone(
         """
-            SELECT event_created_at FROM nostrmarket.products 
+            SELECT event_created_at FROM nostrmarket.products
             ORDER BY event_created_at DESC LIMIT 1
         """,
-        (),
+        {},
     )
-    return row[0] or 0 if row else 0
+    return row["event_created_at"] or 0 if row else 0
 
 
 async def delete_product(merchant_id: str, product_id: str) -> None:
     await db.execute(
-        "DELETE FROM nostrmarket.products WHERE merchant_id =? AND id = ?",
-        (
-            merchant_id,
-            product_id,
-        ),
+        """
+            DELETE FROM nostrmarket.products
+            WHERE merchant_id = :merchant_id AND id = :id
+        """,
+        {
+            "merchant_id": merchant_id,
+            "id": product_id,
+        },
     )
 
 
 async def delete_merchant_products(merchant_id: str) -> None:
     await db.execute(
-        "DELETE FROM nostrmarket.products WHERE merchant_id = ?",
-        (merchant_id,),
+        "DELETE FROM nostrmarket.products WHERE merchant_id = :merchant_id",
+        {"merchant_id": merchant_id},
     )
 
 
@@ -442,42 +516,57 @@ async def delete_merchant_products(merchant_id: str) -> None:
 
 async def create_order(merchant_id: str, o: Order) -> Order:
     await db.execute(
-        f"""
+        """
         INSERT INTO nostrmarket.orders (
-            merchant_id, 
-            id, 
-            event_id, 
+            merchant_id,
+            id,
+            event_id,
             event_created_at,
             merchant_public_key,
-            public_key, 
-            address, 
-            contact_data, 
-            extra_data, 
+            public_key,
+            address,
+            contact_data,
+            extra_data,
             order_items,
             shipping_id,
-            stall_id, 
-            invoice_id, 
+            stall_id,
+            invoice_id,
             total
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (
+            :merchant_id,
+            :id,
+            :event_id,
+            :event_created_at,
+            :merchant_public_key,
+            :public_key,
+            :address,
+            :contact_data,
+            :extra_data,
+            :order_items,
+            :shipping_id,
+            :stall_id,
+            :invoice_id,
+            :total
+        )
         ON CONFLICT(event_id) DO NOTHING
         """,
-        (
-            merchant_id,
-            o.id,
-            o.event_id,
-            o.event_created_at,
-            o.merchant_public_key,
-            o.public_key,
-            o.address,
-            json.dumps(o.contact.dict() if o.contact else {}),
-            json.dumps(o.extra.dict()),
-            json.dumps([i.dict() for i in o.items]),
-            o.shipping_id,
-            o.stall_id,
-            o.invoice_id,
-            o.total,
-        ),
+        {
+            "merchant_id": merchant_id,
+            "id": o.id,
+            "event_id": o.event_id,
+            "event_created_at": o.event_created_at,
+            "merchant_public_key": o.merchant_public_key,
+            "public_key": o.public_key,
+            "address": o.address,
+            "contact_data": json.dumps(o.contact.dict() if o.contact else {}),
+            "extra_data": json.dumps(o.extra.dict()),
+            "order_items": json.dumps([i.dict() for i in o.items]),
+            "shipping_id": o.shipping_id,
+            "stall_id": o.stall_id,
+            "invoice_id": o.invoice_id,
+            "total": o.total,
+        },
     )
     order = await get_order(merchant_id, o.id)
     assert order, "Newly created order couldn't be retrieved"
@@ -486,38 +575,54 @@ async def create_order(merchant_id: str, o: Order) -> Order:
 
 
 async def get_order(merchant_id: str, order_id: str) -> Optional[Order]:
-    row = await db.fetchone(
-        "SELECT * FROM nostrmarket.orders WHERE merchant_id =? AND id = ?",
-        (
-            merchant_id,
-            order_id,
-        ),
+    row: dict = await db.fetchone(
+        """
+            SELECT * FROM nostrmarket.orders
+            WHERE merchant_id = :merchant_id AND id = :id
+        """,
+        {
+            "merchant_id": merchant_id,
+            "id": order_id,
+        },
     )
     return Order.from_row(row) if row else None
 
 
 async def get_order_by_event_id(merchant_id: str, event_id: str) -> Optional[Order]:
-    row = await db.fetchone(
-        "SELECT * FROM nostrmarket.orders WHERE merchant_id =? AND  event_id =?",
-        (
-            merchant_id,
-            event_id,
-        ),
+    row: dict = await db.fetchone(
+        """
+            SELECT * FROM nostrmarket.orders
+            WHERE merchant_id = :merchant_id AND  event_id = :event_id
+        """,
+        {
+            "merchant_id": merchant_id,
+            "event_id": event_id,
+        },
     )
     return Order.from_row(row) if row else None
 
 
 async def get_orders(merchant_id: str, **kwargs) -> List[Order]:
     q = " AND ".join(
-        [f"{field[0]} = ?" for field in kwargs.items() if field[1] != None]
+        [
+            f"{field[0]} = :{field[0]}"
+            for field in kwargs.items()
+            if field[1] is not None
+        ]
     )
-    values = ()
-    if q:
-        q = f"AND {q}"
-        values = (v for v in kwargs.values() if v != None)
-    rows = await db.fetchall(
-        f"SELECT * FROM nostrmarket.orders WHERE merchant_id = ? {q} ORDER BY event_created_at DESC",
-        (merchant_id, *values),
+    values = {"merchant_id": merchant_id}
+    for field in kwargs.items():
+        if field[1] is None:
+            continue
+        values[field[0]] = field[1]
+
+    rows: list[dict] = await db.fetchall(
+        f"""
+        SELECT * FROM nostrmarket.orders
+        WHERE merchant_id = :merchant_id {q}
+        ORDER BY event_created_at DESC
+        """,
+        values,
     )
     return [Order.from_row(row) for row in rows]
 
@@ -526,26 +631,48 @@ async def get_orders_for_stall(
     merchant_id: str, stall_id: str, **kwargs
 ) -> List[Order]:
     q = " AND ".join(
-        [f"{field[0]} = ?" for field in kwargs.items() if field[1] != None]
+        [
+            f"{field[0]} = :{field[0]}"
+            for field in kwargs.items()
+            if field[1] is not None
+        ]
     )
-    values = ()
-    if q:
-        q = f"AND {q}"
-        values = (v for v in kwargs.values() if v != None)
-    rows = await db.fetchall(
-        f"SELECT * FROM nostrmarket.orders WHERE merchant_id = ? AND stall_id = ? {q} ORDER BY time DESC",
-        (merchant_id, stall_id, *values),
+    values = {"merchant_id": merchant_id, "stall_id": stall_id}
+    for field in kwargs.items():
+        if field[1] is None:
+            continue
+        values[field[0]] = field[1]
+
+    rows: list[dict] = await db.fetchall(
+        f"""
+            SELECT * FROM nostrmarket.orders
+            WHERE merchant_id = :merchant_id AND stall_id = :stall_id {q}
+            ORDER BY time DESC
+        """,
+        values,
     )
     return [Order.from_row(row) for row in rows]
 
 
 async def update_order(merchant_id: str, order_id: str, **kwargs) -> Optional[Order]:
-    q = ", ".join([f"{field[0]} = ?" for field in kwargs.items()])
+    q = ", ".join(
+        [
+            f"{field[0]} = :{field[0]}"
+            for field in kwargs.items()
+            if field[1] is not None
+        ]
+    )
+    values = {"merchant_id": merchant_id, "id": order_id}
+    for field in kwargs.items():
+        if field[1] is None:
+            continue
+        values[field[0]] = field[1]
     await db.execute(
         f"""
-            UPDATE nostrmarket.orders SET {q} WHERE merchant_id = ? and id = ?
+            UPDATE nostrmarket.orders
+            SET {q} WHERE merchant_id = :merchant_id and id = :id
         """,
-        (*kwargs.values(), merchant_id, order_id),
+        values,
     )
 
     return await get_order(merchant_id, order_id)
@@ -553,12 +680,12 @@ async def update_order(merchant_id: str, order_id: str, **kwargs) -> Optional[Or
 
 async def update_order_paid_status(order_id: str, paid: bool) -> Optional[Order]:
     await db.execute(
-        f"UPDATE nostrmarket.orders SET paid = ?  WHERE id = ?",
-        (paid, order_id),
+        "UPDATE nostrmarket.orders SET paid = :paid  WHERE id = :id",
+        {"paid": paid, "id": order_id},
     )
-    row = await db.fetchone(
-        "SELECT * FROM nostrmarket.orders WHERE id = ?",
-        (order_id,),
+    row: dict = await db.fetchone(
+        "SELECT * FROM nostrmarket.orders WHERE id = :id",
+        {"id": order_id},
     )
     return Order.from_row(row) if row else None
 
@@ -567,25 +694,29 @@ async def update_order_shipped_status(
     merchant_id: str, order_id: str, shipped: bool
 ) -> Optional[Order]:
     await db.execute(
-        f"UPDATE nostrmarket.orders SET shipped = ?  WHERE merchant_id = ? AND id = ?",
-        (shipped, merchant_id, order_id),
+        """
+            UPDATE nostrmarket.orders
+            SET shipped = :shipped
+            WHERE merchant_id = :merchant_id AND id = :id
+        """,
+        {"shipped": shipped, "merchant_id": merchant_id, "id": order_id},
     )
 
-    row = await db.fetchone(
-        "SELECT * FROM nostrmarket.orders WHERE id = ?",
-        (order_id,),
+    row: dict = await db.fetchone(
+        "SELECT * FROM nostrmarket.orders WHERE id = :id",
+        {"id": order_id},
     )
     return Order.from_row(row) if row else None
 
 
 async def delete_merchant_orders(merchant_id: str) -> None:
     await db.execute(
-        "DELETE FROM nostrmarket.orders WHERE merchant_id = ?",
-        (merchant_id,),
+        "DELETE FROM nostrmarket.orders WHERE merchant_id = :merchant_id",
+        {"merchant_id": merchant_id},
     )
 
 
-######################################## MESSAGES ########################################L
+######################################## MESSAGES ######################################
 
 
 async def create_direct_message(
@@ -593,21 +724,29 @@ async def create_direct_message(
 ) -> DirectMessage:
     dm_id = urlsafe_short_hash()
     await db.execute(
-        f"""
-        INSERT INTO nostrmarket.direct_messages (merchant_id, id, event_id, event_created_at, message, public_key, type, incoming)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        INSERT INTO nostrmarket.direct_messages
+        (
+            merchant_id, id, event_id, event_created_at,
+            message, public_key, type, incoming
+        )
+        VALUES
+            (
+            :merchant_id, :id, :event_id, :event_created_at,
+            :message, :public_key, :type, :incoming
+            )
         ON CONFLICT(event_id) DO NOTHING
         """,
-        (
-            merchant_id,
-            dm_id,
-            dm.event_id,
-            dm.event_created_at,
-            dm.message,
-            dm.public_key,
-            dm.type,
-            dm.incoming,
-        ),
+        {
+            "merchant_id": merchant_id,
+            "id": dm_id,
+            "event_id": dm.event_id,
+            "event_created_at": dm.event_created_at,
+            "message": dm.message,
+            "public_key": dm.public_key,
+            "type": dm.type,
+            "incoming": dm.incoming,
+        },
     )
     if dm.event_id:
         msg = await get_direct_message_by_event_id(merchant_id, dm.event_id)
@@ -618,12 +757,15 @@ async def create_direct_message(
 
 
 async def get_direct_message(merchant_id: str, dm_id: str) -> Optional[DirectMessage]:
-    row = await db.fetchone(
-        "SELECT * FROM nostrmarket.direct_messages WHERE merchant_id = ? AND id = ?",
-        (
-            merchant_id,
-            dm_id,
-        ),
+    row: dict = await db.fetchone(
+        """
+            SELECT * FROM nostrmarket.direct_messages
+            WHERE merchant_id = :merchant_id AND id = :id
+        """,
+        {
+            "merchant_id": merchant_id,
+            "id": dm_id,
+        },
     )
     return DirectMessage.from_row(row) if row else None
 
@@ -631,75 +773,85 @@ async def get_direct_message(merchant_id: str, dm_id: str) -> Optional[DirectMes
 async def get_direct_message_by_event_id(
     merchant_id: str, event_id: str
 ) -> Optional[DirectMessage]:
-    row = await db.fetchone(
-        "SELECT * FROM nostrmarket.direct_messages WHERE merchant_id = ? AND event_id = ?",
-        (
-            merchant_id,
-            event_id,
-        ),
+    row: dict = await db.fetchone(
+        """
+        SELECT * FROM nostrmarket.direct_messages
+        WHERE merchant_id = :merchant_id AND event_id = :event_id
+        """,
+        {
+            "merchant_id": merchant_id,
+            "event_id": event_id,
+        },
     )
     return DirectMessage.from_row(row) if row else None
 
 
 async def get_direct_messages(merchant_id: str, public_key: str) -> List[DirectMessage]:
-    rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.direct_messages WHERE merchant_id = ? AND public_key = ? ORDER BY event_created_at",
-        (merchant_id, public_key),
+    rows: list[dict] = await db.fetchall(
+        """
+        SELECT * FROM nostrmarket.direct_messages
+        WHERE merchant_id = :merchant_id AND public_key = :public_key
+        ORDER BY event_created_at
+        """,
+        {"merchant_id": merchant_id, "public_key": public_key},
     )
     return [DirectMessage.from_row(row) for row in rows]
 
 
 async def get_orders_from_direct_messages(merchant_id: str) -> List[DirectMessage]:
-    rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.direct_messages WHERE merchant_id = ? AND type >= 0 ORDER BY event_created_at, type",
-        (merchant_id),
+    rows: list[dict] = await db.fetchall(
+        """
+        SELECT * FROM nostrmarket.direct_messages
+        WHERE merchant_id = :merchant_id AND type >= 0 ORDER BY event_created_at, type
+        """,
+        {"merchant_id": merchant_id},
     )
     return [DirectMessage.from_row(row) for row in rows]
 
 
 async def get_last_direct_messages_time(merchant_id: str) -> int:
-    row = await db.fetchone(
+    row: dict = await db.fetchone(
         """
-            SELECT time FROM nostrmarket.direct_messages 
-            WHERE merchant_id = ? ORDER BY time DESC LIMIT 1
+            SELECT time FROM nostrmarket.direct_messages
+            WHERE merchant_id = :merchant_id ORDER BY time DESC LIMIT 1
         """,
-        (merchant_id,),
+        {"merchant_id": merchant_id},
     )
-    return row[0] if row else 0
+    return row["time"] if row else 0
 
 
 async def get_last_direct_messages_created_at() -> int:
-    row = await db.fetchone(
+    row: dict = await db.fetchone(
         """
-            SELECT event_created_at FROM nostrmarket.direct_messages 
+            SELECT event_created_at FROM nostrmarket.direct_messages
             ORDER BY event_created_at DESC LIMIT 1
         """,
-        (),
+        {},
     )
-    return row[0] if row else 0
+    return row["event_created_at"] if row else 0
 
 
 async def delete_merchant_direct_messages(merchant_id: str) -> None:
     await db.execute(
-        "DELETE FROM nostrmarket.direct_messages WHERE merchant_id = ?",
-        (merchant_id,),
+        "DELETE FROM nostrmarket.direct_messages WHERE merchant_id = :merchant_id",
+        {"merchant_id": merchant_id},
     )
 
 
-######################################## CUSTOMERS ########################################
+######################################## CUSTOMERS #####################################
 
 
 async def create_customer(merchant_id: str, data: Customer) -> Customer:
     await db.execute(
-        f"""
+        """
         INSERT INTO nostrmarket.customers (merchant_id, public_key, meta)
-        VALUES (?, ?, ?)
+        VALUES (:merchant_id, :public_key, :meta)
         """,
-        (
-            merchant_id,
-            data.public_key,
-            json.dumps(data.profile) if data.profile else "{}",
-        ),
+        {
+            "merchant_id": merchant_id,
+            "public_key": data.public_key,
+            "meta": json.dumps(data.profile) if data.profile else "{}",
+        },
     )
 
     customer = await get_customer(merchant_id, data.public_key)
@@ -708,30 +860,34 @@ async def create_customer(merchant_id: str, data: Customer) -> Customer:
 
 
 async def get_customer(merchant_id: str, public_key: str) -> Optional[Customer]:
-    row = await db.fetchone(
-        "SELECT * FROM nostrmarket.customers WHERE merchant_id = ? AND public_key = ?",
-        (
-            merchant_id,
-            public_key,
-        ),
+    row: dict = await db.fetchone(
+        """
+            SELECT * FROM nostrmarket.customers
+            WHERE merchant_id = :merchant_id AND public_key = :public_key
+        """,
+        {
+            "merchant_id": merchant_id,
+            "public_key": public_key,
+        },
     )
     return Customer.from_row(row) if row else None
 
 
 async def get_customers(merchant_id: str) -> List[Customer]:
-    rows = await db.fetchall(
-        "SELECT * FROM nostrmarket.customers WHERE merchant_id = ?", (merchant_id,)
+    rows: list[dict] = await db.fetchall(
+        "SELECT * FROM nostrmarket.customers WHERE merchant_id = :merchant_id",
+        {"merchant_id": merchant_id},
     )
     return [Customer.from_row(row) for row in rows]
 
 
 async def get_all_unique_customers() -> List[Customer]:
     q = """
-            SELECT public_key, MAX(merchant_id) as merchant_id, MAX(event_created_at)  
-            FROM nostrmarket.customers 
+            SELECT public_key, MAX(merchant_id) as merchant_id, MAX(event_created_at)
+            FROM nostrmarket.customers
             GROUP BY public_key
         """
-    rows = await db.fetchall(q)
+    rows: list[dict] = await db.fetchall(q)
     return [Customer.from_row(row) for row in rows]
 
 
@@ -739,27 +895,43 @@ async def update_customer_profile(
     public_key: str, event_created_at: int, profile: CustomerProfile
 ):
     await db.execute(
-        f"UPDATE nostrmarket.customers SET event_created_at = ?, meta = ? WHERE public_key = ?",
-        (event_created_at, json.dumps(profile.dict()), public_key),
+        """
+        UPDATE nostrmarket.customers
+        SET event_created_at = :event_created_at, meta = :meta
+        WHERE public_key = :public_key
+        """,
+        {
+            "event_created_at": event_created_at,
+            "meta": json.dumps(profile.dict()),
+            "public_key": public_key,
+        },
     )
 
 
 async def increment_customer_unread_messages(merchant_id: str, public_key: str):
     await db.execute(
-        f"UPDATE nostrmarket.customers SET unread_messages = unread_messages + 1 WHERE merchant_id = ? AND public_key = ?",
-        (
-            merchant_id,
-            public_key,
-        ),
+        """
+        UPDATE nostrmarket.customers
+        SET unread_messages = unread_messages + 1
+        WHERE merchant_id = :merchant_id AND public_key = :public_key
+        """,
+        {
+            "merchant_id": merchant_id,
+            "public_key": public_key,
+        },
     )
 
 
 # ??? two merchants
 async def update_customer_no_unread_messages(merchant_id: str, public_key: str):
     await db.execute(
-        f"UPDATE nostrmarket.customers SET unread_messages = 0 WHERE merchant_id =? AND public_key = ?",
-        (
-            merchant_id,
-            public_key,
-        ),
+        """
+        UPDATE nostrmarket.customers
+        SET unread_messages = 0
+        WHERE merchant_id = :merchant_id AND public_key = :public_key
+        """,
+        {
+            "merchant_id": merchant_id,
+            "public_key": public_key,
+        },
     )

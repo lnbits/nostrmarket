@@ -1,0 +1,369 @@
+<div>
+  <div class="row q-mb-md">
+    <div class="col-md-4 col-sm-6 q-pr-lg">
+      <q-select
+        v-model="search.publicKey"
+        :options="customerOptions"
+        label="Customer"
+        emit-value
+        class="text-wrap"
+      >
+      </q-select>
+    </div>
+    <div class="col-md-2 col-sm-6 q-pr-lg">
+      <q-select
+        v-model="search.isPaid"
+        :options="ternaryOptions"
+        label="Paid"
+        emit-value
+      >
+      </q-select>
+    </div>
+    <div class="col-md-2 col-sm-6 q-pr-lg">
+      <q-select
+        v-model="search.isShipped"
+        :options="ternaryOptions"
+        label="Shipped"
+        emit-value
+      >
+      </q-select>
+    </div>
+    <div class="col-md-4 col-sm-6">
+      <q-btn-dropdown
+        @click="getOrders()"
+        :disable="search.restoring"
+        outline
+        unelevated
+        split
+        class="q-pt-md float-right"
+        :label="search.restoring ? 'Restoring Orders...' : 'Load Orders'"
+      >
+        <q-spinner
+          v-if="search.restoring"
+          color="primary"
+          size="2.55em"
+          class="q-pt-md float-right"
+        ></q-spinner>
+        <q-item @click="restoreOrders" clickable v-close-popup>
+          <q-item-section>
+            <q-item-label>Restore Orders</q-item-label>
+            <q-item-label caption
+              >Restore previous orders from Nostr</q-item-label
+            >
+          </q-item-section>
+        </q-item>
+      </q-btn-dropdown>
+    </div>
+  </div>
+  <div class="row q-mt-md">
+    <div class="col">
+      <q-table
+        flat
+        dense
+        :rows="orders"
+        row-key="id"
+        :columns="ordersTable.columns"
+        v-model:pagination="ordersTable.pagination"
+        :filter="filter"
+      >
+        <template v-slot:body="props">
+          <q-tr :props="props">
+            <q-td auto-width>
+              <q-btn
+                size="sm"
+                color="primary"
+                round
+                dense
+                @click="props.row.expanded= !props.row.expanded"
+                :icon="props.row.expanded? 'remove' : 'add'"
+              />
+            </q-td>
+
+            <q-td key="id" :props="props">
+              <span v-text="toShortId(props.row.id)"></span>
+
+              <q-badge v-if="props.row.isNew" color="orange">new</q-badge></q-td
+            >
+            <q-td key="total" :props="props">
+              <span v-text="satBtc(props.row.total)"></span>
+            </q-td>
+            <q-td key="fiat" :props="props">
+              <span v-if="props.row.extra.currency !== 'sat'">
+                <span v-text="orderTotal(props.row)"></span
+                ><span v-text="props.row.extra.currency"></span>
+              </span>
+            </q-td>
+
+            <q-td key="paid" :props="props">
+              <q-checkbox
+                v-model="props.row.paid"
+                :label="props.row.paid ? 'Yes' : 'No'"
+                disable
+                readonly
+                size="sm"
+              ></q-checkbox>
+            </q-td>
+            <q-td key="shipped" :props="props">
+              <q-checkbox
+                v-model="props.row.shipped"
+                @update:model-value="showShipOrderDialog(props.row)"
+                :label="props.row.shipped ? 'Yes' : 'No'"
+                size="sm"
+              ></q-checkbox>
+            </q-td>
+
+            <q-td key="public_key" :props="props">
+              <span
+                @click="customerSelected(props.row.public_key)"
+                class="cursor-pointer"
+              >
+                <span v-text="toShortId(props.row.public_key)"></span>
+              </span>
+            </q-td>
+            <q-td key="event_created_at" :props="props">
+              <span v-text="formatDate(props.row.event_created_at)"></span>
+            </q-td>
+          </q-tr>
+          <q-tr v-if="props.row.expanded" :props="props">
+            <q-td colspan="100%">
+              <div class="row items-center no-wrap">
+                <div class="col-3 q-pr-lg">Products:</div>
+                <div class="col-8">
+                  <div class="row items-center no-wrap q-mb-md">
+                    <div class="col-1"><strong>Quantity</strong></div>
+                    <div class="col-1"></div>
+                    <div class="col-4"><strong>Name</strong></div>
+                    <div class="col-2"><strong>Price</strong></div>
+                    <div class="col-4"></div>
+                  </div>
+                </div>
+                <div class="col-1"></div>
+              </div>
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col-3 q-pr-lg"></div>
+                <div class="col-8">
+                  <div
+                    v-for="item in props.row.items"
+                    class="row items-center no-wrap q-mb-md"
+                  >
+                    <div class="col-1">
+                      <span v-text="item.quantity"></span>
+                    </div>
+                    <div class="col-1">x</div>
+                    <div class="col-4">
+                      <p :title="productName(props.row, item.product_id)">
+                        <span
+                          v-text="shortLabel(productName(props.row, item.product_id))"
+                        ></span>
+                      </p>
+                    </div>
+                    <div class="col-2">
+                      <span
+                        v-text="productPrice(props.row, item.product_id)"
+                      ></span>
+                    </div>
+                    <div class="col-4"></div>
+                  </div>
+                  <div
+                    v-if="props.row.extra.shipping_cost"
+                    class="row items-center no-wrap q-mb-md"
+                  >
+                    <div class="col-1"></div>
+                    <div class="col-1"></div>
+                    <div class="col-4">Shipping Cost</div>
+                    <div class="col-2">
+                      <span v-text="props.row.extra.shipping_cost"></span>
+                      <span v-text="props.row.extra.currency"></span>
+                    </div>
+                    <div class="col-4"></div>
+                  </div>
+                </div>
+                <div class="col-1"></div>
+              </div>
+              <div
+                v-if="props.row.extra.currency !== 'sat'"
+                class="row items-center no-wrap q-mb-md q-mt-md"
+              >
+                <div class="col-3 q-pr-lg">Exchange Rate (1 BTC):</div>
+                <div class="col-6 col-sm-8 q-pr-lg">
+                  <q-input
+                    filled
+                    dense
+                    readonly
+                    disabled
+                    :value="formatFiat(props.row.extra.btc_price, props.row.extra.currency)"
+                    type="text"
+                  ></q-input>
+                </div>
+                <div class="col-3 col-sm-1"></div>
+              </div>
+              <div
+                v-if="props.row.extra.fail_message"
+                class="row items-center no-wrap q-mb-md"
+              >
+                <div class="col-3 q-pr-lg">Error:</div>
+                <div class="col-6 col-sm-8 q-pr-lg">
+                  <q-badge color="pink"
+                    ><span v-text="props.row.extra.fail_message"></span
+                  ></q-badge>
+                </div>
+                <div class="col-3 col-sm-1"></div>
+              </div>
+              <div class="row items-center no-wrap q-mb-md q-mt-md">
+                <div class="col-3 q-pr-lg">Order ID:</div>
+                <div class="col-6 col-sm-8 q-pr-lg">
+                  <q-input
+                    filled
+                    dense
+                    readonly
+                    disabled
+                    v-model.trim="props.row.id"
+                    type="text"
+                  ></q-input>
+                </div>
+                <div class="col-3 col-sm-1"></div>
+              </div>
+
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col-3 q-pr-lg">Customer Public Key:</div>
+                <div class="col-6 col-sm-8 q-pr-lg">
+                  <q-input
+                    filled
+                    dense
+                    readonly
+                    disabled
+                    v-model.trim="props.row.public_key"
+                    type="text"
+                  ></q-input>
+                </div>
+                <div class="col-3 col-sm-1"></div>
+              </div>
+
+              <div
+                v-if="props.row.address"
+                class="row items-center no-wrap q-mb-md"
+              >
+                <div class="col-3 q-pr-lg">Address:</div>
+                <div class="col-6 col-sm-8 q-pr-lg">
+                  <q-input
+                    filled
+                    dense
+                    readonly
+                    disabled
+                    v-model.trim="props.row.address"
+                    type="text"
+                  ></q-input>
+                </div>
+                <div class="col-3 col-sm-1"></div>
+              </div>
+
+              <div
+                v-if="props.row.contact.phone"
+                class="row items-center no-wrap q-mb-md"
+              >
+                <div class="col-3 q-pr-lg">Phone:</div>
+                <div class="col-6 col-sm-8 q-pr-lg">
+                  <q-input
+                    filled
+                    dense
+                    readonly
+                    disabled
+                    v-model.trim="props.row.contact.phone"
+                    type="text"
+                  ></q-input>
+                </div>
+                <div class="col-3 col-sm-1"></div>
+              </div>
+              <div
+                v-if="props.row.contact.email"
+                class="row items-center no-wrap q-mb-md"
+              >
+                <div class="col-3 q-pr-lg">Email:</div>
+                <div class="col-6 col-sm-8 q-pr-lg">
+                  <q-input
+                    filled
+                    dense
+                    readonly
+                    disabled
+                    v-model.trim="props.row.contact.email"
+                    type="text"
+                  ></q-input>
+                </div>
+                <div class="col-3 col-sm-1"></div>
+              </div>
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col-3 q-pr-lg">Shipping Zone:</div>
+                <div class="col-6 col-sm-8 q-pr-lg">
+                  <q-select
+                    :options="getStallZones(props.row.stall_id)"
+                    filled
+                    dense
+                    emit-value
+                    v-model.trim="props.row.shipping_id"
+                    label="Shipping Zones"
+                  ></q-select>
+                </div>
+                <div class="col-3 col-sm-1"></div>
+              </div>
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col-3 q-pr-lg">Invoice ID:</div>
+                <div class="col-6 col-sm-8 q-pr-lg">
+                  <q-input
+                    filled
+                    dense
+                    readonly
+                    disabled
+                    v-model.trim="props.row.invoice_id"
+                    type="text"
+                  ></q-input>
+                </div>
+                <div class="col-3"></div>
+              </div>
+              <div class="row items-center no-wrap q-mb-md">
+                <div class="col-3 q-pr-lg"></div>
+
+                <div class="col-9">
+                  <q-btn
+                    @click="reissueOrderInvoice(props.row)"
+                    unelevated
+                    color="primary"
+                    type="submit"
+                    class="float-left"
+                    label="Reissue Invoice"
+                  ></q-btn>
+                </div>
+              </div>
+            </q-td>
+          </q-tr>
+        </template>
+      </q-table>
+    </div>
+  </div>
+  <q-dialog v-model="showShipDialog" position="top">
+    <q-card v-if="selectedOrder" class="q-pa-lg q-pt-xl" style="width: 500px">
+      <q-form @submit="updateOrderShipped" class="q-gutter-md">
+        <q-input
+          filled
+          dense
+          v-model.trim="shippingMessage"
+          label="Shipping Message"
+          type="textarea"
+          rows="4"
+        ></q-input>
+
+        <div class="row q-mt-lg">
+          <q-btn
+            unelevated
+            color="primary"
+            type="submit"
+            :label="selectedOrder.shipped? 'Unship Order' : 'Ship Order'"
+          ></q-btn>
+
+          <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+            >Cancel</q-btn
+          >
+        </div>
+      </q-form>
+    </q-card>
+  </q-dialog>
+</div>

@@ -1,0 +1,14 @@
+**/.git
+**/.svn
+**/.hg
+**/node_modules
+
+*.yml
+
+**/static/market/*
+**/static/js/nostr.bundle.js*
+
+
+flake.lock
+
+.venv

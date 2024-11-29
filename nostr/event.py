@@ -13,7 +13,7 @@ class NostrEvent(BaseModel):
     kind: int
     tags: List[List[str]] = []
     content: str = ""
-    sig: Optional[str]
+    sig: Optional[str] = None
 
     def serialize(self) -> List:
         return [0, self.pubkey, self.created_at, self.kind, self.tags, self.content]
@@ -41,7 +41,7 @@ class NostrEvent(BaseModel):
                 f"Invalid public key: '{self.pubkey}' for event '{self.id}'"
             )
 
-        valid_signature = pub_key.schnorr_verify(
+        valid_signature = self.sig and pub_key.schnorr_verify(
             bytes.fromhex(event_id), bytes.fromhex(self.sig), None, raw=True
         )
         if not valid_signature:
