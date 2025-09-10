@@ -30,7 +30,7 @@ class NostrClient:
     async def connect_to_nostrclient_ws(self) -> WebSocketApp:
         logger.debug(f"Connecting to websockets for 'nostrclient' extension...")
 
-        relay_endpoint = encrypt_internal_message("relay")
+        relay_endpoint = encrypt_internal_message("relay", urlsafe=True)
         on_open, on_message, on_error, on_close = self._ws_handlers()
         ws = WebSocketApp(
             f"ws://localhost:{settings.port}/nostrclient/api/v1/{relay_endpoint}",
