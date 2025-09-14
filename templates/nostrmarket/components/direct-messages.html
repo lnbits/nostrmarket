@@ -27,7 +27,7 @@
     </q-card-section>
     <q-card-section>
       <div class="row q-col-gutter-sm items-end">
-        <div class="col" style="min-width: 0;">
+        <div class="col" style="min-width: 0">
           <q-select
             v-model="activePublicKey"
             :options="customers.map(c => ({label: buildCustomerLabel(c), value: c.public_key}))"
@@ -43,7 +43,11 @@
                   <q-item-label>
                     <span v-text="scope.opt.label.split('(')[0]"></span>
                   </q-item-label>
-                  <q-item-label caption class="text-mono" style="word-break: break-all;">
+                  <q-item-label
+                    caption
+                    class="text-mono"
+                    style="word-break: break-all"
+                  >
                     <span v-text="scope.opt.value"></span>
                   </q-item-label>
                 </q-item-section>

@@ -20,7 +20,7 @@
           <div class="text-subtitle2 q-mb-sm">Public Key</div>
           <div
             class="cursor-pointer q-mx-auto"
-            style="max-width: 200px;"
+            style="max-width: 200px"
             @click="copyText(publicKey)"
           >
             <q-responsive :ratio="1">
@@ -32,8 +32,10 @@
               ></lnbits-qrcode>
             </q-responsive>
           </div>
-          <div class="q-mt-md text-caption text-mono" style="padding: 0 16px;">
-            <span v-text="publicKey.substring(0, 8)"></span>...<span v-text="publicKey.substring(publicKey.length - 8)"></span>
+          <div class="q-mt-md text-caption text-mono" style="padding: 0 16px">
+            <span v-text="publicKey.substring(0, 8)"></span>...<span
+              v-text="publicKey.substring(publicKey.length - 8)"
+            ></span>
           </div>
           <q-btn
             flat
@@ -58,7 +60,7 @@
           </div>
           <div
             class="cursor-pointer q-mx-auto"
-            style="max-width: 200px;"
+            style="max-width: 200px"
             @click="copyText(privateKey)"
           >
             <q-responsive :ratio="1">
@@ -70,8 +72,10 @@
               ></lnbits-qrcode>
             </q-responsive>
           </div>
-          <div class="q-mt-md text-caption text-mono" style="padding: 0 16px;">
-            <span v-text="privateKey.substring(0, 8)"></span>...<span v-text="privateKey.substring(privateKey.length - 8)"></span>
+          <div class="q-mt-md text-caption text-mono" style="padding: 0 16px">
+            <span v-text="privateKey.substring(0, 8)"></span>...<span
+              v-text="privateKey.substring(privateKey.length - 8)"
+            ></span>
           </div>
           <q-btn
             flat
