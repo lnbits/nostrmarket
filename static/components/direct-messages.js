@@ -50,13 +50,16 @@ window.app.component('direct-messages', {
   methods: {
     sendMessage: async function () {},
     buildCustomerLabel: function (c) {
-      let label = `${c.profile.name || 'unknown'} ${c.profile.about || ''}`
-      if (c.unread_messages) {
-        label += `[new: ${c.unread_messages}]`
+      if (!c) return ''
+      let label = c.profile.name || 'unknown'
+      if (c.profile.about) {
+        label += ` - ${c.profile.about.substring(0, 30)}`
+        if (c.profile.about.length > 30) label += '...'
       }
-      label += `  (${c.public_key.slice(0, 16)}...${c.public_key.slice(
-        c.public_key.length - 16
-      )}`
+      if (c.unread_messages) {
+        label = `[${c.unread_messages} new] ${label}`
+      }
+      label += ` (${c.public_key.slice(0, 8)}...${c.public_key.slice(-8)})`
       return label
     },
     getDirectMessages: async function (pubkey) {

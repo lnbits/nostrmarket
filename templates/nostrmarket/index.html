@@ -5,8 +5,8 @@
     <div v-if="merchant && merchant.id">
       <q-card>
         <q-card-section>
-          <div class="row">
-            <div class="col-4">
+          <div class="row items-center q-col-gutter-sm">
+            <div class="col-12 col-sm-auto">
               <merchant-details
                 :merchant-id="merchant.id"
                 :inkey="g.user.wallets[0].inkey"
@@ -16,25 +16,26 @@
                 @merchant-deleted="handleMerchantDeleted"
               ></merchant-details>
             </div>
-            <div class="col-6">
-              <q-toggle
-                @update:model-value="toggleMerchantState()"
-                size="md"
-                checked-icon="check"
-                v-model="merchant.config.active"
-                color="primary"
-                unchecked-icon="clear"
-                class="float-left"
-              />
-              <span
-                v-text="merchant.config.active ? 'Accepting Orders': 'Orders Paused'"
-              ></span>
+            <div class="col-12 col-sm-auto q-mx-sm">
+              <div class="row items-center no-wrap">
+                <q-toggle
+                  @update:model-value="toggleMerchantState()"
+                  size="md"
+                  checked-icon="check"
+                  v-model="merchant.config.active"
+                  color="primary"
+                  unchecked-icon="clear"
+                />
+                <span
+                  class="q-ml-sm"
+                  v-text="merchant.config.active ? 'Accepting Orders': 'Orders Paused'"
+                ></span>
+              </div>
             </div>
-            <div class="col-2">
+            <div class="col-12 col-sm-auto q-ml-sm-auto">
               <shipping-zones
                 :inkey="g.user.wallets[0].inkey"
                 :adminkey="g.user.wallets[0].adminkey"
-                class="float-right"
               ></shipping-zones>
             </div>
           </div>
