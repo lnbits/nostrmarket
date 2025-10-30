@@ -1,16 +1,16 @@
 import base64
 import secrets
 
-import secp256k1
+import coincurve
 from bech32 import bech32_decode, convertbits
-from cffi import FFI
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 
 def get_shared_secret(privkey: str, pubkey: str):
-    point = secp256k1.PublicKey(bytes.fromhex("02" + pubkey), True)
-    return point.ecdh(bytes.fromhex(privkey), hashfn=copy_x)
+    pk = coincurve.PublicKey(bytes.fromhex("02" + pubkey))
+    sk = coincurve.PrivateKey(bytes.fromhex(privkey))
+    return sk.ecdh(pk.format())
 
 
 def decrypt_message(encoded_message: str, encryption_key) -> str:
@@ -48,8 +48,8 @@ def encrypt_message(message: str, encryption_key, iv: bytes | None = None) -> st
 
 
 def sign_message_hash(private_key: str, hash_: bytes) -> str:
-    privkey = secp256k1.PrivateKey(bytes.fromhex(private_key))
-    sig = privkey.schnorr_sign(hash_, None, raw=True)
+    privkey = coincurve.PrivateKey(bytes.fromhex(private_key))
+    sig = privkey.sign_schnorr(hash_)
     return sig.hex()
 
 
@@ -62,17 +62,6 @@ def test_decrypt_encrypt(encoded_message: str, encryption_key):
     assert (
         encoded_message == ecrypted_msg
     ), f"expected '{encoded_message}', but got '{ecrypted_msg}'"
-
-
-ffi = FFI()
-
-
-@ffi.callback(
-    "int (unsigned char *, const unsigned char *, const unsigned char *, void *)"
-)
-def copy_x(output, x32, y32, data):
-    ffi.memmove(output, x32, 32)
-    return 1
 
 
 def normalize_public_key(pubkey: str) -> str:
