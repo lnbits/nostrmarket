@@ -1,12 +1,11 @@
 import json
 from http import HTTPStatus
-from typing import List, Optional
 
 from fastapi import Depends
 from fastapi.exceptions import HTTPException
+from lnbits.core.models import WalletTypeInfo
 from lnbits.core.services import websocket_updater
 from lnbits.decorators import (
-    WalletTypeInfo,
     require_admin_key,
     require_invoice_key,
 )
@@ -135,7 +134,7 @@ async def api_create_merchant(
 @nostrmarket_ext.get("/api/v1/merchant")
 async def api_get_merchant(
     wallet: WalletTypeInfo = Depends(require_invoice_key),
-) -> Optional[Merchant]:
+) -> Merchant | None:
 
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
@@ -303,7 +302,7 @@ async def api_delete_merchant_on_nostr(
 @nostrmarket_ext.get("/api/v1/zone")
 async def api_get_zones(
     wallet: WalletTypeInfo = Depends(require_invoice_key),
-) -> List[Zone]:
+) -> list[Zone]:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
@@ -503,7 +502,7 @@ async def api_get_stall(
 
 @nostrmarket_ext.get("/api/v1/stall")
 async def api_get_stalls(
-    pending: Optional[bool] = False,
+    pending: bool | None = False,
     wallet: WalletTypeInfo = Depends(require_invoice_key),
 ):
     try:
@@ -527,7 +526,7 @@ async def api_get_stalls(
 @nostrmarket_ext.get("/api/v1/stall/product/{stall_id}")
 async def api_get_stall_products(
     stall_id: str,
-    pending: Optional[bool] = False,
+    pending: bool | None = False,
     wallet: WalletTypeInfo = Depends(require_invoice_key),
 ):
     try:
@@ -551,9 +550,9 @@ async def api_get_stall_products(
 @nostrmarket_ext.get("/api/v1/stall/order/{stall_id}")
 async def api_get_stall_orders(
     stall_id: str,
-    paid: Optional[bool] = None,
-    shipped: Optional[bool] = None,
-    pubkey: Optional[str] = None,
+    paid: bool | None = None,
+    shipped: bool | None = None,
+    pubkey: str | None = None,
     wallet: WalletTypeInfo = Depends(require_invoice_key),
 ):
     try:
@@ -687,7 +686,7 @@ async def api_update_product(
 async def api_get_product(
     product_id: str,
     wallet: WalletTypeInfo = Depends(require_invoice_key),
-) -> Optional[Product]:
+) -> Product | None:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
@@ -772,9 +771,9 @@ async def api_get_order(
 
 @nostrmarket_ext.get("/api/v1/order")
 async def api_get_orders(
-    paid: Optional[bool] = None,
-    shipped: Optional[bool] = None,
-    pubkey: Optional[str] = None,
+    paid: bool | None = None,
+    shipped: bool | None = None,
+    pubkey: str | None = None,
     wallet: WalletTypeInfo = Depends(require_invoice_key),
 ):
     try:
@@ -860,7 +859,7 @@ async def api_update_order_status(
 async def api_restore_order(
     event_id: str,
     wallet: WalletTypeInfo = Depends(require_admin_key),
-) -> Optional[Order]:
+) -> Order | None:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
@@ -987,7 +986,7 @@ async def api_reissue_order_invoice(
 @nostrmarket_ext.get("/api/v1/message/{public_key}")
 async def api_get_messages(
     public_key: str, wallet: WalletTypeInfo = Depends(require_invoice_key)
-) -> List[DirectMessage]:
+) -> list[DirectMessage]:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
@@ -1043,7 +1042,7 @@ async def api_create_message(
 @nostrmarket_ext.get("/api/v1/customer")
 async def api_get_customers(
     wallet: WalletTypeInfo = Depends(require_invoice_key),
-) -> List[Customer]:
+) -> list[Customer]:
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"

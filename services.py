@@ -1,8 +1,7 @@
 import asyncio
 import json
-from typing import List, Optional, Tuple
 
-from lnbits.bolt11 import decode
+from bolt11 import decode
 from lnbits.core.crud import get_wallet
 from lnbits.core.services import create_invoice, websocket_updater
 from loguru import logger
@@ -60,7 +59,7 @@ from .nostr.event import NostrEvent
 
 async def create_new_order(
     merchant_public_key: str, data: PartialOrder
-) -> Optional[PaymentRequest]:
+) -> PaymentRequest | None:
     merchant = await get_merchant_by_pubkey(merchant_public_key)
     assert merchant, "Cannot find merchant for order!"
 
@@ -137,7 +136,7 @@ async def update_merchant_to_nostr(
     merchant: Merchant, delete_merchant=False
 ) -> Merchant:
     stalls = await get_stalls(merchant.id)
-    event: Optional[NostrEvent] = None
+    event: NostrEvent | None = None
     for stall in stalls:
         assert stall.id
         products = await get_products(merchant.id, stall.id)
@@ -222,7 +221,7 @@ async def notify_client_of_order_status(
 
 async def update_products_for_order(
     merchant: Merchant, order: Order
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     product_ids = [i.product_id for i in order.items]
     success, products, message = await compute_products_new_quantity(
         merchant.id, product_ids, order.items
@@ -290,9 +289,9 @@ async def send_dm(
 
 
 async def compute_products_new_quantity(
-    merchant_id: str, product_ids: List[str], items: List[OrderItem]
-) -> Tuple[bool, List[Product], str]:
-    products: List[Product] = await get_products_by_ids(merchant_id, product_ids)
+    merchant_id: str, product_ids: list[str], items: list[OrderItem]
+) -> tuple[bool, list[Product], str]:
+    products: list[Product] = await get_products_by_ids(merchant_id, product_ids)
 
     for p in products:
         required_quantity = next(
@@ -484,7 +483,7 @@ async def _handle_outgoing_dms(
 
 async def _handle_incoming_structured_dm(
     merchant: Merchant, dm: DirectMessage, json_data: dict
-) -> Tuple[DirectMessageType, Optional[str]]:
+) -> tuple[DirectMessageType, str | None]:
     try:
         if dm.type == DirectMessageType.CUSTOMER_ORDER.value and merchant.config.active:
             json_resp = await _handle_new_order(

@@ -1,0 +1,10 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  lint:
+    uses: lnbits/lnbits/.github/workflows/lint.yml@dev

@@ -5,27 +5,27 @@ format: prettier black ruff
 check: mypy pyright checkblack checkruff checkprettier
 
 prettier:
-	poetry run ./node_modules/.bin/prettier --write .
+	uv run ./node_modules/.bin/prettier --write .
 pyright:
-	poetry run ./node_modules/.bin/pyright
+	uv run ./node_modules/.bin/pyright
 
 mypy:
-	poetry run mypy .
+	uv run mypy .
 
 black:
-	poetry run black .
+	uv run black .
 
 ruff:
-	poetry run ruff check . --fix
+	uv run ruff check . --fix
 
 checkruff:
-	poetry run ruff check .
+	uv run ruff check .
 
 checkprettier:
-	poetry run ./node_modules/.bin/prettier --check .
+	uv run ./node_modules/.bin/prettier --check .
 
 checkblack:
-	poetry run black --check .
+	uv run black --check .
 
 checkeditorconfig:
 	editorconfig-checker
@@ -33,14 +33,14 @@ checkeditorconfig:
 test:
 	PYTHONUNBUFFERED=1 \
 	DEBUG=true \
-	poetry run pytest
+	uv run pytest
 install-pre-commit-hook:
 	@echo "Installing pre-commit hook to git"
-	@echo "Uninstall the hook with poetry run pre-commit uninstall"
-	poetry run pre-commit install
+	@echo "Uninstall the hook with uv run pre-commit uninstall"
+	uv run pre-commit install
 
 pre-commit:
-	poetry run pre-commit run --all-files
+	uv run pre-commit run --all-files
 
 
 checkbundle:
