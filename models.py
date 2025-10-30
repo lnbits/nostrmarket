@@ -2,7 +2,7 @@ import json
 import time
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 from lnbits.utils.exchange_rates import btc_price, fiat_amount_as_satoshis
 from pydantic import BaseModel
@@ -32,16 +32,16 @@ class Nostrable:
 
 
 class MerchantProfile(BaseModel):
-    name: Optional[str] = None
-    about: Optional[str] = None
-    picture: Optional[str] = None
+    name: str | None = None
+    about: str | None = None
+    picture: str | None = None
 
 
 class MerchantConfig(MerchantProfile):
-    event_id: Optional[str] = None
-    sync_from_nostr = False
+    event_id: str | None = None
+    sync_from_nostr: bool = False
     active: bool = False
-    restore_in_progress: Optional[bool] = False
+    restore_in_progress: bool | None = False
 
 
 class PartialMerchant(BaseModel):
@@ -52,7 +52,7 @@ class PartialMerchant(BaseModel):
 
 class Merchant(PartialMerchant, Nostrable):
     id: str
-    time: Optional[int] = 0
+    time: int | None = 0
 
     def sign_hash(self, hash_: bytes) -> str:
         return sign_message_hash(self.private_key, hash_)
@@ -122,11 +122,11 @@ class Merchant(PartialMerchant, Nostrable):
 
 ######################################## ZONES ########################################
 class Zone(BaseModel):
-    id: Optional[str] = None
-    name: Optional[str] = None
+    id: str | None = None
+    name: str | None = None
     currency: str
     cost: float
-    countries: List[str] = []
+    countries: list[str] = []
 
     @classmethod
     def from_row(cls, row: dict) -> "Zone":
@@ -139,22 +139,22 @@ class Zone(BaseModel):
 
 
 class StallConfig(BaseModel):
-    image_url: Optional[str] = None
-    description: Optional[str] = None
+    image_url: str | None = None
+    description: str | None = None
 
 
 class Stall(BaseModel, Nostrable):
-    id: Optional[str] = None
+    id: str | None = None
     wallet: str
     name: str
     currency: str = "sat"
-    shipping_zones: List[Zone] = []
+    shipping_zones: list[Zone] = []
     config: StallConfig = StallConfig()
     pending: bool = False
 
     """Last published nostr event for this Stall"""
-    event_id: Optional[str] = None
-    event_created_at: Optional[int] = None
+    event_id: str | None = None
+    event_created_at: int | None = None
 
     def validate_stall(self):
         for z in self.shipping_zones:
@@ -212,19 +212,19 @@ class ProductShippingCost(BaseModel):
 
 
 class ProductConfig(BaseModel):
-    description: Optional[str] = None
-    currency: Optional[str] = None
-    use_autoreply: Optional[bool] = False
-    autoreply_message: Optional[str] = None
-    shipping: List[ProductShippingCost] = []
+    description: str | None = None
+    currency: str | None = None
+    use_autoreply: bool | None = False
+    autoreply_message: str | None = None
+    shipping: list[ProductShippingCost] = []
 
 
 class Product(BaseModel, Nostrable):
-    id: Optional[str] = None
+    id: str | None = None
     stall_id: str
     name: str
-    categories: List[str] = []
-    images: List[str] = []
+    categories: list[str] = []
+    images: list[str] = []
     price: float
     quantity: int
     active: bool = True
@@ -232,8 +232,8 @@ class Product(BaseModel, Nostrable):
     config: ProductConfig = ProductConfig()
 
     """Last published nostr event for this Product"""
-    event_id: Optional[str] = None
-    event_created_at: Optional[int] = None
+    event_id: str | None = None
+    event_created_at: int | None = None
 
     def to_nostr_event(self, pubkey: str) -> NostrEvent:
         content = {
@@ -290,7 +290,7 @@ class ProductOverview(BaseModel):
     id: str
     name: str
     price: float
-    product_shipping_cost: Optional[float] = None
+    product_shipping_cost: float | None = None
 
     @classmethod
     def from_product(cls, p: Product) -> "ProductOverview":
@@ -307,21 +307,21 @@ class OrderItem(BaseModel):
 
 
 class OrderContact(BaseModel):
-    nostr: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
+    nostr: str | None = None
+    phone: str | None = None
+    email: str | None = None
 
 
 class OrderExtra(BaseModel):
-    products: List[ProductOverview]
+    products: list[ProductOverview]
     currency: str
     btc_price: str
     shipping_cost: float = 0
     shipping_cost_sat: float = 0
-    fail_message: Optional[str] = None
+    fail_message: str | None = None
 
     @classmethod
-    async def from_products(cls, products: List[Product]):
+    async def from_products(cls, products: list[Product]):
         currency = products[0].config.currency if len(products) else "sat"
         exchange_rate = (
             await btc_price(currency) if currency and currency != "sat" else 1
@@ -337,19 +337,19 @@ class OrderExtra(BaseModel):
 
 class PartialOrder(BaseModel):
     id: str
-    event_id: Optional[str] = None
-    event_created_at: Optional[int] = None
+    event_id: str | None = None
+    event_created_at: int | None = None
     public_key: str
     merchant_public_key: str
     shipping_id: str
-    items: List[OrderItem]
-    contact: Optional[OrderContact] = None
-    address: Optional[str] = None
+    items: list[OrderItem]
+    contact: OrderContact | None = None
+    address: str | None = None
 
     def validate_order(self):
         assert len(self.items) != 0, f"Order has no items. Order: '{self.id}'"
 
-    def validate_order_items(self, product_list: List[Product]):
+    def validate_order_items(self, product_list: list[Product]):
         assert len(self.items) != 0, f"Order has no items. Order: '{self.id}'"
         assert (
             len(product_list) != 0
@@ -370,8 +370,8 @@ class PartialOrder(BaseModel):
                 )
 
     async def costs_in_sats(
-        self, products: List[Product], shipping_id: str, stall_shipping_cost: float
-    ) -> Tuple[float, float]:
+        self, products: list[Product], shipping_id: str, stall_shipping_cost: float
+    ) -> tuple[float, float]:
         product_prices = {}
         for p in products:
             product_shipping_cost = next(
@@ -400,7 +400,7 @@ class PartialOrder(BaseModel):
         return product_cost, stall_shipping_cost
 
     def receipt(
-        self, products: List[Product], shipping_id: str, stall_shipping_cost: float
+        self, products: list[Product], shipping_id: str, stall_shipping_cost: float
     ) -> str:
         if len(products) == 0:
             return "[No Products]"
@@ -449,7 +449,7 @@ class Order(PartialOrder):
     total: float
     paid: bool = False
     shipped: bool = False
-    time: Optional[int] = None
+    time: int | None = None
     extra: OrderExtra
 
     @classmethod
@@ -463,14 +463,14 @@ class Order(PartialOrder):
 
 class OrderStatusUpdate(BaseModel):
     id: str
-    message: Optional[str] = None
-    paid: Optional[bool] = False
-    shipped: Optional[bool] = None
+    message: str | None = None
+    paid: bool | None = False
+    shipped: bool | None = None
 
 
 class OrderReissue(BaseModel):
     id: str
-    shipping_id: Optional[str] = None
+    shipping_id: str | None = None
 
 
 class PaymentOption(BaseModel):
@@ -480,8 +480,8 @@ class PaymentOption(BaseModel):
 
 class PaymentRequest(BaseModel):
     id: str
-    message: Optional[str] = None
-    payment_options: List[PaymentOption]
+    message: str | None = None
+    payment_options: list[PaymentOption]
 
 
 ######################################## MESSAGE #######################################
@@ -497,16 +497,16 @@ class DirectMessageType(Enum):
 
 
 class PartialDirectMessage(BaseModel):
-    event_id: Optional[str] = None
-    event_created_at: Optional[int] = None
+    event_id: str | None = None
+    event_created_at: int | None = None
     message: str
     public_key: str
     type: int = DirectMessageType.PLAIN_TEXT.value
     incoming: bool = False
-    time: Optional[int] = None
+    time: int | None = None
 
     @classmethod
-    def parse_message(cls, msg) -> Tuple[DirectMessageType, Optional[Any]]:
+    def parse_message(cls, msg) -> tuple[DirectMessageType, Any | None]:
         try:
             msg_json = json.loads(msg)
             if "type" in msg_json:
@@ -529,15 +529,15 @@ class DirectMessage(PartialDirectMessage):
 
 
 class CustomerProfile(BaseModel):
-    name: Optional[str] = None
-    about: Optional[str] = None
+    name: str | None = None
+    about: str | None = None
 
 
 class Customer(BaseModel):
     merchant_id: str
     public_key: str
-    event_created_at: Optional[int] = None
-    profile: Optional[CustomerProfile] = None
+    event_created_at: int | None = None
+    profile: CustomerProfile | None = None
     unread_messages: int = 0
 
     @classmethod

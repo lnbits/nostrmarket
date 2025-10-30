@@ -1,41 +1,44 @@
-[tool.poetry]
-name = "lnbits-nostrmarket"
+[project]
+name = "nostrmarket"
 version = "0.0.0"
+requires-python = ">=3.10,<3.13"
 description = "LNbits, free and open-source Lightning wallet and accounts system."
-authors = ["Alan Bits <alan@lnbits.com>"]
+authors = [{ name = "Alan Bits", email = "alan@lnbits.com" }]
+urls = { Homepage = "https://lnbits.com", Repository = "https://github.com/lnbits/nostrmarket" }
+dependencies = [ "lnbits>1" ]
 
-[tool.poetry.dependencies]
-python = "^3.10 | ^3.9"
-lnbits = {version = "*", allow-prereleases = true}
+[tool.poetry]
+package-mode = false
 
-[tool.poetry.group.dev.dependencies]
-black = "^24.3.0"
-pytest-asyncio = "^0.21.0"
-pytest = "^7.3.2"
-mypy = "^1.5.1"
-pre-commit = "^3.2.2"
-ruff = "^0.3.2"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[dependency-groups]
+dev = [
+    "black",
+    "pytest-asyncio",
+    "pytest",
+    "mypy==1.17.1",
+    "pre-commit",
+    "ruff",
+    "pytest-md",
+    "types-cffi",
+]
 
 [tool.mypy]
 exclude = "(nostr/*)"
+plugins = ["pydantic.mypy"]
+
 [[tool.mypy.overrides]]
 module = [
+  "nostr.*",
   "secp256k1.*",
-  "embit.*",
-  "lnbits.*",
-  "lnurl.*",
-  "loguru.*",
-  "fastapi.*",
-  "pydantic.*",
-  "pyqrcode.*",
-  "shortuuid.*",
-  "httpx.*",
 ]
 ignore_missing_imports = "True"
+
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+warn_untyped_fields = true
 
 [tool.pytest.ini_options]
 log_cli = false
