@@ -35,7 +35,7 @@ class NostrEvent(BaseModel):
                 f"Invalid event id. Expected: '{event_id}' got '{self.id}'"
             )
         try:
-            pub_key = PublicKeyXOnly(bytes.fromhex("02" + self.pubkey))
+            pub_key = PublicKeyXOnly(bytes.fromhex(self.pubkey))
         except Exception as exc:
             raise ValueError(
                 f"Invalid public key: '{self.pubkey}' for event '{self.id}'"
