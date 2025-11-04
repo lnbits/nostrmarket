@@ -29,7 +29,6 @@ plugins = ["pydantic.mypy"]
 [[tool.mypy.overrides]]
 module = [
   "nostr.*",
-  "secp256k1.*",
 ]
 ignore_missing_imports = "True"
 
