@@ -10,7 +10,11 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 def get_shared_secret(privkey: str, pubkey: str):
     pk = coincurve.PublicKey(bytes.fromhex("02" + pubkey))
     sk = coincurve.PrivateKey(bytes.fromhex(privkey))
-    return sk.ecdh(pk.format())
+    shared_point = pk.multiply(sk.secret)
+
+    shared_point_bytes = shared_point.format(compressed=False)
+    x_coord = shared_point_bytes[1:33]
+    return x_coord
 
 
 def decrypt_message(encoded_message: str, encryption_key) -> str:
