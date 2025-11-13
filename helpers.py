@@ -16,6 +16,7 @@ def get_shared_secret(privkey: str, pubkey: str):
     x_coord = shared_point_bytes[1:33]
     return x_coord
 
+
 def decrypt_message(encoded_message: str, encryption_key) -> str:
     encoded_data = encoded_message.split("?iv=")
     if len(encoded_data) == 1:

@@ -1,8 +1,9 @@
 {
   "name": "Nostr Market",
+  "version": "1.1.0",
   "short_description": "Nostr Webshop/market on LNbits",
   "tile": "/nostrmarket/static/images/bitcoin-shop.png",
-  "min_lnbits_version": "1.0.0",
+  "min_lnbits_version": "1.4.0",
   "contributors": [
     {
       "name": "motorina0",
