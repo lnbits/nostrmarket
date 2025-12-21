@@ -149,19 +149,9 @@ window.app.component('stall-list', {
           }
         })
     },
-    getCurrencies: async function () {
-      try {
-        const {data} = await LNbits.api.request(
-          'GET',
-          '/nostrmarket/api/v1/currencies',
-          this.inkey
-        )
-
-        return ['sat', ...data]
-      } catch (error) {
-        LNbits.utils.notifyApiError(error)
-      }
-      return []
+    getCurrencies: function () {
+      const currencies = window.g.allowedCurrencies || []
+      return ['sat', ...currencies]
     },
     getStalls: async function (pending = false) {
       try {
@@ -207,7 +197,7 @@ window.app.component('stall-list', {
       }
     },
     openCreateStallDialog: async function (stallData) {
-      this.currencies = await this.getCurrencies()
+      this.currencies = this.getCurrencies()
       this.zoneOptions = await this.getZones()
       if (!this.zoneOptions || !this.zoneOptions.length) {
         this.$q.notify({
@@ -256,7 +246,7 @@ window.app.component('stall-list', {
   },
   created: async function () {
     this.stalls = await this.getStalls()
-    this.currencies = await this.getCurrencies()
+    this.currencies = this.getCurrencies()
     this.zoneOptions = await this.getZones()
   }
 })

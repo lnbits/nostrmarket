@@ -162,22 +162,13 @@ window.app.component('shipping-zones', {
         LNbits.utils.notifyApiError(error)
       }
     },
-    async getCurrencies() {
-      try {
-        const {data} = await LNbits.api.request(
-          'GET',
-          '/nostrmarket/api/v1/currencies',
-          this.inkey
-        )
-
-        this.currencies = ['sat', ...data]
-      } catch (error) {
-        LNbits.utils.notifyApiError(error)
-      }
+    getCurrencies() {
+      const currencies = window.g.allowedCurrencies || []
+      this.currencies = ['sat', ...currencies]
     }
   },
   created: async function () {
     await this.getZones()
-    await this.getCurrencies()
+    this.getCurrencies()
   }
 })
