@@ -1,0 +1,289 @@
+<div>
+  <div class="row items-center q-mb-md q-col-gutter-sm justify-end">
+    <div class="col-auto">
+      <q-input
+        dense
+        debounce="300"
+        v-model="filter"
+        placeholder="Search by name, stall..."
+        style="min-width: 250px"
+      >
+        <template v-slot:prepend>
+          <q-icon name="search"></q-icon>
+        </template>
+      </q-input>
+    </div>
+    <div class="col-auto">
+      <q-btn-dropdown
+        flat
+        dense
+        :icon="selectedStall ? 'filter_alt' : 'filter_alt_off'"
+        :color="selectedStall ? 'primary' : 'grey'"
+      >
+        <q-list>
+          <q-item clickable v-close-popup @click="selectedStall = null">
+            <q-item-section>
+              <q-item-label>All Stalls</q-item-label>
+            </q-item-section>
+            <q-item-section side v-if="!selectedStall">
+              <q-icon name="check" color="primary"></q-icon>
+            </q-item-section>
+          </q-item>
+          <q-separator></q-separator>
+          <q-item
+            v-for="stall in stallOptions"
+            :key="stall.value"
+            clickable
+            v-close-popup
+            @click="selectedStall = stall.value"
+          >
+            <q-item-section>
+              <q-item-label v-text="stall.label"></q-item-label>
+            </q-item-section>
+            <q-item-section side v-if="selectedStall === stall.value">
+              <q-icon name="check" color="primary"></q-icon>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </q-btn-dropdown>
+    </div>
+    <div class="col-auto">
+      <q-btn
+        @click="openSelectPendingProductDialog"
+        outline
+        color="primary"
+        icon="restore"
+        label="Restore Product"
+        :disable="!stalls.length"
+        class="q-px-md"
+      ></q-btn>
+    </div>
+    <div class="col-auto">
+      <q-btn
+        @click="showNewProductDialog()"
+        unelevated
+        color="primary"
+        icon="add"
+        label="New Product"
+        :disable="!stalls.length"
+        class="q-px-md"
+      ></q-btn>
+    </div>
+  </div>
+
+  <div v-if="!stalls.length" class="text-center q-pa-lg text-grey">
+    <q-icon name="info" size="md" class="q-mb-sm"></q-icon>
+    <div>No stalls found. Please create a stall first in the Stalls tab.</div>
+  </div>
+
+  <q-table
+    v-else
+    flat
+    dense
+    :rows="filteredProducts"
+    row-key="id"
+    :columns="productsTable.columns"
+    v-model:pagination="productsTable.pagination"
+    :filter="filter"
+  >
+    <template v-slot:body="props">
+      <q-tr :props="props">
+        <q-td key="name" :props="props">
+          <span v-text="shortLabel(props.row.name)"></span>
+        </q-td>
+        <q-td key="stall" :props="props">
+          <span v-text="getStallName(props.row.stall_id)"></span>
+        </q-td>
+        <q-td key="price" :props="props">
+          <span v-text="props.row.price"></span>
+        </q-td>
+        <q-td key="quantity" :props="props">
+          <span v-text="props.row.quantity"></span>
+        </q-td>
+        <q-td key="actions" :props="props">
+          <q-toggle
+            @update:model-value="toggleProductActive(props.row)"
+            size="xs"
+            checked-icon="check"
+            :model-value="props.row.active"
+            color="green"
+            unchecked-icon="clear"
+          >
+            <q-tooltip v-if="props.row.active">Product is active - click to deactivate</q-tooltip>
+            <q-tooltip v-else>Product is inactive - click to activate</q-tooltip>
+          </q-toggle>
+          <q-btn
+            size="sm"
+            color="primary"
+            dense
+            flat
+            @click="editProduct(props.row)"
+            icon="edit"
+          >
+            <q-tooltip>Edit product</q-tooltip>
+          </q-btn>
+          <q-btn
+            size="sm"
+            color="negative"
+            dense
+            flat
+            @click="deleteProduct(props.row)"
+            icon="delete"
+          >
+            <q-tooltip>Delete product</q-tooltip>
+          </q-btn>
+        </q-td>
+      </q-tr>
+    </template>
+  </q-table>
+
+  <!-- Product Dialog -->
+  <q-dialog v-model="productDialog.showDialog" position="top">
+    <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+      <q-form @submit="sendProductFormData" class="q-gutter-md">
+        <q-select
+          v-if="!productDialog.data.id"
+          filled
+          dense
+          v-model="productDialog.data.stall_id"
+          :options="stallOptions"
+          label="Stall *"
+          emit-value
+          map-options
+        ></q-select>
+
+        <q-input
+          filled
+          dense
+          v-model.trim="productDialog.data.name"
+          label="Name *"
+        ></q-input>
+
+        <q-input
+          filled
+          dense
+          v-model.trim="productDialog.data.config.description"
+          label="Description"
+        ></q-input>
+
+        <div class="row q-mb-sm">
+          <div class="col">
+            <q-input
+              filled
+              dense
+              v-model.number="productDialog.data.price"
+              type="number"
+              :label="'Price (' + getStallCurrency(productDialog.data.stall_id) + ') *'"
+              :step="getStallCurrency(productDialog.data.stall_id) != 'sat' ? '0.01' : '1'"
+            ></q-input>
+          </div>
+          <div class="col q-ml-md">
+            <q-input
+              filled
+              dense
+              v-model.number="productDialog.data.quantity"
+              type="number"
+              label="Quantity *"
+            ></q-input>
+          </div>
+        </div>
+
+        <q-expansion-item group="advanced" label="Categories" caption="Add tags to products">
+          <div class="q-pl-sm q-pt-sm">
+            <q-select
+              filled
+              multiple
+              dense
+              emit-value
+              v-model.trim="productDialog.data.categories"
+              use-input
+              use-chips
+              hide-dropdown-icon
+              input-debounce="0"
+              new-value-mode="add-unique"
+              label="Categories (Hit Enter to add)"
+            ></q-select>
+          </div>
+        </q-expansion-item>
+
+        <q-expansion-item group="advanced" label="Images" caption="Add images for product">
+          <div class="q-pl-sm q-pt-sm">
+            <q-input
+              filled
+              dense
+              v-model.trim="productDialog.data.image"
+              @keydown.enter.prevent="addProductImage"
+              type="url"
+              label="Image URL"
+            >
+              <template v-slot:append>
+                <q-btn @click="addProductImage" dense flat icon="add"></q-btn>
+              </template>
+            </q-input>
+            <q-chip
+              v-for="imageUrl in productDialog.data.images"
+              :key="imageUrl"
+              removable
+              @remove="removeProductImage(imageUrl)"
+              color="primary"
+              text-color="white"
+            >
+              <span v-text="imageUrl.split('/').pop()"></span>
+            </q-chip>
+          </div>
+        </q-expansion-item>
+
+        <div class="row q-mt-lg">
+          <q-btn
+            v-if="productDialog.data.id"
+            type="submit"
+            :label="productDialog.data.pending ? 'Restore Product' : 'Update Product'"
+            unelevated
+            color="primary"
+          ></q-btn>
+          <q-btn
+            v-else
+            unelevated
+            color="primary"
+            :disable="!productDialog.data.stall_id || !productDialog.data.price || !productDialog.data.name || !productDialog.data.quantity"
+            type="submit"
+          >Create Product</q-btn>
+          <q-btn v-close-popup flat color="grey" class="q-ml-auto">Cancel</q-btn>
+        </div>
+      </q-form>
+    </q-card>
+  </q-dialog>
+
+  <!-- Restore Dialog -->
+  <q-dialog v-model="productDialog.showRestore" position="top">
+    <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+      <div v-if="pendingProducts && pendingProducts.length" class="row q-mt-lg">
+        <q-item
+          v-for="pendingProduct of pendingProducts"
+          :key="pendingProduct.id"
+          tag="label"
+          class="full-width"
+          v-ripple
+        >
+          <q-item-section>
+            <q-item-label><span v-text="pendingProduct.name"></span></q-item-label>
+            <q-item-label caption><span v-text="pendingProduct.config?.description"></span></q-item-label>
+          </q-item-section>
+          <q-item-section class="q-pl-xl float-right">
+            <q-btn
+              @click="openRestoreProductDialog(pendingProduct)"
+              v-close-popup
+              flat
+              color="green"
+              class="q-ml-auto float-right"
+            >Restore</q-btn>
+          </q-item-section>
+        </q-item>
+      </div>
+      <div v-else>There are no products to be restored.</div>
+      <div class="row q-mt-lg">
+        <q-btn v-close-popup flat color="grey" class="q-ml-auto">Close</q-btn>
+      </div>
+    </q-card>
+  </q-dialog>
+</div>

@@ -1,0 +1,122 @@
+<div>
+  <div class="row items-center q-mb-md q-col-gutter-sm justify-end">
+    <div class="col-auto">
+      <q-btn
+        unelevated
+        color="primary"
+        icon="add"
+        label="New Shipping Zone"
+        @click="openZoneDialog()"
+        class="q-px-md"
+      ></q-btn>
+    </div>
+  </div>
+
+  <q-table
+    flat
+    dense
+    :rows="zones"
+    row-key="id"
+    :columns="zonesTable.columns"
+    v-model:pagination="zonesTable.pagination"
+  >
+    <template v-slot:body="props">
+      <q-tr :props="props">
+        <q-td key="name" :props="props">
+          <span v-text="props.row.name || '(unnamed)'"></span>
+        </q-td>
+        <q-td key="countries" :props="props">
+          <span v-text="props.row.countries.join(', ')"></span>
+        </q-td>
+        <q-td key="currency" :props="props">
+          <span v-text="props.row.currency"></span>
+        </q-td>
+        <q-td key="cost" :props="props">
+          <span v-text="props.row.cost"></span>
+        </q-td>
+        <q-td key="actions" :props="props">
+          <q-btn
+            size="sm"
+            color="primary"
+            dense
+            flat
+            icon="edit"
+            @click="openZoneDialog(props.row)"
+          >
+            <q-tooltip>Edit zone</q-tooltip>
+          </q-btn>
+          <q-btn
+            size="sm"
+            color="negative"
+            dense
+            flat
+            icon="delete"
+            @click="confirmDeleteZone(props.row)"
+          >
+            <q-tooltip>Delete zone</q-tooltip>
+          </q-btn>
+        </q-td>
+      </q-tr>
+    </template>
+  </q-table>
+
+  <q-dialog v-model="zoneDialog.showDialog" position="top">
+    <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+      <q-form @submit="sendZoneFormData" class="q-gutter-md">
+        <q-input
+          filled
+          dense
+          label="Zone Name"
+          type="text"
+          v-model.trim="zoneDialog.data.name"
+        ></q-input>
+        <q-select
+          filled
+          dense
+          multiple
+          :options="shippingZoneOptions"
+          label="Countries"
+          v-model="zoneDialog.data.countries"
+        ></q-select>
+        <q-select
+          :disabled="!!zoneDialog.data.id"
+          :readonly="!!zoneDialog.data.id"
+          filled
+          dense
+          v-model="zoneDialog.data.currency"
+          type="text"
+          label="Unit"
+          :options="currencies"
+        ></q-select>
+        <q-input
+          filled
+          dense
+          :label="'Cost of Shipping (' + zoneDialog.data.currency + ') *'"
+          fill-mask="0"
+          reverse-fill-mask
+          :step="zoneDialog.data.currency != 'sat' ? '0.01' : '1'"
+          type="number"
+          v-model.trim="zoneDialog.data.cost"
+        ></q-input>
+        <div class="row q-mt-lg">
+          <div v-if="zoneDialog.data.id">
+            <q-btn unelevated color="primary" type="submit">Update</q-btn>
+          </div>
+          <div v-else>
+            <q-btn
+              unelevated
+              color="primary"
+              :disable="!zoneDialog.data.countries || !zoneDialog.data.countries.length"
+              type="submit"
+              >Create Shipping Zone</q-btn
+            >
+          </div>
+
+          <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+            >Cancel</q-btn
+          >
+        </div>
+      </q-form>
+    </q-card>
+  </q-dialog>
+</div>
