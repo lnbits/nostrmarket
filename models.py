@@ -503,6 +503,7 @@ class PartialDirectMessage(BaseModel):
     public_key: str
     type: int = DirectMessageType.PLAIN_TEXT.value
     incoming: bool = False
+    sent: bool = True
     time: int | None = None
 
     @classmethod

@@ -31,6 +31,7 @@ from .crud import (
     delete_zone,
     get_customer,
     get_customers,
+    get_direct_message,
     get_direct_message_by_event_id,
     get_direct_messages,
     get_last_direct_messages_time,
@@ -49,6 +50,7 @@ from .crud import (
     get_zones,
     touch_merchant,
     update_customer_no_unread_messages,
+    update_direct_message_sent,
     update_merchant,
     update_order,
     update_order_shipped_status,
@@ -1012,12 +1014,6 @@ async def api_create_message(
     data: PartialDirectMessage, wallet: WalletTypeInfo = Depends(require_admin_key)
 ) -> DirectMessage:
     try:
-        if not nostr_client.is_websocket_connected:
-            raise HTTPException(
-                status_code=HTTPStatus.SERVICE_UNAVAILABLE,
-                detail="Nostrclient is not connected. Please check the nostrclient extension.",
-            )
-
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
 
@@ -1025,8 +1021,14 @@ async def api_create_message(
         data.event_id = dm_event.id
         data.event_created_at = dm_event.created_at
 
-        dm = await create_direct_message(merchant.id, data)
-        await nostr_client.publish_nostr_event(dm_event)
+        # Check if nostrclient is connected before sending
+        if nostr_client.is_websocket_connected:
+            dm = await create_direct_message(merchant.id, data)
+            await nostr_client.publish_nostr_event(dm_event)
+        else:
+            # Save as not sent if nostrclient is not connected
+            data.sent = False
+            dm = await create_direct_message(merchant.id, data)
 
         return dm
     except AssertionError as ex:
@@ -1039,6 +1041,79 @@ async def api_create_message(
         raise HTTPException(
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             detail="Cannot create message",
+        ) from ex
+
+
+@nostrmarket_ext.patch("/api/v1/message/{dm_id}")
+async def api_update_message_sent(
+    dm_id: str,
+    sent: bool,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+) -> DirectMessage:
+    try:
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+
+        dm = await get_direct_message(merchant.id, dm_id)
+        assert dm, "Message cannot be found"
+
+        updated_dm = await update_direct_message_sent(merchant.id, dm_id, sent)
+        assert updated_dm, "Failed to update message"
+
+        return updated_dm
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        ) from ex
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot update message",
+        ) from ex
+
+
+@nostrmarket_ext.put("/api/v1/message/{dm_id}/resend")
+async def api_resend_message(
+    dm_id: str, wallet: WalletTypeInfo = Depends(require_admin_key)
+) -> DirectMessage:
+    try:
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+
+        dm = await get_direct_message(merchant.id, dm_id)
+        assert dm, "Message cannot be found"
+
+        if not nostr_client.is_websocket_connected:
+            raise HTTPException(
+                status_code=HTTPStatus.SERVICE_UNAVAILABLE,
+                detail="Nostr client is not connected",
+            )
+
+        # Rebuild and send the DM event
+        dm_event = merchant.build_dm_event(dm.message, dm.public_key)
+        await nostr_client.publish_nostr_event(dm_event)
+
+        # Mark as sent with new timestamp
+        updated_dm = await update_direct_message_sent(
+            merchant.id, dm_id, True, dm_event.created_at
+        )
+        assert updated_dm, "Failed to update message"
+
+        return updated_dm
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        ) from ex
+    except HTTPException:
+        raise
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot resend message",
         ) from ex
 
 
