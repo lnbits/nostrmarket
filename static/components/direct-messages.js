@@ -86,6 +86,14 @@ window.app.component('direct-messages', {
       if (!pubkey) return ''
       return `${pubkey.slice(0, 8)}...${pubkey.slice(-8)}`
     },
+    toNpub: function (hexPubkey) {
+      if (!hexPubkey) return ''
+      try {
+        return NostrTools.nip19.npubEncode(hexPubkey)
+      } catch (e) {
+        return hexPubkey
+      }
+    },
     getIdenticonStyle: function (pubkey) {
       if (!pubkey) return {backgroundColor: '#666', borderRadius: '50%'}
       // Generate a color based on the pubkey (hex string)
