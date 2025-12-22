@@ -64,7 +64,7 @@
                 </q-item-label>
                 <q-item-label caption class="ellipsis text-grey-6">
                   <span
-                    v-text="customer.profile?.nip05 || truncateNpub(customer.public_key)"
+                    v-text="customer.profile?.nip05 || truncateNpub(toNpub(customer.public_key))"
                   ></span>
                 </q-item-label>
                 <q-item-label
@@ -120,7 +120,7 @@
                 ></a>
                 <div
                   class="text-caption text-grey-6"
-                  v-text="activeCustomer?.profile.nip05 || truncateNpub(activePublicKey)"
+                  v-text="activeCustomer?.profile.nip05 || truncateNpub(toNpub(activePublicKey))"
                 ></div>
               </div>
               <q-btn
