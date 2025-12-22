@@ -219,7 +219,6 @@ window.app = Vue.createApp({
       try {
         const response = await fetch('/nostrclient/api/v1/relays')
         const body = await response.json()
-        console.log('Nostrclient /relays:', response.status, body)
 
         if (response.status === 200) {
           const relaysConnected = body.filter(r => r.connected).length

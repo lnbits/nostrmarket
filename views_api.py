@@ -1,12 +1,10 @@
 import json
 from http import HTTPStatus
 
-import httpx
 from fastapi import Depends
 from fastapi.exceptions import HTTPException
 from lnbits.core.models import WalletTypeInfo
 from lnbits.core.services import websocket_updater
-from lnbits.settings import settings
 from lnbits.decorators import (
     require_admin_key,
     require_invoice_key,
@@ -1105,64 +1103,6 @@ async def api_create_customer(
 @nostrmarket_ext.get("/api/v1/currencies")
 async def api_list_currencies_available():
     return list(currencies.keys())
-
-
-@nostrmarket_ext.get("/api/v1/status")
-async def api_get_nostr_status(
-    wallet: WalletTypeInfo = Depends(require_invoice_key),
-) -> dict:
-    """Get the status of the nostrclient extension."""
-    nostrclient_available = False
-    relays = []
-    error = None
-
-    try:
-        async with httpx.AsyncClient() as client:
-            url = f"http://127.0.0.1:{settings.port}/nostrclient/api/v1/relays"
-            logger.info(f"Calling nostrclient API: {url}")
-            response = await client.get(url, timeout=5.0)
-            logger.info(
-                f"Nostrclient response: status={response.status_code}, "
-                f"body={response.text[:500]}"
-            )
-
-            if response.status_code == 200:
-                nostrclient_available = True
-                relays = response.json()
-            else:
-                # Any non-200 response means we can't verify nostrclient is working
-                try:
-                    error = response.json().get("detail", f"HTTP {response.status_code}")
-                except Exception:
-                    error = f"HTTP {response.status_code}"
-    except httpx.ConnectError:
-        error = "Cannot connect to nostrclient extension"
-    except httpx.TimeoutException:
-        error = "Timeout connecting to nostrclient"
-    except Exception as ex:
-        error = str(ex)
-
-    # Only show connected if no errors and websocket is connected
-    connected = (
-        nostrclient_available
-        and nostr_client.is_websocket_connected
-        and error is None
-    )
-
-    # If nostrclient exists but websocket not connected, explain why
-    if nostrclient_available and not nostr_client.is_websocket_connected and not error:
-        error = "Websocket not connected"
-
-    # Count connected relays
-    relays_connected = sum(1 for r in relays if r.get("connected", False))
-    relays_total = len(relays)
-
-    return {
-        "connected": connected,
-        "error": error,
-        "relays_connected": relays_connected,
-        "relays_total": relays_total,
-    }
 
 
 @nostrmarket_ext.put("/api/v1/restart")
