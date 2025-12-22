@@ -57,14 +57,6 @@
                     :style="getIdenticonStyle(customer.public_key)"
                   ></div>
                 </q-avatar>
-                <q-badge
-                  v-if="customer.unread_messages"
-                  color="primary"
-                  floating
-                  rounded
-                >
-                  <span v-text="customer.unread_messages"></span>
-                </q-badge>
               </q-item-section>
               <q-item-section>
                 <q-item-label class="ellipsis">
@@ -83,6 +75,11 @@
                 >
                   <span v-text="customer.lastMessage"></span>
                 </q-item-label>
+              </q-item-section>
+              <q-item-section side top v-if="customer.unread_messages > 0">
+                <q-badge color="primary" rounded>
+                  ${ customer.unread_messages }
+                </q-badge>
               </q-item-section>
             </q-item>
             <q-item v-if="!customers.length" class="text-center text-grey-6">
