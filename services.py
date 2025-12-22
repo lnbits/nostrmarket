@@ -641,8 +641,10 @@ async def _handle_customer_profile_update(event: NostrEvent):
             event.pubkey,
             event.created_at,
             CustomerProfile(
-                name=profile["name"] if "name" in profile else "",
-                about=profile["about"] if "about" in profile else "",
+                name=profile.get("name", ""),
+                about=profile.get("about", ""),
+                picture=profile.get("picture"),
+                nip05=profile.get("nip05"),
             ),
         )
     except Exception as ex:
