@@ -18,21 +18,18 @@ window.app = Vue.createApp({
       },
       wsConnection: null,
       nostrStatus: {
-        nostrclient_available: false,
-        nostrclient_relays: [],
-        nostrclient_error: null,
-        nostrmarket_running: false,
-        websocket_connected: false
+        connected: false,
+        error: null,
+        relays_connected: 0,
+        relays_total: 0
       }
     }
   },
   computed: {
     nostrStatusColor: function () {
-      if (!this.nostrStatus.nostrclient_available) {
-        return 'red'
-      } else if (this.nostrStatus.websocket_connected) {
+      if (this.nostrStatus.connected) {
         return 'green'
-      } else if (this.nostrStatus.nostrmarket_running) {
+      } else if (this.nostrStatus.warning) {
         return 'orange'
       }
       return 'red'
@@ -218,31 +215,61 @@ window.app = Vue.createApp({
         })
       }
     },
-    checkNostrStatus: async function () {
+    checkNostrStatus: async function (showNotification = false) {
       try {
-        const {data} = await LNbits.api.request(
-          'GET',
-          '/nostrmarket/api/v1/status',
-          this.g.user.wallets[0].inkey
-        )
-        this.nostrStatus = data
-        if (!data.nostrclient_available) {
+        const response = await fetch('/nostrclient/api/v1/relays')
+        const body = await response.json()
+        console.log('Nostrclient /relays:', response.status, body)
+
+        if (response.status === 200) {
+          const relaysConnected = body.filter(r => r.connected).length
+          if (body.length === 0) {
+            this.nostrStatus = {
+              connected: false,
+              error: 'No relays configured in Nostr Client',
+              relays_connected: 0,
+              relays_total: 0,
+              warning: true
+            }
+          } else {
+            this.nostrStatus = {
+              connected: true,
+              error: null,
+              relays_connected: relaysConnected,
+              relays_total: body.length
+            }
+          }
+        } else {
+          this.nostrStatus = {
+            connected: false,
+            error: body.detail,
+            relays_connected: 0,
+            relays_total: 0
+          }
+        }
+
+        if (showNotification) {
           this.$q.notify({
-            timeout: 5000,
-            type: 'warning',
-            message: 'Nostrclient extension not available',
-            caption:
-              data.nostrclient_error ||
-              'Please install and configure the nostrclient extension'
+            timeout: 3000,
+            type: this.nostrStatus.connected ? 'positive' : 'warning',
+            message: this.nostrStatus.connected ? 'Connected' : 'Disconnected',
+            caption: this.nostrStatus.error || undefined
           })
         }
       } catch (error) {
+        console.error('Failed to check nostr status:', error)
         this.nostrStatus = {
-          nostrclient_available: false,
-          nostrclient_relays: [],
-          nostrclient_error: 'Failed to check status',
-          nostrmarket_running: false,
-          websocket_connected: false
+          connected: false,
+          error: error.message,
+          relays_connected: 0,
+          relays_total: 0
+        }
+        if (showNotification) {
+          this.$q.notify({
+            timeout: 5000,
+            type: 'negative',
+            message: this.nostrStatus.error
+          })
         }
       }
     },
@@ -253,13 +280,18 @@ window.app = Vue.createApp({
         )
         .onOk(async () => {
           try {
+            this.$q.notify({
+              timeout: 2000,
+              type: 'info',
+              message: 'Reconnecting...'
+            })
             await LNbits.api.request(
               'PUT',
               '/nostrmarket/api/v1/restart',
               this.g.user.wallets[0].adminkey
             )
-            // Check status after restart
-            setTimeout(() => this.checkNostrStatus(), 2000)
+            // Check status after restart (give time for websocket to reconnect)
+            setTimeout(() => this.checkNostrStatus(true), 3000)
           } catch (error) {
             LNbits.utils.notifyApiError(error)
           }

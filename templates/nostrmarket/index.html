@@ -170,7 +170,7 @@
                   </q-item-label>
                 </q-item-section>
               </q-item>
-              <q-item clickable v-close-popup @click="checkNostrStatus">
+              <q-item clickable v-close-popup @click="checkNostrStatus(true)">
                 <q-item-section avatar>
                   <q-icon name="wifi_find" color="primary"></q-icon>
                 </q-item-section>
@@ -185,27 +185,29 @@
               <q-item>
                 <q-item-section>
                   <q-item-label caption>
-                    <strong>Nostrclient:</strong>
+                    <strong>Status:</strong>
                     <q-badge
-                      :color="nostrStatus.nostrclient_available ? 'green' : 'red'"
+                      :color="nostrStatus.connected ? 'green' : 'red'"
                       class="q-ml-xs"
-                      v-text="nostrStatus.nostrclient_available ? 'Available' : 'Not Available'"
-                    ></q-badge>
-                    <br />
-                    <strong>Relays:</strong>
-                    <span v-text="(nostrStatus.nostrclient_relays || []).length"></span> configured<br />
-                    <strong>WebSocket:</strong>
-                    <q-badge
-                      :color="nostrStatus.websocket_connected ? 'green' : 'orange'"
-                      class="q-ml-xs"
-                      v-text="nostrStatus.websocket_connected ? 'Connected' : 'Disconnected'"
+                      v-text="nostrStatus.connected ? 'Connected' : 'Disconnected'"
                     ></q-badge>
                   </q-item-label>
                   <q-item-label
-                    v-if="nostrStatus.nostrclient_error"
+                    v-if="nostrStatus.relays_total > 0"
+                    caption
+                    class="q-mt-xs"
+                  >
+                    <strong>Relays:</strong>&nbsp;
+                    <span v-text="nostrStatus.relays_connected"></span>
+                    of
+                    <span v-text="nostrStatus.relays_total"></span>
+                    connected
+                  </q-item-label>
+                  <q-item-label
+                    v-if="nostrStatus.error"
                     caption
                     class="text-negative q-mt-xs"
-                    v-text="nostrStatus.nostrclient_error"
+                    v-text="nostrStatus.error"
                   ></q-item-label>
                 </q-item-section>
               </q-item>

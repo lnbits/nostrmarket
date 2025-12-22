@@ -1113,31 +1113,55 @@ async def api_get_nostr_status(
 ) -> dict:
     """Get the status of the nostrclient extension."""
     nostrclient_available = False
-    nostrclient_relays = []
-    nostrclient_error = None
+    relays = []
+    error = None
 
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"http://localhost:{settings.port}/nostrclient/api/v1/relays",
-                timeout=5.0,
+            url = f"http://127.0.0.1:{settings.port}/nostrclient/api/v1/relays"
+            logger.info(f"Calling nostrclient API: {url}")
+            response = await client.get(url, timeout=5.0)
+            logger.info(
+                f"Nostrclient response: status={response.status_code}, "
+                f"body={response.text[:500]}"
             )
+
             if response.status_code == 200:
                 nostrclient_available = True
-                nostrclient_relays = response.json()
+                relays = response.json()
+            else:
+                # Any non-200 response means we can't verify nostrclient is working
+                try:
+                    error = response.json().get("detail", f"HTTP {response.status_code}")
+                except Exception:
+                    error = f"HTTP {response.status_code}"
     except httpx.ConnectError:
-        nostrclient_error = "Cannot connect to nostrclient extension"
+        error = "Cannot connect to nostrclient extension"
     except httpx.TimeoutException:
-        nostrclient_error = "Timeout connecting to nostrclient"
+        error = "Timeout connecting to nostrclient"
     except Exception as ex:
-        nostrclient_error = str(ex)
+        error = str(ex)
+
+    # Only show connected if no errors and websocket is connected
+    connected = (
+        nostrclient_available
+        and nostr_client.is_websocket_connected
+        and error is None
+    )
+
+    # If nostrclient exists but websocket not connected, explain why
+    if nostrclient_available and not nostr_client.is_websocket_connected and not error:
+        error = "Websocket not connected"
+
+    # Count connected relays
+    relays_connected = sum(1 for r in relays if r.get("connected", False))
+    relays_total = len(relays)
 
     return {
-        "nostrclient_available": nostrclient_available,
-        "nostrclient_relays": nostrclient_relays,
-        "nostrclient_error": nostrclient_error,
-        "nostrmarket_running": nostr_client.running,
-        "websocket_connected": nostr_client.is_websocket_connected,
+        "connected": connected,
+        "error": error,
+        "relays_connected": relays_connected,
+        "relays_total": relays_total,
     }
 
 
