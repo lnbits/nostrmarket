@@ -68,20 +68,6 @@ window.app.component('direct-messages', {
     }
   },
   methods: {
-    sendMessage: async function () {},
-    buildCustomerLabel: function (c) {
-      if (!c) return ''
-      let label = c.profile.name || 'unknown'
-      if (c.profile.about) {
-        label += ` - ${c.profile.about.substring(0, 30)}`
-        if (c.profile.about.length > 30) label += '...'
-      }
-      if (c.unread_messages) {
-        label = `[${c.unread_messages} new] ${label}`
-      }
-      label += ` (${c.public_key.slice(0, 8)}...${c.public_key.slice(-8)})`
-      return label
-    },
     truncateNpub: function (pubkey) {
       if (!pubkey) return ''
       return `${pubkey.slice(0, 8)}...${pubkey.slice(-8)}`
@@ -252,10 +238,6 @@ window.app.component('direct-messages', {
     },
     showClientOrders: function () {
       this.$emit('customer-selected', this.activePublicKey)
-    },
-    selectActiveCustomer: async function () {
-      await this.getDirectMessages(this.activePublicKey)
-      await this.getCustomers()
     },
     showMessageRawData: function (index) {
       this.rawMessage = this.messages[index]?.message
