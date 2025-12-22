@@ -379,14 +379,7 @@ window.app.component('order-list', {
       }
     },
     buildCustomerLabel: function (c) {
-      let label = `${c.profile.name || 'unknown'} ${c.profile.about || ''}`
-      if (c.unread_messages) {
-        label += `[new: ${c.unread_messages}]`
-      }
-      label += `  (${c.public_key.slice(0, 16)}...${c.public_key.slice(
-        c.public_key.length - 16
-      )}`
-      return label
+      return c.profile?.display_name || c.profile?.name || 'Unknown'
     },
     orderPaid: function (orderId) {
       const order = this.orders.find(o => o.id === orderId)
