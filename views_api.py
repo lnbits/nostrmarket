@@ -1012,6 +1012,12 @@ async def api_create_message(
     data: PartialDirectMessage, wallet: WalletTypeInfo = Depends(require_admin_key)
 ) -> DirectMessage:
     try:
+        if not nostr_client.is_websocket_connected:
+            raise HTTPException(
+                status_code=HTTPStatus.SERVICE_UNAVAILABLE,
+                detail="Nostrclient is not connected. Please check the nostrclient extension.",
+            )
+
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
 
