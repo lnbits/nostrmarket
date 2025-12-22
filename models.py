@@ -532,8 +532,6 @@ class CustomerProfile(BaseModel):
     name: str | None = None
     display_name: str | None = None
     about: str | None = None
-    picture: str | None = None
-    nip05: str | None = None
 
 
 class Customer(BaseModel):
