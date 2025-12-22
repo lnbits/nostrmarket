@@ -1,10 +1,12 @@
 import json
 from http import HTTPStatus
 
+import httpx
 from fastapi import Depends
 from fastapi.exceptions import HTTPException
 from lnbits.core.models import WalletTypeInfo
 from lnbits.core.services import websocket_updater
+from lnbits.settings import settings
 from lnbits.decorators import (
     require_admin_key,
     require_invoice_key,
@@ -1103,6 +1105,40 @@ async def api_create_customer(
 @nostrmarket_ext.get("/api/v1/currencies")
 async def api_list_currencies_available():
     return list(currencies.keys())
+
+
+@nostrmarket_ext.get("/api/v1/status")
+async def api_get_nostr_status(
+    wallet: WalletTypeInfo = Depends(require_invoice_key),
+) -> dict:
+    """Get the status of the nostrclient extension."""
+    nostrclient_available = False
+    nostrclient_relays = []
+    nostrclient_error = None
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"http://localhost:{settings.port}/nostrclient/api/v1/relays",
+                timeout=5.0,
+            )
+            if response.status_code == 200:
+                nostrclient_available = True
+                nostrclient_relays = response.json()
+    except httpx.ConnectError:
+        nostrclient_error = "Cannot connect to nostrclient extension"
+    except httpx.TimeoutException:
+        nostrclient_error = "Timeout connecting to nostrclient"
+    except Exception as ex:
+        nostrclient_error = str(ex)
+
+    return {
+        "nostrclient_available": nostrclient_available,
+        "nostrclient_relays": nostrclient_relays,
+        "nostrclient_error": nostrclient_error,
+        "nostrmarket_running": nostr_client.running,
+        "websocket_connected": nostr_client.is_websocket_connected,
+    }
 
 
 @nostrmarket_ext.put("/api/v1/restart")

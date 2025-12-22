@@ -1,44 +1,61 @@
 <q-card>
   <q-card-section>
-    <p>
-      Nostr Market<br />
+    <p class="text-body1">
+      Create, edit and publish products to your Nostr relays. Customers can
+      browse your stalls and pay with Lightning.
+    </p>
+    <p class="q-mb-none">
       <small>
-        Created by,
+        Created by
         <a
           class="text-secondary"
           target="_blank"
           style="color: unset"
           href="https://github.com/talvasconcelos"
           >Tal Vasconcelos</a
-        >
+        >,
         <a
           class="text-secondary"
           target="_blank"
           style="color: unset"
           href="https://github.com/benarc"
           >Ben Arc</a
-        >
+        >,
         <a
           class="text-secondary"
           target="_blank"
           style="color: unset"
           href="https://github.com/motorina0"
           >motorina0</a
-        ></small
-      >
+        >
+      </small>
     </p>
-    <a
-      class="text-secondary"
-      target="_blank"
-      href="/docs#/nostrmarket"
-      class="text-white"
-      >Swagger REST API Documentation</a
-    >
   </q-card-section>
-  <q-card-section>
-    <a class="text-secondary" target="_blank" href="/nostrmarket/market"
-      ><q-tooltip>Visit the market client</q-tooltip
-      ><q-icon name="storefront" class="q-mr-sm"></q-icon>Market client</a
-    >
+  <q-card-section class="q-pt-none">
+    <a class="text-secondary" target="_blank" href="/nostrmarket/market">
+      <q-icon name="storefront" class="q-mr-sm"></q-icon>Market client
+      <q-tooltip>Visit the market client</q-tooltip>
+    </a>
+    <br />
+    <a class="text-secondary" target="_blank" href="/docs#/nostrmarket">
+      <q-icon name="code" class="q-mr-sm"></q-icon>API Documentation
+      <q-tooltip>Swagger REST API Documentation</q-tooltip>
+    </a>
+  </q-card-section>
+  <q-card-section class="q-pt-none">
+    <q-banner dense class="bg-orange-8 text-white" rounded>
+      <template v-slot:avatar>
+        <q-icon name="info" color="white"></q-icon>
+      </template>
+      <strong>Requires:</strong>&nbsp;
+      <a
+        href="https://github.com/lnbits/nostrclient"
+        target="_blank"
+        class="text-white"
+        style="text-decoration: underline"
+        >nostrclient</a
+      >
+      extension to be installed and configured with relays.
+    </q-banner>
   </q-card-section>
 </q-card>

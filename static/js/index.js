@@ -16,7 +16,29 @@ window.app = Vue.createApp({
           privateKey: null
         }
       },
-      wsConnection: null
+      wsConnection: null,
+      nostrStatus: {
+        nostrclient_available: false,
+        nostrclient_relays: [],
+        nostrclient_error: null,
+        nostrmarket_running: false,
+        websocket_connected: false
+      }
+    }
+  },
+  computed: {
+    nostrStatusColor: function () {
+      if (!this.nostrStatus.nostrclient_available) {
+        return 'red'
+      } else if (this.nostrStatus.websocket_connected) {
+        return 'green'
+      } else if (this.nostrStatus.nostrmarket_running) {
+        return 'orange'
+      }
+      return 'red'
+    },
+    nostrStatusLabel: function () {
+      return 'Connect'
     }
   },
   methods: {
@@ -196,10 +218,38 @@ window.app = Vue.createApp({
         })
       }
     },
+    checkNostrStatus: async function () {
+      try {
+        const {data} = await LNbits.api.request(
+          'GET',
+          '/nostrmarket/api/v1/status',
+          this.g.user.wallets[0].inkey
+        )
+        this.nostrStatus = data
+        if (!data.nostrclient_available) {
+          this.$q.notify({
+            timeout: 5000,
+            type: 'warning',
+            message: 'Nostrclient extension not available',
+            caption:
+              data.nostrclient_error ||
+              'Please install and configure the nostrclient extension'
+          })
+        }
+      } catch (error) {
+        this.nostrStatus = {
+          nostrclient_available: false,
+          nostrclient_relays: [],
+          nostrclient_error: 'Failed to check status',
+          nostrmarket_running: false,
+          websocket_connected: false
+        }
+      }
+    },
     restartNostrConnection: async function () {
       LNbits.utils
         .confirmDialog(
-          'Are you sure you want to reconnect to the nostrcient extension?'
+          'Are you sure you want to reconnect to the nostrclient extension?'
         )
         .onOk(async () => {
           try {
@@ -208,6 +258,8 @@ window.app = Vue.createApp({
               '/nostrmarket/api/v1/restart',
               this.g.user.wallets[0].adminkey
             )
+            // Check status after restart
+            setTimeout(() => this.checkNostrStatus(), 2000)
           } catch (error) {
             LNbits.utils.notifyApiError(error)
           }
@@ -216,6 +268,7 @@ window.app = Vue.createApp({
   },
   created: async function () {
     await this.getMerchant()
+    await this.checkNostrStatus()
     setInterval(async () => {
       if (
         !this.wsConnection ||
