@@ -790,7 +790,7 @@ async def get_direct_messages(merchant_id: str, public_key: str) -> list[DirectM
         """
         SELECT * FROM nostrmarket.direct_messages
         WHERE merchant_id = :merchant_id AND public_key = :public_key
-        ORDER BY event_created_at
+        ORDER BY time
         """,
         {"merchant_id": merchant_id, "public_key": public_key},
     )
@@ -835,9 +835,10 @@ async def update_direct_message_sent(
 ) -> DirectMessage | None:
     if event_created_at:
         await db.execute(
-            """
+            f"""
             UPDATE nostrmarket.direct_messages
-            SET sent = :sent, event_created_at = :event_created_at
+            SET sent = :sent, event_created_at = :event_created_at,
+                time = {db.timestamp_now}
             WHERE merchant_id = :merchant_id AND id = :id
             """,
             {

@@ -119,12 +119,12 @@ window.app.component('direct-messages', {
           `/nostrmarket/api/v1/message/${dm.id}/resend`,
           this.adminkey
         )
-        // Remove from current position and add to end
+        // Update message in place and re-sort by event_created_at
         const index = this.messages.findIndex(m => m.id === dm.id)
         if (index !== -1) {
-          this.messages.splice(index, 1)
+          this.messages[index] = data
         }
-        this.messages.push(data)
+        this.messages.sort((a, b) => a.time - b.time)
         this.focusOnChatBox(this.messages.length - 1)
         this.$q.notify({
           type: 'positive',
