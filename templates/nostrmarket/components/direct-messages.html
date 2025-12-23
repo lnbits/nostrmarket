@@ -87,7 +87,9 @@
                     <strong>Reply sent for order: </strong>
                   </div>
                   <div v-else-if="dm.message.type === 2">
-                    <q-badge v-if="dm.message.paid" color="green">Paid </q-badge>
+                    <q-badge v-if="dm.message.paid" color="green"
+                      >Paid
+                    </q-badge>
                     <q-badge v-if="dm.message.shipped" color="green"
                       >Shipped
                     </q-badge>
@@ -110,7 +112,10 @@
                 </div>
                 <div v-else><span v-text="dm.message"></span></div>
               </q-chat-message>
-              <div v-if="!dm.incoming && dm.sent === false" class="text-right q-mt-xs">
+              <div
+                v-if="!dm.incoming && dm.sent === false"
+                class="text-right q-mt-xs"
+              >
                 <q-badge color="amber-8" class="q-mr-xs">Failed</q-badge>
                 <q-btn
                   flat
