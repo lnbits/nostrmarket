@@ -81,17 +81,17 @@ window.app.component('shipping-zones-list', {
             sortable: true
           },
           {
-            name: 'currency',
-            align: 'left',
-            label: 'Currency',
-            field: 'currency',
-            sortable: true
-          },
-          {
             name: 'cost',
             align: 'left',
             label: 'Cost',
             field: 'cost',
+            sortable: true
+          },
+          {
+            name: 'currency',
+            align: 'left',
+            label: 'Currency',
+            field: 'currency',
             sortable: true
           },
           {

@@ -42,11 +42,11 @@
         <q-td key="countries" :props="props">
           <span v-text="props.row.countries.join(', ')"></span>
         </q-td>
-        <q-td key="currency" :props="props">
-          <span v-text="props.row.currency"></span>
-        </q-td>
         <q-td key="cost" :props="props">
           <span v-text="props.row.cost"></span>
+        </q-td>
+        <q-td key="currency" :props="props">
+          <span v-text="props.row.currency"></span>
         </q-td>
         <q-td key="actions" :props="props">
           <q-btn
