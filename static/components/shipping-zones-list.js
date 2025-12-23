@@ -6,6 +6,7 @@ window.app.component('shipping-zones-list', {
   data: function () {
     return {
       zones: [],
+      filter: '',
       zoneDialog: {
         showDialog: false,
         data: {
@@ -19,7 +20,6 @@ window.app.component('shipping-zones-list', {
       currencies: [],
       shippingZoneOptions: [
         'Free (digital)',
-        'Flat rate',
         'Worldwide',
         'Europe',
         'Australia',
@@ -27,6 +27,7 @@ window.app.component('shipping-zones-list', {
         'Belgium',
         'Brazil',
         'Canada',
+        'China',
         'Denmark',
         'Finland',
         'France',
@@ -34,8 +35,8 @@ window.app.component('shipping-zones-list', {
         'Greece',
         'Hong Kong',
         'Hungary',
-        'Ireland',
         'Indonesia',
+        'Ireland',
         'Israel',
         'Italy',
         'Japan',
@@ -59,10 +60,9 @@ window.app.component('shipping-zones-list', {
         'Thailand',
         'Turkey',
         'Ukraine',
-        'United Kingdom**',
-        'United States***',
-        'Vietnam',
-        'China'
+        'United Kingdom',
+        'United States',
+        'Vietnam'
       ],
       zonesTable: {
         columns: [
@@ -70,25 +70,29 @@ window.app.component('shipping-zones-list', {
             name: 'name',
             align: 'left',
             label: 'Name',
-            field: 'name'
+            field: 'name',
+            sortable: true
           },
           {
             name: 'countries',
             align: 'left',
             label: 'Countries',
-            field: 'countries'
+            field: 'countries',
+            sortable: true
           },
           {
             name: 'currency',
             align: 'left',
             label: 'Currency',
-            field: 'currency'
+            field: 'currency',
+            sortable: true
           },
           {
             name: 'cost',
             align: 'left',
             label: 'Cost',
-            field: 'cost'
+            field: 'cost',
+            sortable: true
           },
           {
             name: 'actions',
@@ -98,7 +102,9 @@ window.app.component('shipping-zones-list', {
           }
         ],
         pagination: {
-          rowsPerPage: 10
+          rowsPerPage: 10,
+          sortBy: 'name',
+          descending: false
         }
       }
     }

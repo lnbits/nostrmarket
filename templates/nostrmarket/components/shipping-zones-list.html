@@ -1,6 +1,19 @@
 <div>
   <div class="row items-center q-mb-md q-col-gutter-sm justify-end">
     <div class="col-auto">
+      <q-input
+        dense
+        debounce="300"
+        v-model="filter"
+        placeholder="Search zones..."
+        style="min-width: 200px"
+      >
+        <template v-slot:prepend>
+          <q-icon name="search"></q-icon>
+        </template>
+      </q-input>
+    </div>
+    <div class="col-auto">
       <q-btn
         unelevated
         color="primary"
@@ -19,6 +32,7 @@
     row-key="id"
     :columns="zonesTable.columns"
     v-model:pagination="zonesTable.pagination"
+    :filter="filter"
   >
     <template v-slot:body="props">
       <q-tr :props="props">
