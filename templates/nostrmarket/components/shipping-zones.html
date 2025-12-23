@@ -59,8 +59,8 @@
               :step="zoneDialog.data.currency != 'sat' ? '0.01' : '1'"
               type="number"
               v-model.trim="zoneDialog.data.cost"
-              :error="zoneDialog.data.currency === 'sat' && zoneDialog.data.cost % 1 !== 0"
-              error-message="Satoshis must be whole numbers"
+              :error="(zoneDialog.data.currency === 'sat' && zoneDialog.data.cost % 1 !== 0) || (zoneDialog.data.currency !== 'sat' && (zoneDialog.data.cost * 100) % 1 !== 0)"
+              :error-message="zoneDialog.data.currency === 'sat' ? 'Satoshis must be whole numbers' : 'Maximum 2 decimal places allowed'"
               hint="Additional costs can be set per product"
             ></q-input>
           </div>
@@ -93,7 +93,7 @@
             <q-btn
               unelevated
               color="primary"
-              :disable="!zoneDialog.data.countries || !zoneDialog.data.countries.length || (zoneDialog.data.currency === 'sat' && zoneDialog.data.cost % 1 !== 0)"
+              :disable="!zoneDialog.data.countries || !zoneDialog.data.countries.length || (zoneDialog.data.currency === 'sat' && zoneDialog.data.cost % 1 !== 0) || (zoneDialog.data.currency !== 'sat' && (zoneDialog.data.cost * 100) % 1 !== 0)"
               type="submit"
               >Create Shipping Zone</q-btn
             >
