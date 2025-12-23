@@ -93,7 +93,7 @@
             <q-btn
               unelevated
               color="primary"
-              :disable="!zoneDialog.data.countries || !zoneDialog.data.countries.length || (zoneDialog.data.currency === 'sat' && zoneDialog.data.cost % 1 !== 0) || (zoneDialog.data.currency !== 'sat' && (zoneDialog.data.cost * 100) % 1 !== 0)"
+              :disable="!zoneDialog.data.name || !zoneDialog.data.countries || !zoneDialog.data.countries.length || (zoneDialog.data.currency === 'sat' && zoneDialog.data.cost % 1 !== 0) || (zoneDialog.data.currency !== 'sat' && (zoneDialog.data.cost * 100) % 1 !== 0)"
               type="submit"
               >Create Shipping Zone</q-btn
             >
