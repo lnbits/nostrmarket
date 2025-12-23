@@ -55,18 +55,22 @@
           dense
           v-model="zoneDialog.data.currency"
           type="text"
-          label="Unit"
+          label="Currency"
           :options="currencies"
         ></q-select>
         <q-input
           filled
           dense
-          :label="'Cost of Shipping (' + zoneDialog.data.currency + ') *'"
+          label="Default shipping cost"
           fill-mask="0"
           reverse-fill-mask
           :step="zoneDialog.data.currency != 'sat' ? '0.01' : '1'"
           type="number"
           v-model.trim="zoneDialog.data.cost"
+          :suffix="zoneDialog.data.currency"
+          :error="zoneDialog.data.currency === 'sat' && zoneDialog.data.cost % 1 !== 0"
+          error-message="Satoshis must be whole numbers"
+          hint="Additional costs can be set per product"
         ></q-input>
         <div class="row q-mt-lg">
           <div v-if="zoneDialog.data.id">
@@ -83,7 +87,7 @@
             <q-btn
               unelevated
               color="primary"
-              :disable="!zoneDialog.data.countries || !zoneDialog.data.countries.length"
+              :disable="!zoneDialog.data.countries || !zoneDialog.data.countries.length || (zoneDialog.data.currency === 'sat' && zoneDialog.data.cost % 1 !== 0)"
               type="submit"
               >Create Shipping Zone</q-btn
             >
