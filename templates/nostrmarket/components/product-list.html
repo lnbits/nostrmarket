@@ -109,8 +109,12 @@
             color="green"
             unchecked-icon="clear"
           >
-            <q-tooltip v-if="props.row.active">Product is active - click to deactivate</q-tooltip>
-            <q-tooltip v-else>Product is inactive - click to activate</q-tooltip>
+            <q-tooltip v-if="props.row.active"
+              >Product is active - click to deactivate</q-tooltip
+            >
+            <q-tooltip v-else
+              >Product is inactive - click to activate</q-tooltip
+            >
           </q-toggle>
           <q-btn
             size="sm"
@@ -188,7 +192,11 @@
           </div>
         </div>
 
-        <q-expansion-item group="advanced" label="Categories" caption="Add tags to products">
+        <q-expansion-item
+          group="advanced"
+          label="Categories"
+          caption="Add tags to products"
+        >
           <div class="q-pl-sm q-pt-sm">
             <q-select
               filled
@@ -206,7 +214,11 @@
           </div>
         </q-expansion-item>
 
-        <q-expansion-item group="advanced" label="Images" caption="Add images for product">
+        <q-expansion-item
+          group="advanced"
+          label="Images"
+          caption="Add images for product"
+        >
           <div class="q-pl-sm q-pt-sm">
             <q-input
               filled
@@ -247,8 +259,11 @@
             color="primary"
             :disable="!productDialog.data.stall_id || !productDialog.data.price || !productDialog.data.name || !productDialog.data.quantity"
             type="submit"
-          >Create Product</q-btn>
-          <q-btn v-close-popup flat color="grey" class="q-ml-auto">Cancel</q-btn>
+            >Create Product</q-btn
+          >
+          <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+            >Cancel</q-btn
+          >
         </div>
       </q-form>
     </q-card>
@@ -266,8 +281,12 @@
           v-ripple
         >
           <q-item-section>
-            <q-item-label><span v-text="pendingProduct.name"></span></q-item-label>
-            <q-item-label caption><span v-text="pendingProduct.config?.description"></span></q-item-label>
+            <q-item-label
+              ><span v-text="pendingProduct.name"></span
+            ></q-item-label>
+            <q-item-label caption
+              ><span v-text="pendingProduct.config?.description"></span
+            ></q-item-label>
           </q-item-section>
           <q-item-section class="q-pl-xl float-right">
             <q-btn
@@ -276,7 +295,8 @@
               flat
               color="green"
               class="q-ml-auto float-right"
-            >Restore</q-btn>
+              >Restore</q-btn
+            >
           </q-item-section>
         </q-item>
       </div>

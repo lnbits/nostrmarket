@@ -258,7 +258,9 @@ window.app = Vue.createApp({
     },
     refreshNip15: async function () {
       LNbits.utils
-        .confirmDialog('This will sync your stalls and products from Nostr relays. Continue?')
+        .confirmDialog(
+          'This will sync your stalls and products from Nostr relays. Continue?'
+        )
         .onOk(async () => {
           try {
             await LNbits.api.request(

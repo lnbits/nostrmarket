@@ -56,7 +56,9 @@
           <span v-text="shortLabel(props.row.config.description)"></span>
         </q-td>
         <q-td key="shippingZones" :props="props">
-          <span v-text="shortLabel(props.row.shipping_zones.filter(z => !!z.name).map(z => z.name).join(', '))"></span>
+          <span
+            v-text="shortLabel(props.row.shipping_zones.filter(z => !!z.name).map(z => z.name).join(', '))"
+          ></span>
         </q-td>
         <q-td key="actions" :props="props">
           <q-btn

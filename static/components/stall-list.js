@@ -35,9 +35,24 @@ window.app.component('stall-list', {
       stallsTable: {
         columns: [
           {name: 'name', align: 'left', label: 'Name', field: 'name'},
-          {name: 'currency', align: 'left', label: 'Currency', field: 'currency'},
-          {name: 'description', align: 'left', label: 'Description', field: row => row.config?.description || ''},
-          {name: 'shippingZones', align: 'left', label: 'Shipping Zones', field: row => row.shipping_zones?.map(z => z.name).join(', ') || ''},
+          {
+            name: 'currency',
+            align: 'left',
+            label: 'Currency',
+            field: 'currency'
+          },
+          {
+            name: 'description',
+            align: 'left',
+            label: 'Description',
+            field: row => row.config?.description || ''
+          },
+          {
+            name: 'shippingZones',
+            align: 'left',
+            label: 'Shipping Zones',
+            field: row => row.shipping_zones?.map(z => z.name).join(', ') || ''
+          },
           {name: 'actions', align: 'right', label: 'Actions', field: ''}
         ],
         pagination: {

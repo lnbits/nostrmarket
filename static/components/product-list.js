@@ -20,7 +20,12 @@ window.app.component('product-list', {
           {name: 'name', align: 'left', label: 'Name', field: 'name'},
           {name: 'stall', align: 'left', label: 'Stall', field: 'stall_id'},
           {name: 'price', align: 'left', label: 'Price', field: 'price'},
-          {name: 'quantity', align: 'left', label: 'Quantity', field: 'quantity'},
+          {
+            name: 'quantity',
+            align: 'left',
+            label: 'Quantity',
+            field: 'quantity'
+          },
           {name: 'actions', align: 'right', label: 'Actions', field: ''}
         ],
         pagination: {
