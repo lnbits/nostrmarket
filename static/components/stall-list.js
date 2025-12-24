@@ -2,7 +2,7 @@ window.app.component('stall-list', {
   name: 'stall-list',
   template: '#stall-list',
   delimiters: ['${', '}'],
-  props: [`adminkey`, 'inkey', 'wallet-options'],
+  props: ['adminkey', 'inkey', 'wallet-options'],
   data: function () {
     return {
       filter: '',
@@ -20,21 +20,21 @@ window.app.component('stall-list', {
           shippingZones: []
         }
       },
+      editDialog: {
+        show: false,
+        data: {
+          id: '',
+          name: '',
+          description: '',
+          wallet: null,
+          currency: 'sat',
+          shippingZones: []
+        }
+      },
       zoneOptions: [],
       stallsTable: {
         columns: [
-          {
-            name: '',
-            align: 'left',
-            label: '',
-            field: ''
-          },
-          {
-            name: 'id',
-            align: 'left',
-            label: 'Name',
-            field: 'id'
-          },
+          {name: 'name', align: 'left', label: 'Name', field: 'name'},
           {
             name: 'currency',
             align: 'left',
@@ -45,14 +45,15 @@ window.app.component('stall-list', {
             name: 'description',
             align: 'left',
             label: 'Description',
-            field: 'description'
+            field: row => row.config?.description || ''
           },
           {
             name: 'shippingZones',
             align: 'left',
             label: 'Shipping Zones',
-            field: 'shippingZones'
-          }
+            field: row => row.shipping_zones?.map(z => z.name).join(', ') || ''
+          },
+          {name: 'actions', align: 'right', label: 'Actions', field: ''}
         ],
         pagination: {
           rowsPerPage: 10
@@ -64,6 +65,11 @@ window.app.component('stall-list', {
     filteredZoneOptions: function () {
       return this.zoneOptions.filter(
         z => z.currency === this.stallDialog.data.currency
+      )
+    },
+    editFilteredZoneOptions: function () {
+      return this.zoneOptions.filter(
+        z => z.currency === this.editDialog.data.currency
       )
     }
   },
@@ -94,7 +100,6 @@ window.app.component('stall-list', {
           stall
         )
         this.stallDialog.show = false
-        data.expanded = false
         this.stalls.unshift(data)
         this.$q.notify({
           type: 'positive',
@@ -114,7 +119,6 @@ window.app.component('stall-list', {
           stallData
         )
         this.stallDialog.show = false
-        data.expanded = false
         this.stalls.unshift(data)
         this.$q.notify({
           type: 'positive',
@@ -124,29 +128,61 @@ window.app.component('stall-list', {
         LNbits.utils.notifyApiError(error)
       }
     },
-    deleteStall: async function (pendingStall) {
+    updateStall: async function () {
+      try {
+        const stallData = {
+          id: this.editDialog.data.id,
+          name: this.editDialog.data.name,
+          wallet: this.editDialog.data.wallet,
+          currency: this.editDialog.data.currency,
+          shipping_zones: this.editDialog.data.shippingZones,
+          config: {
+            description: this.editDialog.data.description
+          }
+        }
+        const {data} = await LNbits.api.request(
+          'PUT',
+          `/nostrmarket/api/v1/stall/${stallData.id}`,
+          this.adminkey,
+          stallData
+        )
+        this.editDialog.show = false
+        const index = this.stalls.findIndex(s => s.id === data.id)
+        if (index !== -1) {
+          this.stalls.splice(index, 1, data)
+        }
+        this.$q.notify({
+          type: 'positive',
+          message: 'Stall updated!'
+        })
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      }
+    },
+    deleteStall: async function (stall) {
+      try {
+        await LNbits.api.request(
+          'DELETE',
+          '/nostrmarket/api/v1/stall/' + stall.id,
+          this.adminkey
+        )
+        this.stalls = this.stalls.filter(s => s.id !== stall.id)
+        this.pendingStalls = this.pendingStalls.filter(s => s.id !== stall.id)
+        this.$q.notify({
+          type: 'positive',
+          message: 'Stall deleted'
+        })
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      }
+    },
+    confirmDeleteStall: function (stall) {
       LNbits.utils
         .confirmDialog(
-          `
-           Are you sure you want to delete this pending stall '${pendingStall.name}'?
-          `
+          `Products and orders will be deleted also! Are you sure you want to delete stall "${stall.name}"?`
         )
         .onOk(async () => {
-          try {
-            await LNbits.api.request(
-              'DELETE',
-              '/nostrmarket/api/v1/stall/' + pendingStall.id,
-              this.adminkey
-            )
-            this.$q.notify({
-              type: 'positive',
-              message: 'Pending Stall Deleted',
-              timeout: 5000
-            })
-          } catch (error) {
-            console.warn(error)
-            LNbits.utils.notifyApiError(error)
-          }
+          await this.deleteStall(stall)
         })
     },
     getCurrencies: function () {
@@ -160,7 +196,7 @@ window.app.component('stall-list', {
           `/nostrmarket/api/v1/stall?pending=${pending}`,
           this.inkey
         )
-        return data.map(s => ({...s, expanded: false}))
+        return data
       } catch (error) {
         LNbits.utils.notifyApiError(error)
       }
@@ -184,18 +220,6 @@ window.app.component('stall-list', {
       }
       return []
     },
-    handleStallDeleted: function (stallId) {
-      this.stalls = _.reject(this.stalls, function (obj) {
-        return obj.id === stallId
-      })
-    },
-    handleStallUpdated: function (stall) {
-      const index = this.stalls.findIndex(r => r.id === stall.id)
-      if (index !== -1) {
-        stall.expanded = true
-        this.stalls.splice(index, 1, stall)
-      }
-    },
     openCreateStallDialog: async function (stallData) {
       this.currencies = this.getCurrencies()
       this.zoneOptions = await this.getZones()
@@ -214,6 +238,24 @@ window.app.component('stall-list', {
         shippingZones: []
       }
       this.stallDialog.show = true
+    },
+    openEditStallDialog: async function (stall) {
+      this.currencies = this.getCurrencies()
+      this.zoneOptions = await this.getZones()
+      this.editDialog.data = {
+        id: stall.id,
+        name: stall.name,
+        description: stall.config?.description || '',
+        wallet: stall.wallet,
+        currency: stall.currency,
+        shippingZones: (stall.shipping_zones || []).map(z => ({
+          ...z,
+          label: z.name
+            ? `${z.name} (${z.countries.join(', ')})`
+            : z.countries.join(', ')
+        }))
+      }
+      this.editDialog.show = true
     },
     openSelectPendingStallDialog: async function () {
       this.stallDialog.showRestore = true
@@ -236,8 +278,11 @@ window.app.component('stall-list', {
           }))
       })
     },
-    customerSelectedForOrder: function (customerPubkey) {
-      this.$emit('customer-selected-for-order', customerPubkey)
+    goToProducts: function (stall) {
+      this.$emit('go-to-products', stall.id)
+    },
+    goToOrders: function (stall) {
+      this.$emit('go-to-orders', stall.id)
     },
     shortLabel(value = '') {
       if (value.length <= 64) return value
