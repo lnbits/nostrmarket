@@ -19,7 +19,6 @@ window.app.component('shipping-zones', {
       currencies: [],
       shippingZoneOptions: [
         'Free (digital)',
-        'Flat rate',
         'Worldwide',
         'Europe',
         'Australia',
@@ -27,6 +26,7 @@ window.app.component('shipping-zones', {
         'Belgium',
         'Brazil',
         'Canada',
+        'China',
         'Denmark',
         'Finland',
         'France',
@@ -34,8 +34,8 @@ window.app.component('shipping-zones', {
         'Greece',
         'Hong Kong',
         'Hungary',
-        'Ireland',
         'Indonesia',
+        'Ireland',
         'Israel',
         'Italy',
         'Japan',
@@ -59,10 +59,9 @@ window.app.component('shipping-zones', {
         'Thailand',
         'Turkey',
         'Ukraine',
-        'United Kingdom**',
-        'United States***',
-        'Vietnam',
-        'China'
+        'United Kingdom',
+        'United States',
+        'Vietnam'
       ]
     }
   },
