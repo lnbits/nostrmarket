@@ -182,7 +182,11 @@
                 @click="restartNostrConnection"
               >
                 <q-list>
-                  <q-item clickable v-close-popup @click="restartNostrConnection">
+                  <q-item
+                    clickable
+                    v-close-popup
+                    @click="restartNostrConnection"
+                  >
                     <q-item-section avatar>
                       <q-icon name="refresh" color="primary"></q-icon>
                     </q-item-section>
@@ -193,7 +197,11 @@
                       </q-item-label>
                     </q-item-section>
                   </q-item>
-                  <q-item clickable v-close-popup @click="checkNostrStatus(true)">
+                  <q-item
+                    clickable
+                    v-close-popup
+                    @click="checkNostrStatus(true)"
+                  >
                     <q-item-section avatar>
                       <q-icon name="wifi_find" color="primary"></q-icon>
                     </q-item-section>
@@ -351,9 +359,9 @@
             <div class="text-h6 q-mb-sm">Nostr Market</div>
             <div class="text-body2 text-grey">
               A decentralized marketplace extension for LNbits implementing the
-              NIP-15 protocol. Create stalls, list products, and accept Lightning
-              payments while communicating with customers via encrypted Nostr
-              direct messages.
+              NIP-15 protocol. Create stalls, list products, and accept
+              Lightning payments while communicating with customers via
+              encrypted Nostr direct messages.
             </div>
           </q-card-section>
           <q-card-section class="q-pa-none">
