@@ -71,11 +71,37 @@
                 <q-separator></q-separator>
                 <q-item clickable v-close-popup @click="$emit('import-key')">
                   <q-item-section avatar>
+                    <q-icon name="vpn_key" color="primary"></q-icon>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>Import Existing Key</q-item-label>
+                    <q-item-label caption>Use an existing nsec</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item clickable v-close-popup @click="$emit('generate-key')">
+                  <q-item-section avatar>
                     <q-icon name="add" color="primary"></q-icon>
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label>Add New Profile</q-item-label>
-                    <q-item-label caption>Import a different nsec</q-item-label>
+                    <q-item-label>Generate New Key</q-item-label>
+                    <q-item-label caption>Create a fresh nsec</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-separator></q-separator>
+                <q-item clickable v-close-popup @click="removeMerchant">
+                  <q-item-section avatar>
+                    <q-icon name="delete" color="negative"></q-icon>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label class="text-negative"
+                      >Remove
+                      <span
+                        v-text="merchantConfig?.display_name || merchantConfig?.name || 'Profile'"
+                      ></span
+                    ></q-item-label>
+                    <q-item-label caption
+                      >Remove this nPub from the DB</q-item-label
+                    >
                   </q-item-section>
                 </q-item>
               </q-list>
