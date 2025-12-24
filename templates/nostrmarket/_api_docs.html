@@ -1,44 +1,213 @@
-<q-card>
-  <q-card-section>
-    <p>
-      Nostr Market<br />
-      <small>
-        Created by,
+<q-expansion-item
+  icon="help_outline"
+  label="What is Nostr?"
+  header-class="text-weight-medium"
+>
+  <q-card>
+    <q-card-section class="text-body2">
+      <p>
+        <strong>Nostr</strong> (Notes and Other Stuff Transmitted by Relays) is
+        a decentralized protocol for censorship-resistant communication. Unlike
+        traditional platforms, your identity and data aren't controlled by any
+        single company.
+      </p>
+      <p class="q-mb-none">
+        Your Nostr identity is a cryptographic key pair - a public key (npub)
+        that others use to find you, and a private key (nsec) that proves you
+        are you. Keep your nsec safe and never share it!
+      </p>
+    </q-card-section>
+  </q-card>
+</q-expansion-item>
+
+<q-expansion-item
+  icon="flag"
+  label="Getting Started"
+  header-class="text-weight-medium"
+>
+  <q-card>
+    <q-card-section class="text-body2">
+      <p><strong>1. Generate or Import Keys</strong></p>
+      <p class="q-mb-md">
+        Create a new Nostr identity or import an existing one using your nsec.
+        Your keys are used to sign all marketplace events.
+      </p>
+      <p><strong>2. Create a Stall</strong></p>
+      <p class="q-mb-md">
+        A stall is your shop. Give it a name, description, and configure
+        shipping zones for delivery.
+      </p>
+      <p><strong>3. Add Products</strong></p>
+      <p class="q-mb-md">
+        List items for sale with images, descriptions, and prices in your
+        preferred currency.
+      </p>
+      <p><strong>4. Publish to Nostr</strong></p>
+      <p class="q-mb-none">
+        Your stall and products are published to Nostr relays where customers
+        can discover them using any compatible marketplace client.
+      </p>
+    </q-card-section>
+  </q-card>
+</q-expansion-item>
+
+<q-expansion-item
+  icon="storefront"
+  label="For Merchants"
+  header-class="text-weight-medium"
+>
+  <q-card>
+    <q-card-section class="text-body2">
+      <p>
+        <strong>Decentralized Commerce</strong> - Your shop exists on Nostr
+        relays, not a single server. No platform fees, no deplatforming risk.
+      </p>
+      <p>
+        <strong>Lightning Payments</strong> - Accept instant, low-fee Bitcoin
+        payments via the Lightning Network.
+      </p>
+      <p>
+        <strong>Encrypted Messages</strong> - Communicate privately with
+        customers using NIP-04 encrypted direct messages.
+      </p>
+      <p>
+        <strong>Portable Identity</strong> - Your merchant reputation travels
+        with your Nostr keys across any compatible marketplace.
+      </p>
+      <p class="q-mb-none">
+        <strong>Global Reach</strong> - Your stalls and products are
+        automatically visible on any Nostr marketplace client that supports
+        NIP-15, including Amethyst, Plebeian Market, and others.
+      </p>
+    </q-card-section>
+  </q-card>
+</q-expansion-item>
+
+<q-expansion-item
+  icon="shopping_cart"
+  label="For Customers"
+  header-class="text-weight-medium"
+>
+  <q-card>
+    <q-card-section class="text-body2">
+      <p>
+        <strong>Browse the Market</strong> - Use the Market Client to discover
+        stalls and products from merchants around the world.
+      </p>
+      <p>
+        <strong>Pay with Lightning</strong> - Fast, private payments with
+        minimal fees using Bitcoin's Lightning Network.
+      </p>
+      <p class="q-mb-none">
+        <strong>Direct Communication</strong> - Message merchants directly via
+        encrypted Nostr DMs for questions, custom orders, or support.
+      </p>
+    </q-card-section>
+  </q-card>
+</q-expansion-item>
+
+<q-expansion-item
+  icon="people"
+  label="Contributors"
+  header-class="text-weight-medium"
+>
+  <q-card>
+    <q-card-section class="text-body2">
+      <p class="q-mb-sm">This extension was created by:</p>
+      <div class="q-gutter-sm">
         <a
-          class="text-secondary"
-          target="_blank"
-          style="color: unset"
           href="https://github.com/talvasconcelos"
-          >Tal Vasconcelos</a
-        >
-        <a
-          class="text-secondary"
           target="_blank"
-          style="color: unset"
-          href="https://github.com/benarc"
-          >Ben Arc</a
+          class="text-decoration-none"
         >
+          <q-chip clickable icon="person">Tal Vasconcelos</q-chip>
+        </a>
         <a
-          class="text-secondary"
+          href="https://github.com/arcbtc"
           target="_blank"
-          style="color: unset"
+          class="text-decoration-none"
+        >
+          <q-chip clickable icon="person">Ben Arc</q-chip>
+        </a>
+        <a
           href="https://github.com/motorina0"
-          >motorina0</a
-        ></small
-      >
-    </p>
-    <a
-      class="text-secondary"
-      target="_blank"
-      href="/docs#/nostrmarket"
-      class="text-white"
-      >Swagger REST API Documentation</a
-    >
-  </q-card-section>
-  <q-card-section>
-    <a class="text-secondary" target="_blank" href="/nostrmarket/market"
-      ><q-tooltip>Visit the market client</q-tooltip
-      ><q-icon name="storefront" class="q-mr-sm"></q-icon>Market client</a
-    >
-  </q-card-section>
-</q-card>
+          target="_blank"
+          class="text-decoration-none"
+        >
+          <q-chip clickable icon="person">motorina0</q-chip>
+        </a>
+        <a
+          href="https://github.com/BenGWeeks"
+          target="_blank"
+          class="text-decoration-none"
+        >
+          <q-chip clickable icon="person">Ben Weeks</q-chip>
+        </a>
+      </div>
+    </q-card-section>
+  </q-card>
+</q-expansion-item>
+
+<q-separator></q-separator>
+
+<q-item clickable tag="a" target="_blank" href="/nostrmarket/market">
+  <q-item-section avatar>
+    <q-icon name="storefront" color="primary"></q-icon>
+  </q-item-section>
+  <q-item-section>
+    <q-item-label>Market Client</q-item-label>
+    <q-item-label caption>Browse and shop from stalls</q-item-label>
+  </q-item-section>
+  <q-item-section side>
+    <q-icon name="open_in_new" size="xs"></q-icon>
+  </q-item-section>
+</q-item>
+
+<q-item clickable tag="a" target="_blank" href="/docs#/nostrmarket">
+  <q-item-section avatar>
+    <q-icon name="api" color="primary"></q-icon>
+  </q-item-section>
+  <q-item-section>
+    <q-item-label>API Documentation</q-item-label>
+    <q-item-label caption>Swagger REST API reference</q-item-label>
+  </q-item-section>
+  <q-item-section side>
+    <q-icon name="open_in_new" size="xs"></q-icon>
+  </q-item-section>
+</q-item>
+
+<q-item
+  clickable
+  tag="a"
+  target="_blank"
+  href="https://github.com/nostr-protocol/nips/blob/master/15.md"
+>
+  <q-item-section avatar>
+    <q-icon name="description" color="secondary"></q-icon>
+  </q-item-section>
+  <q-item-section>
+    <q-item-label>NIP-15 Specification</q-item-label>
+    <q-item-label caption>Nostr Marketplace protocol</q-item-label>
+  </q-item-section>
+  <q-item-section side>
+    <q-icon name="open_in_new" size="xs"></q-icon>
+  </q-item-section>
+</q-item>
+
+<q-item
+  clickable
+  tag="a"
+  target="_blank"
+  href="https://github.com/lnbits/nostrmarket/issues"
+>
+  <q-item-section avatar>
+    <q-icon name="bug_report" color="warning"></q-icon>
+  </q-item-section>
+  <q-item-section>
+    <q-item-label>Report Issues / Feedback</q-item-label>
+    <q-item-label caption>GitHub Issues</q-item-label>
+  </q-item-section>
+  <q-item-section side>
+    <q-icon name="open_in_new" size="xs"></q-icon>
+  </q-item-section>
+</q-item>
