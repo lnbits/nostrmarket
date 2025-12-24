@@ -13,12 +13,41 @@ window.app.component('merchant-tab', {
     'is-admin',
     'merchant-config'
   ],
+  emits: [
+    'toggle-show-keys',
+    'hide-keys',
+    'merchant-deleted',
+    'toggle-merchant-state',
+    'restart-nostr-connection',
+    'profile-updated'
+  ],
+  data: function () {
+    return {
+      showEditProfileDialog: false,
+      showKeysDialog: false
+    }
+  },
   computed: {
     marketClientUrl: function () {
       return '/nostrmarket/market'
     }
   },
   methods: {
+    publishProfile: async function () {
+      try {
+        await LNbits.api.request(
+          'PUT',
+          `/nostrmarket/api/v1/merchant/${this.merchantId}/nostr`,
+          this.adminkey
+        )
+        this.$q.notify({
+          type: 'positive',
+          message: 'Profile published to Nostr!'
+        })
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      }
+    },
     toggleShowKeys: function () {
       this.$emit('toggle-show-keys')
     },
@@ -33,6 +62,9 @@ window.app.component('merchant-tab', {
     },
     restartNostrConnection: function () {
       this.$emit('restart-nostr-connection')
+    },
+    handleImageError: function (e) {
+      e.target.style.display = 'none'
     }
   }
 })

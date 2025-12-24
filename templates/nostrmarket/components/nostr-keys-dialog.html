@@ -1,0 +1,75 @@
+<q-dialog v-model="show">
+  <q-card style="min-width: 400px; max-width: 450px">
+    <q-card-section>
+      <div class="text-h6">Nostr Keys</div>
+    </q-card-section>
+    <q-card-section>
+      <!-- QR Code for npub only -->
+      <div class="q-mx-auto q-mb-md text-center" style="max-width: 200px">
+        <lnbits-qrcode
+          :value="npub"
+          :options="{ width: 200 }"
+          :show-buttons="false"
+          class="rounded-borders"
+        ></lnbits-qrcode>
+      </div>
+
+      <!-- Public Key (npub) -->
+      <div class="text-subtitle2 q-mb-xs">
+        <q-icon name="public" class="q-mr-xs"></q-icon>
+        Public Key (npub)
+      </div>
+      <q-input :model-value="npub" readonly dense outlined class="q-mb-md">
+        <template v-slot:append>
+          <q-btn
+            flat
+            dense
+            icon="content_copy"
+            @click="copyText(npub, 'npub copied!')"
+          >
+            <q-tooltip>Copy npub</q-tooltip>
+          </q-btn>
+        </template>
+      </q-input>
+
+      <!-- Private Key (nsec) -->
+      <div class="text-subtitle2 q-mb-xs text-warning">
+        <q-icon name="warning" class="q-mr-xs"></q-icon>
+        Private Key (nsec)
+      </div>
+      <q-input
+        :model-value="showNsec ? nsec : '••••••••••••••••••••••••••••••••••••••••••••••'"
+        readonly
+        dense
+        outlined
+        class="q-mb-xs"
+      >
+        <template v-slot:append>
+          <q-btn
+            flat
+            dense
+            :icon="showNsec ? 'visibility_off' : 'visibility'"
+            @click="showNsec = !showNsec"
+          >
+            <q-tooltip v-text="showNsec ? 'Hide' : 'Show'"></q-tooltip>
+          </q-btn>
+          <q-btn
+            flat
+            dense
+            icon="content_copy"
+            @click="copyText(nsec, 'nsec copied! Keep it secret!')"
+          >
+            <q-tooltip>Copy nsec</q-tooltip>
+          </q-btn>
+        </template>
+      </q-input>
+      <div class="text-caption text-negative">
+        <q-icon name="error" size="14px"></q-icon>
+        Never share your private key!
+      </div>
+    </q-card-section>
+    <q-card-actions align="right" class="q-pa-md">
+      <q-btn flat label="CLOSE" color="grey" v-close-popup></q-btn>
+    </q-card-actions>
+  </q-card>
+</q-dialog>

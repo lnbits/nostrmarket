@@ -158,6 +158,8 @@
               @merchant-deleted="handleMerchantDeleted"
               @toggle-merchant-state="toggleMerchantState"
               @restart-nostr-connection="restartNostrConnection"
+              @import-key="showImportKeysDialog"
+              @profile-updated="getMerchant"
             ></merchant-tab>
           </q-tab-panel>
 
@@ -424,8 +426,11 @@
   }
 </style>
 
-<template id="key-pair"
-  >{% include("nostrmarket/components/key-pair.html") %}</template
+<template id="nostr-keys-dialog"
+  >{% include("nostrmarket/components/nostr-keys-dialog.html") %}</template
+>
+<template id="edit-profile-dialog"
+  >{% include("nostrmarket/components/edit-profile-dialog.html") %}</template
 >
 <template id="shipping-zones"
   >{% include("nostrmarket/components/shipping-zones.html") %}</template
@@ -459,7 +464,8 @@
 <script src="{{ url_for('nostrmarket_static', path='js/utils.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/index.js') }}"></script>
 
-<script src="{{ static_url_for('nostrmarket/static', 'components/key-pair.js') }}"></script>
+<script src="{{ static_url_for('nostrmarket/static', 'components/nostr-keys-dialog.js') }}"></script>
+<script src="{{ static_url_for('nostrmarket/static', 'components/edit-profile-dialog.js') }}"></script>
 <script src="{{ static_url_for('nostrmarket/static', 'components/shipping-zones.js') }}"></script>
 <script src="{{ static_url_for('nostrmarket/static', 'components/stall-details.js') }}"></script>
 <script src="{{ static_url_for('nostrmarket/static', 'components/stall-list.js') }}"></script>

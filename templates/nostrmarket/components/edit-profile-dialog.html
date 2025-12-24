@@ -1,0 +1,63 @@
+<q-dialog v-model="show" position="top">
+  <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+    <q-form @submit="saveProfile" class="q-gutter-md">
+      <div class="text-h6 q-mb-md">Edit Profile</div>
+      <q-input
+        filled
+        dense
+        v-model.trim="formData.name"
+        label="Name (username)"
+      ></q-input>
+      <q-input
+        filled
+        dense
+        v-model.trim="formData.display_name"
+        label="Display Name"
+      ></q-input>
+      <q-input
+        filled
+        dense
+        v-model.trim="formData.about"
+        label="About"
+        type="textarea"
+        rows="3"
+      ></q-input>
+      <q-input
+        filled
+        dense
+        v-model.trim="formData.picture"
+        label="Profile Picture URL"
+      ></q-input>
+      <q-input
+        filled
+        dense
+        v-model.trim="formData.banner"
+        label="Banner Image URL"
+      ></q-input>
+      <q-input
+        filled
+        dense
+        v-model.trim="formData.website"
+        label="Website"
+      ></q-input>
+      <q-input
+        filled
+        dense
+        v-model.trim="formData.nip05"
+        label="NIP-05 Identifier"
+      ></q-input>
+      <q-input
+        filled
+        dense
+        v-model.trim="formData.lud16"
+        label="Lightning Address (lud16)"
+      ></q-input>
+      <div class="row q-mt-lg">
+        <q-btn unelevated color="primary" type="submit" :loading="saving"
+          >Save</q-btn
+        >
+        <q-btn v-close-popup flat color="grey" class="q-ml-auto">Cancel</q-btn>
+      </div>
+    </q-form>
+  </q-card>
+</q-dialog>

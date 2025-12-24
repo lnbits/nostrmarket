@@ -62,6 +62,7 @@ from .models import (
     DirectMessage,
     DirectMessageType,
     Merchant,
+    MerchantConfig,
     Order,
     OrderReissue,
     OrderStatusUpdate,
@@ -190,6 +191,35 @@ async def api_delete_merchant(
         ) from ex
     finally:
         await subscribe_to_all_merchants()
+
+
+@nostrmarket_ext.patch("/api/v1/merchant/{merchant_id}")
+async def api_update_merchant(
+    merchant_id: str,
+    config: MerchantConfig,
+    wallet: WalletTypeInfo = Depends(require_admin_key),
+):
+    try:
+        merchant = await get_merchant_for_user(wallet.wallet.user)
+        assert merchant, "Merchant cannot be found"
+        assert merchant.id == merchant_id, "Wrong merchant ID"
+
+        updated_merchant = await update_merchant(
+            wallet.wallet.user, merchant_id, config
+        )
+        return updated_merchant
+
+    except AssertionError as ex:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=str(ex),
+        ) from ex
+    except Exception as ex:
+        logger.warning(ex)
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Cannot update merchant",
+        ) from ex
 
 
 @nostrmarket_ext.put("/api/v1/merchant/{merchant_id}/nostr")
