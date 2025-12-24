@@ -98,9 +98,6 @@ async def api_create_merchant(
         merchant = await get_merchant_by_pubkey(data.public_key)
         assert merchant is None, "A merchant already uses this public key"
 
-        merchant = await get_merchant_for_user(wallet.wallet.user)
-        assert merchant is None, "A merchant already exists for this user"
-
         merchant = await create_merchant(wallet.wallet.user, data)
 
         await create_zone(

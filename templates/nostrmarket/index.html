@@ -408,6 +408,63 @@
       </q-card>
     </q-dialog>
   </div>
+
+  <!-- Generate Key Dialog -->
+  <q-dialog v-model="generateKeyDialog.show" position="top">
+    <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+      <div class="text-h6 q-mb-md">Generate New Key</div>
+      <div class="q-mb-md">
+        <div class="text-subtitle2 q-mb-xs">Public Key (npub)</div>
+        <q-input :model-value="generateKeyDialog.npub" readonly dense outlined>
+          <template v-slot:append>
+            <q-btn
+              flat
+              dense
+              icon="content_copy"
+              @click="copyText(generateKeyDialog.npub, 'npub copied!')"
+            ></q-btn>
+          </template>
+        </q-input>
+      </div>
+      <div class="q-mb-md">
+        <div class="text-subtitle2 q-mb-xs text-warning">
+          <q-icon name="warning" size="xs"></q-icon>
+          Private Key (nsec)
+        </div>
+        <q-input
+          :model-value="generateKeyDialog.showNsec ? generateKeyDialog.nsec : '••••••••••••••••••••••••••••••••••••••••••••••'"
+          readonly
+          dense
+          outlined
+        >
+          <template v-slot:append>
+            <q-btn
+              flat
+              dense
+              :icon="generateKeyDialog.showNsec ? 'visibility_off' : 'visibility'"
+              @click="generateKeyDialog.showNsec = !generateKeyDialog.showNsec"
+            ></q-btn>
+            <q-btn
+              flat
+              dense
+              icon="content_copy"
+              @click="copyText(generateKeyDialog.nsec, 'nsec copied! Keep it safe!')"
+            ></q-btn>
+          </template>
+        </q-input>
+        <div class="text-caption text-negative q-mt-xs">
+          <q-icon name="error" size="xs"></q-icon>
+          Never share your private key!
+        </div>
+      </div>
+      <div class="row q-mt-lg">
+        <q-btn unelevated color="primary" @click="confirmGenerateKey"
+          >Create Merchant</q-btn
+        >
+        <q-btn v-close-popup flat color="grey" class="q-ml-auto">Cancel</q-btn>
+      </div>
+    </q-card>
+  </q-dialog>
 </div>
 {% endblock%}{% block scripts %} {{ window_vars(user) }}
 

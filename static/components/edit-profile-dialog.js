@@ -50,10 +50,16 @@ window.app.component('edit-profile-dialog', {
           this.adminkey,
           config
         )
+        // Publish to Nostr
+        await LNbits.api.request(
+          'PUT',
+          `/nostrmarket/api/v1/merchant/${this.merchantId}/nostr`,
+          this.adminkey
+        )
         this.show = false
         this.$q.notify({
           type: 'positive',
-          message: 'Profile updated!'
+          message: 'Profile saved and published to Nostr!'
         })
         this.$emit('profile-updated')
       } catch (error) {

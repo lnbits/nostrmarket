@@ -53,8 +53,13 @@
         label="Lightning Address (lud16)"
       ></q-input>
       <div class="row q-mt-lg">
-        <q-btn unelevated color="primary" type="submit" :loading="saving"
-          >Save</q-btn
+        <q-btn
+          unelevated
+          color="primary"
+          type="submit"
+          :loading="saving"
+          icon="publish"
+          >Save &amp; Publish</q-btn
         >
         <q-btn v-close-popup flat color="grey" class="q-ml-auto">Cancel</q-btn>
       </div>

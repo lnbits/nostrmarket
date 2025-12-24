@@ -24,13 +24,6 @@
             >
               <q-tooltip>Show Keys</q-tooltip>
             </q-btn>
-            <q-btn
-              outline
-              color="primary"
-              @click="publishProfile"
-              icon="publish"
-              >Publish</q-btn
-            >
             <q-btn-dropdown
               split
               outline
@@ -40,14 +33,14 @@
             >
               <q-list>
                 <q-item-label header>Saved Profiles</q-item-label>
-                <q-item clickable v-close-popup>
+                <q-item>
                   <q-item-section avatar>
                     <q-icon name="check" color="primary"></q-icon>
                   </q-item-section>
                   <q-item-section>
                     <q-item-label
                       ><span
-                        v-text="merchantConfig?.name || 'Current Profile'"
+                        v-text="merchantConfig?.display_name || merchantConfig?.name || 'Current Profile'"
                       ></span
                     ></q-item-label>
                     <q-item-label
@@ -60,12 +53,18 @@
                       ></span>
                     </q-item-label>
                   </q-item-section>
-                </q-item>
-                <q-item disable>
-                  <q-item-section>
-                    <q-item-label caption class="text-grey-6">
-                      Multi-profile support coming soon
-                    </q-item-label>
+                  <q-item-section side>
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      icon="delete"
+                      color="negative"
+                      size="sm"
+                      @click.stop="removeMerchant"
+                    >
+                      <q-tooltip>Remove profile</q-tooltip>
+                    </q-btn>
                   </q-item-section>
                 </q-item>
                 <q-separator></q-separator>
@@ -85,23 +84,6 @@
                   <q-item-section>
                     <q-item-label>Generate New Key</q-item-label>
                     <q-item-label caption>Create a fresh nsec</q-item-label>
-                  </q-item-section>
-                </q-item>
-                <q-separator></q-separator>
-                <q-item clickable v-close-popup @click="removeMerchant">
-                  <q-item-section avatar>
-                    <q-icon name="delete" color="negative"></q-icon>
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label class="text-negative"
-                      >Remove
-                      <span
-                        v-text="merchantConfig?.display_name || merchantConfig?.name || 'Profile'"
-                      ></span
-                    ></q-item-label>
-                    <q-item-label caption
-                      >Remove this nPub from the DB</q-item-label
-                    >
                   </q-item-section>
                 </q-item>
               </q-list>
