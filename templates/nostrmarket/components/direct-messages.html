@@ -28,14 +28,11 @@
       <div class="row" style="height: 100%">
         <!-- Contact Sidebar -->
         <div
-          class="col-4 contact-sidebar"
-          style="
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-            overflow-y: auto;
-            height: 100%;
-          "
+          class="col-4"
+          style="border-right: 1px solid rgba(255, 255, 255, 0.1); height: 100%"
         >
-          <q-list separator>
+          <q-scroll-area style="height: 100%">
+            <q-list separator>
             <q-item
               v-for="customer in sortedCustomers"
               :key="customer.public_key"
@@ -89,6 +86,7 @@
               </q-item-section>
             </q-item>
           </q-list>
+          </q-scroll-area>
         </div>
 
         <!-- Conversation Area -->
@@ -135,11 +133,9 @@
             </div>
 
             <!-- Messages Area -->
-            <div
-              class="chat-messages q-pa-sm"
-              style="flex: 1; overflow-y: auto; min-height: 0"
-            >
-              <q-chat-message
+            <q-scroll-area style="flex: 1; min-height: 0">
+              <div class="q-pa-sm q-pr-lg">
+                <q-chat-message
                 v-for="(dm, index) in messagesAsJson"
                 :key="index"
                 :name="dm.incoming ? (activeCustomer?.profile.name || 'Customer') : 'Me'"
@@ -198,7 +194,8 @@
                 </div>
                 <div v-else><span v-text="dm.message"></span></div>
               </q-chat-message>
-            </div>
+              </div>
+            </q-scroll-area>
 
             <!-- Message Input -->
             <div
