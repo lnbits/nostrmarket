@@ -112,6 +112,28 @@ window.app.component('direct-messages', {
         LNbits.utils.notifyApiError(error)
       }
     },
+    resendMessage: async function (dm) {
+      try {
+        const {data} = await LNbits.api.request(
+          'PUT',
+          `/nostrmarket/api/v1/message/${dm.id}/resend`,
+          this.adminkey
+        )
+        // Update message in place and re-sort by event_created_at
+        const index = this.messages.findIndex(m => m.id === dm.id)
+        if (index !== -1) {
+          this.messages[index] = data
+        }
+        this.messages.sort((a, b) => a.time - b.time)
+        this.focusOnChatBox(this.messages.length - 1)
+        this.$q.notify({
+          type: 'positive',
+          message: 'Message sent!'
+        })
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      }
+    },
     addPublicKey: async function () {
       try {
         const {data} = await LNbits.api.request(

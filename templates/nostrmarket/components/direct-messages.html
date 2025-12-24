@@ -71,46 +71,64 @@
       <div class="chat-container" ref="chatCard">
         <div class="chat-box">
           <div class="chat-messages" style="height: 45vh">
-            <q-chat-message
-              v-for="(dm, index) in messagesAsJson"
-              :key="index"
-              :name="dm.incoming ? 'customer': 'me'"
-              :sent="!dm.incoming"
-              :stamp="dm.dateFrom"
-              :bg-color="dm.incoming ? 'white' : 'light-green-2'"
-              :class="'chat-mesage-index-'+index"
-            >
-              <div v-if="dm.isJson">
-                <div v-if="dm.message.type === 0">
-                  <strong>New order:</strong>
+            <template v-for="(dm, index) in messagesAsJson" :key="index">
+              <q-chat-message
+                :name="dm.incoming ? 'customer': 'me'"
+                :sent="!dm.incoming"
+                :stamp="dm.dateFrom"
+                :bg-color="dm.incoming ? 'white' : (dm.sent === false ? 'amber-2' : 'light-green-2')"
+                :class="'chat-mesage-index-'+index"
+              >
+                <div v-if="dm.isJson">
+                  <div v-if="dm.message.type === 0">
+                    <strong>New order:</strong>
+                  </div>
+                  <div v-else-if="dm.message.type === 1">
+                    <strong>Reply sent for order: </strong>
+                  </div>
+                  <div v-else-if="dm.message.type === 2">
+                    <q-badge v-if="dm.message.paid" color="green"
+                      >Paid
+                    </q-badge>
+                    <q-badge v-if="dm.message.shipped" color="green"
+                      >Shipped
+                    </q-badge>
+                  </div>
+                  <div>
+                    <span v-text="dm.message.message"></span>
+                    <q-badge color="orange">
+                      <span
+                        v-text="dm.message.id"
+                        @click="showOrderDetails(dm.message.id, dm.event_id)"
+                        class="cursor-pointer"
+                      ></span>
+                    </q-badge>
+                  </div>
+                  <q-badge
+                    @click="showMessageRawData(index)"
+                    class="cursor-pointer"
+                    >...</q-badge
+                  >
                 </div>
-                <div v-else-if="dm.message.type === 1">
-                  <strong>Reply sent for order: </strong>
-                </div>
-                <div v-else-if="dm.message.type === 2">
-                  <q-badge v-if="dm.message.paid" color="green">Paid </q-badge>
-                  <q-badge v-if="dm.message.shipped" color="green"
-                    >Shipped
-                  </q-badge>
-                </div>
-                <div>
-                  <span v-text="dm.message.message"></span>
-                  <q-badge color="orange">
-                    <span
-                      v-text="dm.message.id"
-                      @click="showOrderDetails(dm.message.id, dm.event_id)"
-                      class="cursor-pointer"
-                    ></span>
-                  </q-badge>
-                </div>
-                <q-badge
-                  @click="showMessageRawData(index)"
-                  class="cursor-pointer"
-                  >...</q-badge
+                <div v-else><span v-text="dm.message"></span></div>
+              </q-chat-message>
+              <div
+                v-if="!dm.incoming && dm.sent === false"
+                class="text-right q-mt-xs"
+              >
+                <q-badge color="amber-8" class="q-mr-xs">Failed</q-badge>
+                <q-btn
+                  flat
+                  dense
+                  size="xs"
+                  color="amber-8"
+                  icon="refresh"
+                  @click="resendMessage(dm)"
                 >
+                  <q-tooltip>Resend message</q-tooltip>
+                </q-btn>
               </div>
-              <div v-else><span v-text="dm.message"></span></div>
-            </q-chat-message>
+            </template>
           </div>
         </div>
         <q-card-section>

@@ -189,3 +189,12 @@ async def m005_update_product_activation(db):
         ADD COLUMN active BOOLEAN NOT NULL DEFAULT true;
         """
     )
+
+
+async def m006_add_direct_message_sent(db):
+    await db.execute(
+        """
+        ALTER TABLE nostrmarket.direct_messages
+        ADD COLUMN sent BOOLEAN NOT NULL DEFAULT true;
+        """
+    )

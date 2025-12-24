@@ -726,12 +726,12 @@ async def create_direct_message(
         INSERT INTO nostrmarket.direct_messages
         (
             merchant_id, id, event_id, event_created_at,
-            message, public_key, type, incoming
+            message, public_key, type, incoming, sent
         )
         VALUES
             (
             :merchant_id, :id, :event_id, :event_created_at,
-            :message, :public_key, :type, :incoming
+            :message, :public_key, :type, :incoming, :sent
             )
         ON CONFLICT(event_id) DO NOTHING
         """,
@@ -744,6 +744,7 @@ async def create_direct_message(
             "public_key": dm.public_key,
             "type": dm.type,
             "incoming": dm.incoming,
+            "sent": dm.sent,
         },
     )
     if dm.event_id:
@@ -789,7 +790,7 @@ async def get_direct_messages(merchant_id: str, public_key: str) -> list[DirectM
         """
         SELECT * FROM nostrmarket.direct_messages
         WHERE merchant_id = :merchant_id AND public_key = :public_key
-        ORDER BY event_created_at
+        ORDER BY time
         """,
         {"merchant_id": merchant_id, "public_key": public_key},
     )
@@ -827,6 +828,40 @@ async def get_last_direct_messages_created_at() -> int:
         {},
     )
     return row["event_created_at"] if row else 0
+
+
+async def update_direct_message_sent(
+    merchant_id: str, dm_id: str, sent: bool, event_created_at: int | None = None
+) -> DirectMessage | None:
+    if event_created_at:
+        await db.execute(
+            f"""
+            UPDATE nostrmarket.direct_messages
+            SET sent = :sent, event_created_at = :event_created_at,
+                time = {db.timestamp_now}
+            WHERE merchant_id = :merchant_id AND id = :id
+            """,
+            {
+                "sent": sent,
+                "event_created_at": event_created_at,
+                "merchant_id": merchant_id,
+                "id": dm_id,
+            },
+        )
+    else:
+        await db.execute(
+            """
+            UPDATE nostrmarket.direct_messages
+            SET sent = :sent
+            WHERE merchant_id = :merchant_id AND id = :id
+            """,
+            {
+                "sent": sent,
+                "merchant_id": merchant_id,
+                "id": dm_id,
+            },
+        )
+    return await get_direct_message(merchant_id, dm_id)
 
 
 async def delete_merchant_direct_messages(merchant_id: str) -> None:
