@@ -5,6 +5,8 @@ window.app = Vue.createApp({
   mixins: [window.windowMixin],
   data: function () {
     return {
+      activeTab: 'merchant',
+      selectedStallFilter: null,
       merchant: {},
       shippingZones: [],
       activeChatCustomer: '',
@@ -16,7 +18,26 @@ window.app = Vue.createApp({
           privateKey: null
         }
       },
-      wsConnection: null
+      wsConnection: null,
+      nostrStatus: {
+        connected: false,
+        error: null,
+        relays_connected: 0,
+        relays_total: 0
+      }
+    }
+  },
+  computed: {
+    nostrStatusColor: function () {
+      if (this.nostrStatus.connected) {
+        return 'green'
+      } else if (this.nostrStatus.warning) {
+        return 'orange'
+      }
+      return 'red'
+    },
+    nostrStatusLabel: function () {
+      return 'Connect'
     }
   },
   methods: {
@@ -196,10 +217,132 @@ window.app = Vue.createApp({
         })
       }
     },
+    checkNostrStatus: async function (showNotification = false) {
+      try {
+        const response = await fetch('/nostrclient/api/v1/relays')
+        const body = await response.json()
+
+        if (response.status === 200) {
+          const relaysConnected = body.filter(r => r.connected).length
+          if (body.length === 0) {
+            this.nostrStatus = {
+              connected: false,
+              error: 'No relays configured in Nostr Client',
+              relays_connected: 0,
+              relays_total: 0,
+              warning: true
+            }
+          } else {
+            this.nostrStatus = {
+              connected: true,
+              error: null,
+              relays_connected: relaysConnected,
+              relays_total: body.length
+            }
+          }
+        } else {
+          this.nostrStatus = {
+            connected: false,
+            error: body.detail,
+            relays_connected: 0,
+            relays_total: 0
+          }
+        }
+
+        if (showNotification) {
+          this.$q.notify({
+            timeout: 3000,
+            type: this.nostrStatus.connected ? 'positive' : 'warning',
+            message: this.nostrStatus.connected ? 'Connected' : 'Disconnected',
+            caption: this.nostrStatus.error || undefined
+          })
+        }
+      } catch (error) {
+        console.error('Failed to check nostr status:', error)
+        this.nostrStatus = {
+          connected: false,
+          error: error.message,
+          relays_connected: 0,
+          relays_total: 0
+        }
+        if (showNotification) {
+          this.$q.notify({
+            timeout: 5000,
+            type: 'negative',
+            message: this.nostrStatus.error
+          })
+        }
+      }
+    },
     restartNostrConnection: async function () {
       LNbits.utils
         .confirmDialog(
-          'Are you sure you want to reconnect to the nostrcient extension?'
+          'Are you sure you want to reconnect to the nostrclient extension?'
+        )
+        .onOk(async () => {
+          try {
+            this.$q.notify({
+              timeout: 2000,
+              type: 'info',
+              message: 'Reconnecting...'
+            })
+            await LNbits.api.request(
+              'PUT',
+              '/nostrmarket/api/v1/restart',
+              this.g.user.wallets[0].adminkey
+            )
+            // Check status after restart (give time for websocket to reconnect)
+            setTimeout(() => this.checkNostrStatus(true), 3000)
+          } catch (error) {
+            LNbits.utils.notifyApiError(error)
+          }
+        })
+    },
+    publishNip15: async function () {
+      try {
+        const {data: stalls} = await LNbits.api.request(
+          'GET',
+          '/nostrmarket/api/v1/stall?pending=false',
+          this.g.user.wallets[0].inkey
+        )
+        for (const stall of stalls) {
+          await LNbits.api.request(
+            'PUT',
+            `/nostrmarket/api/v1/stall/${stall.id}`,
+            this.g.user.wallets[0].adminkey,
+            stall
+          )
+        }
+        // Fetch products from all stalls
+        let productCount = 0
+        for (const stall of stalls) {
+          const {data: products} = await LNbits.api.request(
+            'GET',
+            `/nostrmarket/api/v1/stall/product/${stall.id}?pending=false`,
+            this.g.user.wallets[0].inkey
+          )
+          for (const product of products) {
+            await LNbits.api.request(
+              'PATCH',
+              `/nostrmarket/api/v1/product/${product.id}`,
+              this.g.user.wallets[0].adminkey,
+              product
+            )
+            productCount++
+          }
+        }
+        this.$q.notify({
+          type: 'positive',
+          message: `Published ${stalls.length} stall(s) and ${productCount} product(s) to Nostr (NIP-15)`
+        })
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      }
+    },
+    refreshNip15: async function () {
+      LNbits.utils
+        .confirmDialog(
+          'This will sync your stalls and products from Nostr relays. Continue?'
         )
         .onOk(async () => {
           try {
@@ -208,14 +351,39 @@ window.app = Vue.createApp({
               '/nostrmarket/api/v1/restart',
               this.g.user.wallets[0].adminkey
             )
+            this.$q.notify({
+              type: 'positive',
+              message: 'Refreshing NIP-15 data from Nostr...'
+            })
           } catch (error) {
             LNbits.utils.notifyApiError(error)
           }
         })
+    },
+    deleteNip15: async function () {
+      LNbits.utils
+        .confirmDialog(
+          'WARNING: This will delete all your stalls and products from Nostr relays. This cannot be undone! Are you sure?'
+        )
+        .onOk(async () => {
+          this.$q.notify({
+            type: 'info',
+            message: 'Delete NIP-15 from Nostr not yet implemented'
+          })
+        })
+    },
+    goToProducts: function (stallId) {
+      this.selectedStallFilter = stallId
+      this.activeTab = 'products'
+    },
+    goToOrders: function (stallId) {
+      this.selectedStallFilter = stallId
+      this.activeTab = 'orders'
     }
   },
   created: async function () {
     await this.getMerchant()
+    await this.checkNostrStatus()
     setInterval(async () => {
       if (
         !this.wsConnection ||

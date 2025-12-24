@@ -1,93 +1,220 @@
 {% extends "base.html" %} {% from "macros.jinja" import window_vars with context
 %} {% block page %}
 <div class="row q-col-gutter-md">
-  <div class="col-12 col-md-7 q-gutter-y-md">
+  <div class="col-12">
     <div v-if="merchant && merchant.id">
       <q-card>
-        <q-card-section>
-          <div class="row items-center q-col-gutter-sm">
-            <div class="col-12 col-sm-auto">
-              <merchant-details
-                :merchant-id="merchant.id"
-                :inkey="g.user.wallets[0].inkey"
-                :adminkey="g.user.wallets[0].adminkey"
-                :show-keys="showKeys"
-                @toggle-show-keys="toggleShowKeys"
-                @merchant-deleted="handleMerchantDeleted"
-              ></merchant-details>
-            </div>
-            <div class="col-12 col-sm-auto q-mx-sm">
-              <div class="row items-center no-wrap">
-                <q-toggle
-                  @update:model-value="toggleMerchantState()"
-                  size="md"
-                  checked-icon="check"
-                  v-model="merchant.config.active"
-                  color="primary"
-                  unchecked-icon="clear"
-                />
-                <span
-                  class="q-ml-sm"
-                  v-text="merchant.config.active ? 'Accepting Orders': 'Orders Paused'"
-                ></span>
-              </div>
-            </div>
-            <div class="col-12 col-sm-auto q-ml-sm-auto">
-              <shipping-zones
-                :inkey="g.user.wallets[0].inkey"
-                :adminkey="g.user.wallets[0].adminkey"
-              ></shipping-zones>
-            </div>
+        <div class="row items-center no-wrap">
+          <q-tabs
+            v-model="activeTab"
+            class="text-grey col"
+            active-color="primary"
+            indicator-color="primary"
+            align="left"
+          >
+            <q-tab
+              name="merchant"
+              label="Merchant"
+              icon="person"
+              style="min-width: 120px"
+            ></q-tab>
+            <q-tab
+              name="shipping"
+              label="Shipping"
+              icon="local_shipping"
+              style="min-width: 120px"
+            ></q-tab>
+            <q-tab
+              name="stalls"
+              label="Stalls"
+              icon="store"
+              style="min-width: 120px"
+            ></q-tab>
+            <q-tab
+              name="products"
+              label="Products"
+              icon="inventory_2"
+              style="min-width: 120px"
+            ></q-tab>
+            <q-tab
+              name="messages"
+              label="Messages"
+              icon="chat"
+              style="min-width: 120px"
+            ></q-tab>
+            <q-tab
+              name="orders"
+              label="Orders"
+              icon="receipt"
+              style="min-width: 120px"
+            ></q-tab>
+          </q-tabs>
+          <div class="col-auto q-mr-md">
+            <q-btn-dropdown
+              color="primary"
+              label="Publish"
+              icon="publish"
+              unelevated
+            >
+              <q-list>
+                <q-item clickable v-close-popup @click="publishNip15">
+                  <q-item-section avatar>
+                    <q-icon name="store" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>Publish NIP-15</q-item-label>
+                    <q-item-label caption
+                      >Publish stalls and products</q-item-label
+                    >
+                  </q-item-section>
+                </q-item>
+                <q-item disable>
+                  <q-item-section avatar>
+                    <q-icon name="sell" color="grey" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label class="text-grey"
+                      >Publish NIP-99</q-item-label
+                    >
+                    <q-item-label caption
+                      >Classified listings (coming soon)</q-item-label
+                    >
+                  </q-item-section>
+                </q-item>
+                <q-separator />
+                <q-item clickable v-close-popup @click="refreshNip15">
+                  <q-item-section avatar>
+                    <q-icon name="refresh" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>Refresh NIP-15 from Nostr</q-item-label>
+                    <q-item-label caption
+                      >Sync stalls and products</q-item-label
+                    >
+                  </q-item-section>
+                </q-item>
+                <q-item disable>
+                  <q-item-section avatar>
+                    <q-icon name="refresh" color="grey" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label class="text-grey"
+                      >Refresh NIP-99 from Nostr</q-item-label
+                    >
+                    <q-item-label caption
+                      >Classified listings (coming soon)</q-item-label
+                    >
+                  </q-item-section>
+                </q-item>
+                <q-separator />
+                <q-item clickable v-close-popup @click="deleteNip15">
+                  <q-item-section avatar>
+                    <q-icon name="delete_forever" color="negative" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label class="text-negative"
+                      >Delete NIP-15 from Nostr</q-item-label
+                    >
+                    <q-item-label caption
+                      >Remove stalls and products</q-item-label
+                    >
+                  </q-item-section>
+                </q-item>
+                <q-item disable>
+                  <q-item-section avatar>
+                    <q-icon name="delete_forever" color="grey" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label class="text-grey"
+                      >Delete NIP-99 from Nostr</q-item-label
+                    >
+                    <q-item-label caption
+                      >Classified listings (coming soon)</q-item-label
+                    >
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-btn-dropdown>
           </div>
-        </q-card-section>
-        <q-card-section v-if="showKeys">
-          <div class="row q-mb-md">
-            <div class="col">
-              <q-btn
-                unelevated
-                color="grey"
-                outline
-                @click="showKeys = false"
-                class="float-left"
-                >Hide Keys</q-btn
-              >
-            </div>
-          </div>
+        </div>
 
-          <div class="row">
-            <div class="col">
-              <key-pair
-                :public-key="merchant.public_key"
-                :private-key="merchant.private_key"
-              ></key-pair>
-            </div>
-          </div>
-        </q-card-section>
-      </q-card>
-      <q-card class="q-mt-lg">
-        <q-card-section>
-          <stall-list
-            :adminkey="g.user.wallets[0].adminkey"
-            :inkey="g.user.wallets[0].inkey"
-            :wallet-options="g.user.walletOptions"
-            @customer-selected-for-order="customerSelectedForOrder"
-          ></stall-list>
-        </q-card-section>
-      </q-card>
-      <q-card class="q-mt-lg">
-        <q-card-section>
-          <div class="row">
-            <div class="col-12">
-              <order-list
-                ref="orderListRef"
-                :adminkey="g.user.wallets[0].adminkey"
-                :inkey="g.user.wallets[0].inkey"
-                :customer-pubkey-filter="orderPubkey"
-                @customer-selected="customerSelectedForOrder"
-              ></order-list>
-            </div>
-          </div>
-        </q-card-section>
+        <q-separator></q-separator>
+
+        <q-tab-panels v-model="activeTab" animated>
+          <!-- Merchant Tab -->
+          <q-tab-panel name="merchant">
+            <merchant-tab
+              :merchant-id="merchant.id"
+              :inkey="g.user.wallets[0].inkey"
+              :adminkey="g.user.wallets[0].adminkey"
+              :show-keys="showKeys"
+              :merchant-active="merchant.config.active"
+              :public-key="merchant.public_key"
+              :private-key="merchant.private_key"
+              :is-admin="g.user.admin"
+              @toggle-show-keys="toggleShowKeys"
+              @hide-keys="showKeys = false"
+              @merchant-deleted="handleMerchantDeleted"
+              @toggle-merchant-state="toggleMerchantState"
+              @restart-nostr-connection="restartNostrConnection"
+            ></merchant-tab>
+          </q-tab-panel>
+
+          <!-- Shipping Tab -->
+          <q-tab-panel name="shipping">
+            <shipping-zones-list
+              :inkey="g.user.wallets[0].inkey"
+              :adminkey="g.user.wallets[0].adminkey"
+            ></shipping-zones-list>
+          </q-tab-panel>
+
+          <!-- Stalls Tab -->
+          <q-tab-panel name="stalls">
+            <stall-list
+              :adminkey="g.user.wallets[0].adminkey"
+              :inkey="g.user.wallets[0].inkey"
+              :wallet-options="g.user.walletOptions"
+              @customer-selected-for-order="customerSelectedForOrder"
+              @go-to-products="goToProducts"
+              @go-to-orders="goToOrders"
+            ></stall-list>
+          </q-tab-panel>
+
+          <!-- Products Tab -->
+          <q-tab-panel name="products">
+            <product-list
+              :adminkey="g.user.wallets[0].adminkey"
+              :inkey="g.user.wallets[0].inkey"
+              :stall-filter="selectedStallFilter"
+              @clear-filter="selectedStallFilter = null"
+            ></product-list>
+          </q-tab-panel>
+
+          <!-- Messages Tab -->
+          <q-tab-panel name="messages">
+            <direct-messages
+              ref="directMessagesRef"
+              :inkey="g.user.wallets[0].inkey"
+              :adminkey="g.user.wallets[0].adminkey"
+              :active-chat-customer="activeChatCustomer"
+              :merchant-id="merchant.id"
+              @customer-selected="filterOrdersForCustomer"
+              @order-selected="showOrderDetails"
+            >
+            </direct-messages>
+          </q-tab-panel>
+
+          <!-- Orders Tab -->
+          <q-tab-panel name="orders">
+            <order-list
+              ref="orderListRef"
+              :adminkey="g.user.wallets[0].adminkey"
+              :inkey="g.user.wallets[0].inkey"
+              :customer-pubkey-filter="orderPubkey"
+              @customer-selected="customerSelectedForOrder"
+            ></order-list>
+          </q-tab-panel>
+        </q-tab-panels>
       </q-card>
     </div>
     <q-card v-else>
@@ -151,28 +278,88 @@
     <div v-if="g.user.admin" class="col-12 q-mb-lg">
       <q-card>
         <q-card-section class="q-pa-md">
-          <q-btn
-            label="Restart Nostr Connection"
-            color="grey"
-            outline
+          <q-btn-dropdown
+            :color="nostrStatusColor"
+            :label="nostrStatusLabel"
+            icon="sync"
+            split
             @click="restartNostrConnection"
           >
-            <q-tooltip>
-              Restart the connection to the nostrclient extension
-            </q-tooltip>
-          </q-btn>
+            <q-list>
+              <q-item clickable v-close-popup @click="restartNostrConnection">
+                <q-item-section avatar>
+                  <q-icon name="refresh" color="primary"></q-icon>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>Restart Connection</q-item-label>
+                  <q-item-label caption>
+                    Reconnect to the nostrclient extension
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item clickable v-close-popup @click="checkNostrStatus(true)">
+                <q-item-section avatar>
+                  <q-icon name="wifi_find" color="primary"></q-icon>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>Check Status</q-item-label>
+                  <q-item-label caption>
+                    Check connection to nostrclient
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-separator></q-separator>
+              <q-item>
+                <q-item-section>
+                  <q-item-label caption>
+                    <strong>Status:</strong>
+                    <q-badge
+                      :color="nostrStatus.connected ? 'green' : 'red'"
+                      class="q-ml-xs"
+                      v-text="nostrStatus.connected ? 'Connected' : 'Disconnected'"
+                    ></q-badge>
+                  </q-item-label>
+                  <q-item-label
+                    v-if="nostrStatus.relays_total > 0"
+                    caption
+                    class="q-mt-xs"
+                  >
+                    <strong>Relays:</strong>&nbsp;
+                    <span v-text="nostrStatus.relays_connected"></span>
+                    of
+                    <span v-text="nostrStatus.relays_total"></span>
+                    connected
+                  </q-item-label>
+                  <q-item-label
+                    v-if="nostrStatus.error"
+                    caption
+                    class="text-negative q-mt-xs"
+                    v-text="nostrStatus.error"
+                  ></q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-btn-dropdown>
         </q-card-section>
       </q-card>
     </div>
     <div class="col-12">
       <q-card>
+        <q-img
+          src="/nostrmarket/static/market/images/nostr-cover.png"
+          :ratio="3"
+          fit="cover"
+        ></q-img>
         <q-card-section>
-          <h6 class="text-subtitle1 q-my-none">
-            {{SITE_TITLE}} Nostr Market Extension
-          </h6>
+          <div class="text-h6 q-mb-sm">Nostr Market</div>
+          <div class="text-body2 text-grey">
+            A decentralized marketplace extension for LNbits implementing the
+            NIP-15 protocol. Create stalls, list products, and accept Lightning
+            payments while communicating with customers via encrypted Nostr
+            direct messages.
+          </div>
         </q-card-section>
         <q-card-section class="q-pa-none">
-          <q-separator></q-separator>
           <q-list> {% include "nostrmarket/_api_docs.html" %} </q-list>
         </q-card-section>
       </q-card>
@@ -257,6 +444,15 @@
 <template id="merchant-details"
   >{% include("nostrmarket/components/merchant-details.html") %}</template
 >
+<template id="merchant-tab"
+  >{% include("nostrmarket/components/merchant-tab.html") %}</template
+>
+<template id="shipping-zones-list"
+  >{% include("nostrmarket/components/shipping-zones-list.html") %}</template
+>
+<template id="product-list"
+  >{% include("nostrmarket/components/product-list.html") %}</template
+>
 
 <script src="{{ url_for('nostrmarket_static', path='js/nostr.bundle.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/utils.js') }}"></script>
@@ -269,5 +465,8 @@
 <script src="{{ static_url_for('nostrmarket/static', 'components/order-list.js') }}"></script>
 <script src="{{ static_url_for('nostrmarket/static', 'components/direct-messages.js') }}"></script>
 <script src="{{ static_url_for('nostrmarket/static', 'components/merchant-details.js') }}"></script>
+<script src="{{ static_url_for('nostrmarket/static', 'components/merchant-tab.js') }}"></script>
+<script src="{{ static_url_for('nostrmarket/static', 'components/shipping-zones-list.js') }}"></script>
+<script src="{{ static_url_for('nostrmarket/static', 'components/product-list.js') }}"></script>
 
 {% endblock %}

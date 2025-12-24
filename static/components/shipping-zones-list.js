@@ -1,11 +1,12 @@
-window.app.component('shipping-zones', {
-  name: 'shipping-zones',
+window.app.component('shipping-zones-list', {
+  name: 'shipping-zones-list',
   props: ['adminkey', 'inkey'],
-  template: '#shipping-zones',
+  template: '#shipping-zones-list',
   delimiters: ['${', '}'],
   data: function () {
     return {
       zones: [],
+      filter: '',
       zoneDialog: {
         showDialog: false,
         data: {
@@ -62,7 +63,50 @@ window.app.component('shipping-zones', {
         'United Kingdom',
         'United States',
         'Vietnam'
-      ]
+      ],
+      zonesTable: {
+        columns: [
+          {
+            name: 'name',
+            align: 'left',
+            label: 'Name',
+            field: 'name',
+            sortable: true
+          },
+          {
+            name: 'countries',
+            align: 'left',
+            label: 'Countries',
+            field: 'countries',
+            sortable: true
+          },
+          {
+            name: 'cost',
+            align: 'left',
+            label: 'Cost',
+            field: 'cost',
+            sortable: true
+          },
+          {
+            name: 'currency',
+            align: 'left',
+            label: 'Currency',
+            field: 'currency',
+            sortable: true
+          },
+          {
+            name: 'actions',
+            align: 'right',
+            label: 'Actions',
+            field: ''
+          }
+        ],
+        pagination: {
+          rowsPerPage: 10,
+          sortBy: 'name',
+          descending: false
+        }
+      }
     }
   },
   methods: {
@@ -74,22 +118,8 @@ window.app.component('shipping-zones', {
         cost: 0,
         currency: 'sat'
       }
-      this.zoneDialog.data = data
-
+      this.zoneDialog.data = {...data}
       this.zoneDialog.showDialog = true
-    },
-    createZone: async function () {
-      try {
-        const {data} = await LNbits.api.request(
-          'POST',
-          '/nostrmarket/api/v1/zone',
-          this.adminkey,
-          {}
-        )
-        this.zones = data
-      } catch (error) {
-        LNbits.utils.notifyApiError(error)
-      }
     },
     getZones: async function () {
       try {
@@ -144,11 +174,18 @@ window.app.component('shipping-zones', {
         LNbits.utils.notifyApiError(error)
       }
     },
-    deleteShippingZone: async function () {
+    confirmDeleteZone: function (zone) {
+      LNbits.utils
+        .confirmDialog(`Are you sure you want to delete zone "${zone.name}"?`)
+        .onOk(async () => {
+          await this.deleteShippingZone(zone.id)
+        })
+    },
+    deleteShippingZone: async function (zoneId) {
       try {
         await LNbits.api.request(
           'DELETE',
-          `/nostrmarket/api/v1/zone/${this.zoneDialog.data.id}`,
+          `/nostrmarket/api/v1/zone/${zoneId}`,
           this.adminkey
         )
         this.$q.notify({
@@ -156,7 +193,6 @@ window.app.component('shipping-zones', {
           message: 'Zone deleted!'
         })
         await this.getZones()
-        this.zoneDialog.showDialog = false
       } catch (error) {
         LNbits.utils.notifyApiError(error)
       }
