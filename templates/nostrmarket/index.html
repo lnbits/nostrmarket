@@ -278,16 +278,68 @@
     <div v-if="g.user.admin" class="col-12 q-mb-lg">
       <q-card>
         <q-card-section class="q-pa-md">
-          <q-btn
-            label="Restart Nostr Connection"
-            color="grey"
-            outline
+          <q-btn-dropdown
+            :color="nostrStatusColor"
+            :label="nostrStatusLabel"
+            icon="sync"
+            split
             @click="restartNostrConnection"
           >
-            <q-tooltip>
-              Restart the connection to the nostrclient extension
-            </q-tooltip>
-          </q-btn>
+            <q-list>
+              <q-item clickable v-close-popup @click="restartNostrConnection">
+                <q-item-section avatar>
+                  <q-icon name="refresh" color="primary"></q-icon>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>Restart Connection</q-item-label>
+                  <q-item-label caption>
+                    Reconnect to the nostrclient extension
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item clickable v-close-popup @click="checkNostrStatus(true)">
+                <q-item-section avatar>
+                  <q-icon name="wifi_find" color="primary"></q-icon>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>Check Status</q-item-label>
+                  <q-item-label caption>
+                    Check connection to nostrclient
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-separator></q-separator>
+              <q-item>
+                <q-item-section>
+                  <q-item-label caption>
+                    <strong>Status:</strong>
+                    <q-badge
+                      :color="nostrStatus.connected ? 'green' : 'red'"
+                      class="q-ml-xs"
+                      v-text="nostrStatus.connected ? 'Connected' : 'Disconnected'"
+                    ></q-badge>
+                  </q-item-label>
+                  <q-item-label
+                    v-if="nostrStatus.relays_total > 0"
+                    caption
+                    class="q-mt-xs"
+                  >
+                    <strong>Relays:</strong>&nbsp;
+                    <span v-text="nostrStatus.relays_connected"></span>
+                    of
+                    <span v-text="nostrStatus.relays_total"></span>
+                    connected
+                  </q-item-label>
+                  <q-item-label
+                    v-if="nostrStatus.error"
+                    caption
+                    class="text-negative q-mt-xs"
+                    v-text="nostrStatus.error"
+                  ></q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-btn-dropdown>
         </q-card-section>
       </q-card>
     </div>
