@@ -74,6 +74,9 @@ window.app.component('stall-list', {
     }
   },
   methods: {
+    emitStallCount: function () {
+      this.$emit('stalls-updated', this.stalls.length)
+    },
     sendStallFormData: async function () {
       const stallData = {
         name: this.stallDialog.data.name,
@@ -101,6 +104,7 @@ window.app.component('stall-list', {
         )
         this.stallDialog.show = false
         this.stalls.unshift(data)
+        this.emitStallCount()
         this.$q.notify({
           type: 'positive',
           message: 'Stall created!'
@@ -120,6 +124,7 @@ window.app.component('stall-list', {
         )
         this.stallDialog.show = false
         this.stalls.unshift(data)
+        this.emitStallCount()
         this.$q.notify({
           type: 'positive',
           message: 'Stall restored!'
@@ -151,6 +156,7 @@ window.app.component('stall-list', {
         if (index !== -1) {
           this.stalls.splice(index, 1, data)
         }
+        this.emitStallCount()
         this.$q.notify({
           type: 'positive',
           message: 'Stall updated!'
@@ -168,6 +174,7 @@ window.app.component('stall-list', {
         )
         this.stalls = this.stalls.filter(s => s.id !== stall.id)
         this.pendingStalls = this.pendingStalls.filter(s => s.id !== stall.id)
+        this.emitStallCount()
         this.$q.notify({
           type: 'positive',
           message: 'Stall deleted'
@@ -291,6 +298,7 @@ window.app.component('stall-list', {
   },
   created: async function () {
     this.stalls = await this.getStalls()
+    this.emitStallCount()
     this.currencies = this.getCurrencies()
     this.zoneOptions = await this.getZones()
   }

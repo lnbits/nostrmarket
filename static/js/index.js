@@ -12,6 +12,7 @@ window.app = Vue.createApp({
       activeChatCustomer: '',
       orderPubkey: null,
       showKeys: false,
+      stallCount: 0,
       importKeyDialog: {
         show: false,
         data: {
@@ -114,6 +115,7 @@ window.app = Vue.createApp({
       this.shippingZones = []
       this.activeChatCustomer = ''
       this.showKeys = false
+      this.stallCount = 0
     },
     createMerchant: async function (privateKey) {
       try {
@@ -378,7 +380,6 @@ window.app = Vue.createApp({
     },
     goToOrders: function (stallId) {
       this.selectedStallFilter = stallId
-      this.activeTab = 'orders'
     }
   },
   created: async function () {
