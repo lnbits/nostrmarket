@@ -48,26 +48,36 @@
           label="Countries"
           v-model="zoneDialog.data.countries"
         ></q-select>
-        <q-select
-          :disabled="!!zoneDialog.data.id"
-          :readonly="!!zoneDialog.data.id"
-          filled
-          dense
-          v-model="zoneDialog.data.currency"
-          type="text"
-          label="Unit"
-          :options="currencies"
-        ></q-select>
-        <q-input
-          filled
-          dense
-          :label="'Cost of Shipping (' + zoneDialog.data.currency + ') *'"
-          fill-mask="0"
-          reverse-fill-mask
-          :step="zoneDialog.data.currency != 'sat' ? '0.01' : '1'"
-          type="number"
-          v-model.trim="zoneDialog.data.cost"
-        ></q-input>
+        <div class="row items-start">
+          <div class="col q-mr-sm">
+            <q-input
+              filled
+              dense
+              label="Default shipping cost"
+              fill-mask="0"
+              reverse-fill-mask
+              :step="zoneDialog.data.currency != 'sat' ? '0.01' : '1'"
+              type="number"
+              v-model.trim="zoneDialog.data.cost"
+              :error="(zoneDialog.data.currency === 'sat' && zoneDialog.data.cost % 1 !== 0) || (zoneDialog.data.currency !== 'sat' && (zoneDialog.data.cost * 100) % 1 !== 0)"
+              :error-message="zoneDialog.data.currency === 'sat' ? 'Satoshis must be whole numbers' : 'Maximum 2 decimal places allowed'"
+              hint="Additional costs can be set per product"
+            ></q-input>
+          </div>
+          <div class="col-auto">
+            <q-select
+              :disabled="!!zoneDialog.data.id"
+              :readonly="!!zoneDialog.data.id"
+              filled
+              dense
+              v-model="zoneDialog.data.currency"
+              type="text"
+              label="Currency"
+              :options="currencies"
+              style="min-width: 100px"
+            ></q-select>
+          </div>
+        </div>
         <div class="row q-mt-lg">
           <div v-if="zoneDialog.data.id">
             <q-btn unelevated color="primary" type="submit">Update</q-btn>
@@ -83,7 +93,7 @@
             <q-btn
               unelevated
               color="primary"
-              :disable="!zoneDialog.data.countries || !zoneDialog.data.countries.length"
+              :disable="!zoneDialog.data.name || !zoneDialog.data.countries || !zoneDialog.data.countries.length || (zoneDialog.data.currency === 'sat' && zoneDialog.data.cost % 1 !== 0) || (zoneDialog.data.currency !== 'sat' && (zoneDialog.data.cost * 100) % 1 !== 0)"
               type="submit"
               >Create Shipping Zone</q-btn
             >
