@@ -155,19 +155,16 @@
         </div>
 
         <!-- Profile Section -->
-        <q-card-section class="q-pt-none" style="margin-top: -50px">
+        <q-card-section class="q-pt-none q-ml-md" style="margin-top: -50px">
           <div class="row">
             <!-- Profile Image -->
             <div class="col-auto">
-              <q-avatar
-                size="100px"
-                style="border: 4px solid white; background: white"
-                class="flex flex-center"
-              >
+              <q-avatar size="100px" color="dark" class="profile-avatar">
                 <img
                   v-if="merchantConfig && merchantConfig.picture"
                   :src="merchantConfig.picture"
                   @error="handleImageError"
+                  style="object-fit: cover"
                 />
                 <q-icon
                   v-else
