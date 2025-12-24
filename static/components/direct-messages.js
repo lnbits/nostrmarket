@@ -146,6 +146,7 @@ window.app.component('direct-messages', {
           ...c,
           profile: c.profile || {
             name: null,
+            display_name: null,
             about: null,
             picture: null,
             nip05: null

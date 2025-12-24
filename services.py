@@ -642,6 +642,7 @@ async def _handle_customer_profile_update(event: NostrEvent):
             event.created_at,
             CustomerProfile(
                 name=profile.get("name", ""),
+                display_name=profile.get("display_name"),
                 about=profile.get("about", ""),
                 picture=profile.get("picture"),
                 nip05=profile.get("nip05"),
