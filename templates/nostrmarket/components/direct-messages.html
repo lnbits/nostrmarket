@@ -1,187 +1,314 @@
 <div>
   <q-card>
-    <q-card-section>
+    <q-card-section class="q-pb-none">
       <div class="row items-center q-col-gutter-sm">
         <div class="col-auto">
           <h6 class="text-subtitle1 q-my-none">Messages</h6>
         </div>
         <div class="col-auto">
-          <q-badge v-if="unreadMessages" color="primary" outline
-            ><span v-text="unreadMessages"></span>&nbsp; new</q-badge
-          >
+          <q-badge v-if="totalUnreadMessages" color="primary">
+            <span v-text="totalUnreadMessages"></span>&nbsp;new
+          </q-badge>
         </div>
         <div class="col-auto q-ml-auto">
           <q-btn
-            v-if="activePublicKey"
-            @click="showClientOrders"
-            unelevated
-            outline
-            size="sm"
-            >Client Orders</q-btn
-          >
-        </div>
-      </div>
-    </q-card-section>
-    <q-card-section class="q-pa-none">
-      <q-separator></q-separator>
-    </q-card-section>
-    <q-card-section>
-      <div class="row q-col-gutter-sm items-end">
-        <div class="col" style="min-width: 0">
-          <q-select
-            v-model="activePublicKey"
-            :options="customers.map(c => ({label: buildCustomerLabel(c), value: c.public_key}))"
-            label="Select Customer"
-            emit-value
-            @input="selectActiveCustomer()"
-            :display-value="activePublicKey ? buildCustomerLabel(customers.find(c => c.public_key === activePublicKey)) : ''"
-            class="ellipsis"
-          >
-            <template v-slot:option="scope">
-              <q-item v-bind="scope.itemProps">
-                <q-item-section>
-                  <q-item-label>
-                    <span v-text="scope.opt.label.split('(')[0]"></span>
-                  </q-item-label>
-                  <q-item-label
-                    caption
-                    class="text-mono"
-                    style="word-break: break-all"
-                  >
-                    <span v-text="scope.opt.value"></span>
-                  </q-item-label>
-                </q-item-section>
-              </q-item>
-            </template>
-          </q-select>
-        </div>
-        <div class="col-auto">
-          <q-btn
-            label="ADD"
-            color="primary"
-            unelevated
             @click="showAddPublicKey = true"
+            flat
+            dense
+            icon="person_add"
+            color="primary"
           >
-            <q-tooltip> Add a public key to chat with </q-tooltip>
+            <q-tooltip>Add a contact to chat with</q-tooltip>
           </q-btn>
         </div>
       </div>
     </q-card-section>
-    <q-card-section>
-      <div class="chat-container" ref="chatCard">
-        <div class="chat-box">
-          <div class="chat-messages" style="height: 45vh">
-            <q-chat-message
-              v-for="(dm, index) in messagesAsJson"
-              :key="index"
-              :name="dm.incoming ? 'customer': 'me'"
-              :sent="!dm.incoming"
-              :stamp="dm.dateFrom"
-              :bg-color="dm.incoming ? 'white' : 'light-green-2'"
-              :class="'chat-mesage-index-'+index"
-            >
-              <div v-if="dm.isJson">
-                <div v-if="dm.message.type === 0">
-                  <strong>New order:</strong>
-                </div>
-                <div v-else-if="dm.message.type === 1">
-                  <strong>Reply sent for order: </strong>
-                </div>
-                <div v-else-if="dm.message.type === 2">
-                  <q-badge v-if="dm.message.paid" color="green">Paid </q-badge>
-                  <q-badge v-if="dm.message.shipped" color="green"
-                    >Shipped
-                  </q-badge>
-                </div>
-                <div>
-                  <span v-text="dm.message.message"></span>
-                  <q-badge color="orange">
+    <q-separator></q-separator>
+    <q-card-section class="q-pa-none" style="height: 500px; overflow: hidden">
+      <div class="row" style="height: 100%">
+        <!-- Contact Sidebar -->
+        <div
+          class="col-4"
+          style="border-right: 1px solid rgba(255, 255, 255, 0.1); height: 100%"
+        >
+          <q-scroll-area style="height: 100%">
+            <q-list separator>
+              <q-item
+                v-for="customer in sortedCustomers"
+                :key="customer.public_key"
+                clickable
+                :active="activePublicKey === customer.public_key"
+                active-class="bg-grey-9"
+                @click="selectCustomer(customer.public_key)"
+              >
+                <q-item-section avatar>
+                  <q-avatar size="40px">
+                    <img
+                      v-if="customer.profile?.picture"
+                      :src="customer.profile.picture"
+                      @error="handleAvatarError($event, customer)"
+                    />
+                    <div
+                      v-else
+                      class="identicon-avatar"
+                      :style="getIdenticonStyle(customer.public_key)"
+                    ></div>
+                  </q-avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="ellipsis">
                     <span
-                      v-text="dm.message.id"
-                      @click="showOrderDetails(dm.message.id, dm.event_id)"
-                      class="cursor-pointer"
+                      v-text="customer.profile?.display_name || customer.profile?.name || 'Unknown'"
                     ></span>
+                  </q-item-label>
+                  <q-item-label caption class="ellipsis text-grey-6">
+                    <span
+                      v-text="customer.profile?.nip05 || truncateNpub(toNpub(customer.public_key))"
+                    ></span>
+                  </q-item-label>
+                  <q-item-label
+                    v-if="customer.lastMessage"
+                    caption
+                    class="ellipsis text-grey-5"
+                    style="font-size: 0.7rem"
+                  >
+                    <span v-text="customer.lastMessage"></span>
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section side top v-if="customer.unread_messages > 0">
+                  <q-badge color="primary" rounded>
+                    ${ customer.unread_messages }
                   </q-badge>
-                </div>
-                <q-badge
-                  @click="showMessageRawData(index)"
-                  class="cursor-pointer"
-                  >...</q-badge
-                >
+                </q-item-section>
+              </q-item>
+              <q-item v-if="!customers.length" class="text-center text-grey-6">
+                <q-item-section>
+                  <q-item-label>No contacts yet</q-item-label>
+                  <q-item-label caption>Click + to add a contact</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-scroll-area>
+        </div>
+
+        <!-- Conversation Area -->
+        <div
+          class="col-8"
+          style="height: 100%; display: flex; flex-direction: column"
+        >
+          <div
+            v-if="activePublicKey"
+            style="
+              height: 100%;
+              display: flex;
+              flex-direction: column;
+              overflow: hidden;
+            "
+          >
+            <!-- Chat Header -->
+            <div
+              class="row items-center q-pa-sm"
+              style="border-bottom: 1px solid rgba(255, 255, 255, 0.1)"
+            >
+              <q-avatar size="32px" class="q-mr-sm">
+                <img
+                  v-if="activeCustomer && activeCustomer.profile.picture"
+                  :src="activeCustomer.profile.picture"
+                />
+                <div
+                  v-else
+                  class="identicon-avatar"
+                  :style="getIdenticonStyle(activePublicKey)"
+                ></div>
+              </q-avatar>
+              <div class="col">
+                <a
+                  :href="'https://njump.me/' + toNpub(activePublicKey)"
+                  target="_blank"
+                  class="text-subtitle2 text-white"
+                  style="text-decoration: none"
+                  v-text="activeCustomer?.profile.display_name || activeCustomer?.profile.name || 'Unknown'"
+                ></a>
+                <div
+                  class="text-caption text-grey-6"
+                  v-text="activeCustomer?.profile.nip05 || truncateNpub(toNpub(activePublicKey))"
+                ></div>
               </div>
-              <div v-else><span v-text="dm.message"></span></div>
-            </q-chat-message>
+              <q-btn
+                flat
+                dense
+                icon="receipt"
+                color="primary"
+                @click="showClientOrders"
+              >
+                <q-tooltip>View orders from this customer</q-tooltip>
+              </q-btn>
+            </div>
+
+            <!-- Messages Area -->
+            <q-scroll-area style="flex: 1; min-height: 0">
+              <div class="q-pa-sm q-pr-lg">
+                <q-chat-message
+                  v-for="(dm, index) in messagesAsJson"
+                  :key="index"
+                  :name="dm.incoming ? (activeCustomer?.profile.display_name || activeCustomer?.profile.name || 'Customer') : 'Me'"
+                  :sent="!dm.incoming"
+                  :stamp="dm.dateFrom"
+                  :bg-color="dm.incoming ? 'grey-9' : 'primary'"
+                  text-color="white"
+                  :class="'chat-message-index-' + index"
+                >
+                  <template v-slot:avatar v-if="dm.incoming">
+                    <q-avatar size="28px" class="q-mr-sm">
+                      <img
+                        v-if="activeCustomer && activeCustomer.profile.picture"
+                        :src="activeCustomer.profile.picture"
+                      />
+                      <div
+                        v-else
+                        class="identicon-avatar"
+                        :style="getIdenticonStyle(activePublicKey)"
+                      ></div>
+                    </q-avatar>
+                  </template>
+                  <div v-if="dm.isJson">
+                    <div v-if="dm.message.type === 0">
+                      <strong>New order:</strong>
+                    </div>
+                    <div v-else-if="dm.message.type === 1">
+                      <strong>Reply sent for order:</strong>
+                    </div>
+                    <div v-else-if="dm.message.type === 2">
+                      <q-badge
+                        v-if="dm.message.paid"
+                        color="green"
+                        class="q-mr-xs"
+                        >Paid</q-badge
+                      >
+                      <q-badge v-if="dm.message.shipped" color="green"
+                        >Shipped</q-badge
+                      >
+                    </div>
+                    <div>
+                      <span v-text="dm.message.message"></span>
+                      <q-badge
+                        color="orange"
+                        class="cursor-pointer q-ml-xs"
+                        @click="showOrderDetails(dm.message.id, dm.event_id)"
+                      >
+                        <span v-text="dm.message.id"></span>
+                      </q-badge>
+                    </div>
+                    <q-badge
+                      @click="showMessageRawData(index)"
+                      class="cursor-pointer q-mt-xs"
+                      >...</q-badge
+                    >
+                  </div>
+                  <div v-else><span v-text="dm.message"></span></div>
+                </q-chat-message>
+              </div>
+            </q-scroll-area>
+
+            <!-- Message Input -->
+            <div
+              class="q-pa-sm"
+              style="border-top: 1px solid rgba(255, 255, 255, 0.1)"
+            >
+              <q-form
+                @submit="sendDirectMesage"
+                class="row items-center q-col-gutter-sm"
+              >
+                <div class="col">
+                  <q-input
+                    ref="newMessage"
+                    v-model="newMessage"
+                    placeholder="Type a message..."
+                    dense
+                    outlined
+                    class="full-width"
+                  ></q-input>
+                </div>
+                <div class="col-auto">
+                  <q-btn
+                    round
+                    dense
+                    unelevated
+                    type="submit"
+                    icon="send"
+                    color="primary"
+                    :disable="!newMessage"
+                  ></q-btn>
+                </div>
+              </q-form>
+            </div>
+          </div>
+
+          <!-- No Conversation Selected -->
+          <div
+            v-else
+            style="
+              height: 100%;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+            "
+            class="text-grey-6"
+          >
+            <q-icon name="chat" size="64px" class="q-mb-md"></q-icon>
+            <div class="text-h6">Select a conversation</div>
+            <div class="text-caption">
+              Choose a contact from the list to start chatting
+            </div>
           </div>
         </div>
-        <q-card-section>
-          <q-form @submit="sendDirectMesage" class="full-width chat-input">
-            <q-input
-              ref="newMessage"
-              v-model="newMessage"
-              placeholder="Message"
-              class="full-width"
-              dense
-              outlined
-            >
-              <template>
-                <q-btn
-                  round
-                  dense
-                  flat
-                  type="submit"
-                  icon="send"
-                  color="primary"
-                />
-              </template>
-            </q-input>
-          </q-form>
-        </q-card-section>
       </div>
     </q-card-section>
   </q-card>
-  <div>
-    <q-dialog v-model="showAddPublicKey" position="top">
-      <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
-        <q-form @submit="addPublicKey" class="q-gutter-md">
-          <q-input
-            filled
-            dense
-            v-model.trim="newPublicKey"
-            label="Public Key (hex or nsec)"
-          ></q-input>
-          <div class="row q-mt-lg">
-            <q-btn
-              unelevated
-              color="primary"
-              :disable="!newPublicKey"
-              type="submit"
-              >Add</q-btn
-            >
-            <q-btn v-close-popup flat color="grey" class="q-ml-auto"
-              >Cancel</q-btn
-            >
-          </div>
-        </q-form>
-      </q-card>
-    </q-dialog>
-    <q-dialog v-model="showRawMessage" position="top">
-      <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
-        <q-form>
-          <q-input
-            filled
-            dense
-            type="textarea"
-            rows="20"
-            v-model.trim="rawMessage"
-            label="Raw Data"
-          ></q-input>
-          <div class="row q-mt-lg">
-            <q-btn v-close-popup flat color="grey" class="q-ml-auto"
-              >Close</q-btn
-            >
-          </div>
-        </q-form>
-      </q-card>
-    </q-dialog>
-  </div>
+
+  <!-- Add Public Key Dialog -->
+  <q-dialog v-model="showAddPublicKey" position="top">
+    <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+      <q-form @submit="addPublicKey" class="q-gutter-md">
+        <q-input
+          filled
+          dense
+          v-model.trim="newPublicKey"
+          label="Public Key (hex or npub)"
+        ></q-input>
+        <div class="row q-mt-lg">
+          <q-btn
+            unelevated
+            color="primary"
+            :disable="!newPublicKey"
+            type="submit"
+            >Add</q-btn
+          >
+          <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+            >Cancel</q-btn
+          >
+        </div>
+      </q-form>
+    </q-card>
+  </q-dialog>
+
+  <!-- Raw Message Dialog -->
+  <q-dialog v-model="showRawMessage" position="top">
+    <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+      <q-form>
+        <q-input
+          filled
+          dense
+          type="textarea"
+          rows="20"
+          v-model.trim="rawMessage"
+          label="Raw Data"
+        ></q-input>
+        <div class="row q-mt-lg">
+          <q-btn v-close-popup flat color="grey" class="q-ml-auto">Close</q-btn>
+        </div>
+      </q-form>
+    </q-card>
+  </q-dialog>
 </div>

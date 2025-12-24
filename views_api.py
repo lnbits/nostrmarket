@@ -1046,7 +1046,11 @@ async def api_get_customers(
     try:
         merchant = await get_merchant_for_user(wallet.wallet.user)
         assert merchant, "Merchant cannot be found"
-        return await get_customers(merchant.id)
+        customers = await get_customers(merchant.id)
+        # Refresh profiles from Nostr in background
+        for customer in customers:
+            await nostr_client.user_profile_temp_subscribe(customer.public_key)
+        return customers
 
     except AssertionError as ex:
         raise HTTPException(
