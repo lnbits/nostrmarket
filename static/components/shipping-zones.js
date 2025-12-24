@@ -19,7 +19,6 @@ window.app.component('shipping-zones', {
       currencies: [],
       shippingZoneOptions: [
         'Free (digital)',
-        'Flat rate',
         'Worldwide',
         'Europe',
         'Australia',
@@ -27,6 +26,7 @@ window.app.component('shipping-zones', {
         'Belgium',
         'Brazil',
         'Canada',
+        'China',
         'Denmark',
         'Finland',
         'France',
@@ -34,8 +34,8 @@ window.app.component('shipping-zones', {
         'Greece',
         'Hong Kong',
         'Hungary',
-        'Ireland',
         'Indonesia',
+        'Ireland',
         'Israel',
         'Italy',
         'Japan',
@@ -59,10 +59,9 @@ window.app.component('shipping-zones', {
         'Thailand',
         'Turkey',
         'Ukraine',
-        'United Kingdom**',
-        'United States***',
-        'Vietnam',
-        'China'
+        'United Kingdom',
+        'United States',
+        'Vietnam'
       ]
     }
   },
@@ -162,22 +161,13 @@ window.app.component('shipping-zones', {
         LNbits.utils.notifyApiError(error)
       }
     },
-    async getCurrencies() {
-      try {
-        const {data} = await LNbits.api.request(
-          'GET',
-          '/nostrmarket/api/v1/currencies',
-          this.inkey
-        )
-
-        this.currencies = ['sat', ...data]
-      } catch (error) {
-        LNbits.utils.notifyApiError(error)
-      }
+    getCurrencies() {
+      const currencies = window.g.allowedCurrencies || []
+      this.currencies = ['sat', ...currencies]
     }
   },
   created: async function () {
     await this.getZones()
-    await this.getCurrencies()
+    this.getCurrencies()
   }
 })
