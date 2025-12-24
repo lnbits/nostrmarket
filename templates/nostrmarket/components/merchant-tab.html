@@ -1,69 +1,11 @@
 <div>
   <div class="row q-col-gutter-md">
     <div class="col-12 col-md-8">
-      <div class="row items-center q-col-gutter-sm q-mb-md">
-        <div class="col-12 col-sm-auto">
-          <merchant-details
-            :merchant-id="merchantId"
-            :inkey="inkey"
-            :adminkey="adminkey"
-            :show-keys="showKeys"
-            @toggle-show-keys="toggleShowKeys"
-            @merchant-deleted="handleMerchantDeleted"
-          ></merchant-details>
-        </div>
-        <div class="col-12 col-sm-auto q-mx-sm">
-          <div class="row items-center no-wrap">
-            <q-toggle
-              :model-value="merchantActive"
-              @update:model-value="toggleMerchantState()"
-              size="md"
-              checked-icon="check"
-              color="primary"
-              unchecked-icon="clear"
-            />
-            <span
-              class="q-ml-sm"
-              v-text="merchantActive ? 'Accepting Orders': 'Orders Paused'"
-            ></span>
-          </div>
-        </div>
-        <div v-if="isAdmin" class="col-12 col-sm-auto q-ml-sm-auto">
-          <q-btn
-            label="Restart Nostr Connection"
-            color="grey"
-            outline
-            size="sm"
-            @click="restartNostrConnection"
-          >
-            <q-tooltip>
-              Restart the connection to the nostrclient extension
-            </q-tooltip>
-          </q-btn>
-        </div>
-      </div>
-      <div v-if="showKeys" class="q-mt-md">
-        <div class="row q-mb-md">
-          <div class="col">
-            <q-btn
-              unelevated
-              color="grey"
-              outline
-              @click="hideKeys"
-              class="float-left"
-              >Hide Keys</q-btn
-            >
-          </div>
-        </div>
-        <div class="row">
-          <div class="col">
-            <key-pair
-              :public-key="publicKey"
-              :private-key="privateKey"
-            ></key-pair>
-          </div>
-        </div>
-      </div>
+      <key-pair
+        :public-key="publicKey"
+        :private-key="privateKey"
+        :merchant-config="merchantConfig"
+      ></key-pair>
     </div>
     <div class="col-12 col-md-4">
       <q-card flat bordered>

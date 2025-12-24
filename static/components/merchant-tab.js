@@ -10,7 +10,8 @@ window.app.component('merchant-tab', {
     'merchant-active',
     'public-key',
     'private-key',
-    'is-admin'
+    'is-admin',
+    'merchant-config'
   ],
   computed: {
     marketClientUrl: function () {

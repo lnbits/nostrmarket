@@ -152,6 +152,7 @@
               :public-key="merchant.public_key"
               :private-key="merchant.private_key"
               :is-admin="g.user.admin"
+              :merchant-config="merchant.config"
               @toggle-show-keys="toggleShowKeys"
               @hide-keys="showKeys = false"
               @merchant-deleted="handleMerchantDeleted"

@@ -1,93 +1,82 @@
-<div>
-  <q-separator></q-separator>
+<q-card v-if="publicKey" flat bordered>
+  <!-- Banner Section -->
+  <div
+    v-if="merchantConfig && merchantConfig.banner"
+    class="banner-container"
+    :style="{
+      height: '120px',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      borderRadius: '4px 4px 0 0',
+      backgroundImage: 'url(' + merchantConfig.banner + ')'
+    }"
+  ></div>
+  <div
+    v-else
+    class="banner-placeholder bg-grey-9"
+    style="height: 120px; border-radius: 4px 4px 0 0"
+  ></div>
 
-  <!-- Header with toggle -->
-  <div class="row items-center justify-between q-mt-md q-px-md">
-    <div class="text-subtitle2">Keys</div>
-    <q-toggle
-      v-model="showPrivateKey"
-      color="primary"
-      label="Show Private Key"
-    />
-  </div>
-
-  <!-- QR Codes Container -->
-  <div class="row q-col-gutter-md q-pa-md">
-    <!-- Public Key QR -->
-    <div class="col-12" :class="showPrivateKey ? 'col-sm-6' : ''">
-      <q-card flat bordered>
-        <q-card-section class="text-center">
-          <div class="text-subtitle2 q-mb-sm">Public Key</div>
-          <div
-            class="cursor-pointer q-mx-auto"
-            style="max-width: 200px"
-            @click="copyText(publicKey)"
-          >
-            <q-responsive :ratio="1">
-              <lnbits-qrcode
-                :value="publicKey"
-                :options="{width: 200}"
-                :show-buttons="false"
-                class="rounded-borders"
-              ></lnbits-qrcode>
-            </q-responsive>
-          </div>
-          <div class="q-mt-md text-caption text-mono" style="padding: 0 16px">
-            <span v-text="publicKey.substring(0, 8)"></span>...<span
-              v-text="publicKey.substring(publicKey.length - 8)"
-            ></span>
-          </div>
-          <q-btn
-            flat
-            dense
-            size="sm"
-            icon="content_copy"
-            label="Click to copy"
-            @click="copyText(publicKey)"
-            class="q-mt-xs"
+  <!-- Profile Section -->
+  <q-card-section class="q-pt-none" style="margin-top: -50px">
+    <div class="row">
+      <!-- Profile Image -->
+      <div class="col-auto">
+        <q-avatar size="100px" class="shadow-2">
+          <img
+            v-if="merchantConfig && merchantConfig.picture"
+            :src="merchantConfig.picture"
+            @error="handleImageError"
           />
-        </q-card-section>
-      </q-card>
-    </div>
+          <q-icon
+            v-else
+            name="person"
+            size="60px"
+            color="grey-5"
+            style="background: var(--q-dark); border-radius: 50%"
+          />
+        </q-avatar>
+      </div>
 
-    <!-- Private Key QR (conditional) -->
-    <div v-if="showPrivateKey" class="col-12 col-sm-6">
-      <q-card flat bordered>
-        <q-card-section class="text-center">
-          <div class="text-subtitle2 q-mb-sm text-warning">
-            <q-icon name="warning"></q-icon>
-            Private Key (Keep Secret!)
+      <!-- Name, About and NIP-05 -->
+      <div class="col q-pl-md" style="padding-top: 50px">
+        <div class="row items-center">
+          <div class="col">
+            <div
+              class="text-h6"
+              v-if="merchantConfig && (merchantConfig.display_name || merchantConfig.name)"
+            >
+              <span
+                v-text="merchantConfig.display_name || merchantConfig.name"
+              ></span>
+            </div>
+            <div class="text-caption text-grey" v-else>(No name set)</div>
+          </div>
+        </div>
+        <div
+          class="text-body2 text-grey q-mt-xs"
+          v-if="merchantConfig && merchantConfig.about"
+          style="max-width: 400px"
+        >
+          <span v-text="merchantConfig.about"></span>
+        </div>
+        <div class="row q-mt-xs q-gutter-sm">
+          <div
+            class="text-caption text-grey-5"
+            v-if="merchantConfig && merchantConfig.nip05"
+          >
+            <q-icon name="verified" color="primary" size="14px"></q-icon>
+            <span v-text="merchantConfig.nip05" class="q-ml-xs"></span>
           </div>
           <div
-            class="cursor-pointer q-mx-auto"
-            style="max-width: 200px"
-            @click="copyText(privateKey)"
+            class="text-caption text-grey-5"
+            v-if="merchantConfig && merchantConfig.lud16"
           >
-            <q-responsive :ratio="1">
-              <lnbits-qrcode
-                :value="privateKey"
-                :options="{width: 200}"
-                :show-buttons="false"
-                class="rounded-borders"
-              ></lnbits-qrcode>
-            </q-responsive>
+            <q-icon name="bolt" color="warning" size="14px"></q-icon>
+            <span v-text="merchantConfig.lud16" class="q-ml-xs"></span>
           </div>
-          <div class="q-mt-md text-caption text-mono" style="padding: 0 16px">
-            <span v-text="privateKey.substring(0, 8)"></span>...<span
-              v-text="privateKey.substring(privateKey.length - 8)"
-            ></span>
-          </div>
-          <q-btn
-            flat
-            dense
-            size="sm"
-            icon="content_copy"
-            label="Click to copy"
-            @click="copyText(privateKey)"
-            class="q-mt-xs"
-          />
-        </q-card-section>
-      </q-card>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
+  </q-card-section>
+</q-card>

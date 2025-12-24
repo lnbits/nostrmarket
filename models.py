@@ -33,8 +33,12 @@ class Nostrable:
 
 class MerchantProfile(BaseModel):
     name: str | None = None
+    display_name: str | None = None
     about: str | None = None
     picture: str | None = None
+    banner: str | None = None
+    nip05: str | None = None
+    lud16: str | None = None
 
 
 class MerchantConfig(MerchantProfile):
