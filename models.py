@@ -530,6 +530,7 @@ class DirectMessage(PartialDirectMessage):
 
 class CustomerProfile(BaseModel):
     name: str | None = None
+    display_name: str | None = None
     about: str | None = None
 
 
