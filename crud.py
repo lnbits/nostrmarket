@@ -616,7 +616,7 @@ async def get_orders(merchant_id: str, **kwargs) -> list[Order]:
     rows: list[dict] = await db.fetchall(
         f"""
         SELECT * FROM nostrmarket.orders
-        WHERE merchant_id = :merchant_id {q}
+        WHERE merchant_id = :merchant_id {('AND ' + q) if q else ''}
         ORDER BY event_created_at DESC
         """,
         values,
@@ -640,10 +640,11 @@ async def get_orders_for_stall(
             continue
         values[field[0]] = field[1]
 
+    q_clause = f"AND {q}" if q else ""
     rows: list[dict] = await db.fetchall(
         f"""
             SELECT * FROM nostrmarket.orders
-            WHERE merchant_id = :merchant_id AND stall_id = :stall_id {q}
+            WHERE merchant_id = :merchant_id AND stall_id = :stall_id {q_clause}
             ORDER BY time DESC
         """,
         values,
