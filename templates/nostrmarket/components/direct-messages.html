@@ -24,15 +24,15 @@
       </div>
     </q-card-section>
     <q-separator></q-separator>
-    <q-card-section class="q-pa-none">
-      <div class="row" style="min-height: 500px">
+    <q-card-section class="q-pa-none" style="height: 500px; overflow: hidden">
+      <div class="row" style="height: 100%">
         <!-- Contact Sidebar -->
         <div
           class="col-4 contact-sidebar"
           style="
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             overflow-y: auto;
-            max-height: 500px;
+            height: 100%;
           "
         >
           <q-list separator>
@@ -92,8 +92,8 @@
         </div>
 
         <!-- Conversation Area -->
-        <div class="col-8 column">
-          <div v-if="activePublicKey" class="col column">
+        <div class="col-8" style="height: 100%; display: flex; flex-direction: column">
+          <div v-if="activePublicKey" style="height: 100%; display: flex; flex-direction: column; overflow: hidden">
             <!-- Chat Header -->
             <div
               class="row items-center q-pa-sm"
@@ -136,8 +136,8 @@
 
             <!-- Messages Area -->
             <div
-              class="col chat-messages q-pa-sm"
-              style="overflow-y: auto; flex: 1"
+              class="chat-messages q-pa-sm"
+              style="flex: 1; overflow-y: auto; min-height: 0"
             >
               <q-chat-message
                 v-for="(dm, index) in messagesAsJson"
@@ -237,7 +237,8 @@
           <!-- No Conversation Selected -->
           <div
             v-else
-            class="col column items-center justify-center text-grey-6"
+            style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center"
+            class="text-grey-6"
           >
             <q-icon name="chat" size="64px" class="q-mb-md"></q-icon>
             <div class="text-h6">Select a conversation</div>
