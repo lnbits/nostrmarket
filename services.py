@@ -149,9 +149,8 @@ async def update_merchant_to_nostr(
         stall.event_id = event.id
         stall.event_created_at = event.created_at
         await update_stall(merchant.id, stall)
-    if delete_merchant:
-        # merchant profile updates not supported yet
-        event = await sign_and_send_to_nostr(merchant, merchant, delete_merchant)
+    # Always publish merchant profile (kind 0)
+    event = await sign_and_send_to_nostr(merchant, merchant, delete_merchant)
     assert event
     merchant.config.event_id = event.id
     return merchant

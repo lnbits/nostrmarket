@@ -33,8 +33,13 @@ class Nostrable:
 
 class MerchantProfile(BaseModel):
     name: str | None = None
+    display_name: str | None = None
     about: str | None = None
     picture: str | None = None
+    banner: str | None = None
+    website: str | None = None
+    nip05: str | None = None
+    lud16: str | None = None
 
 
 class MerchantConfig(MerchantProfile):
@@ -86,11 +91,23 @@ class Merchant(PartialMerchant, Nostrable):
         return merchant
 
     def to_nostr_event(self, pubkey: str) -> NostrEvent:
-        content = {
-            "name": self.config.name,
-            "about": self.config.about,
-            "picture": self.config.picture,
-        }
+        content: dict[str, str] = {}
+        if self.config.name:
+            content["name"] = self.config.name
+        if self.config.display_name:
+            content["display_name"] = self.config.display_name
+        if self.config.about:
+            content["about"] = self.config.about
+        if self.config.picture:
+            content["picture"] = self.config.picture
+        if self.config.banner:
+            content["banner"] = self.config.banner
+        if self.config.website:
+            content["website"] = self.config.website
+        if self.config.nip05:
+            content["nip05"] = self.config.nip05
+        if self.config.lud16:
+            content["lud16"] = self.config.lud16
         event = NostrEvent(
             pubkey=pubkey,
             created_at=round(time.time()),
