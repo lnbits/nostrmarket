@@ -1,102 +1,95 @@
 <div>
   <div class="row q-col-gutter-md">
+    <!-- Left Column - Merchant Controls -->
     <div class="col-12 col-md-8">
-      <div class="row items-center q-col-gutter-sm q-mb-md">
-        <div class="col-12 col-sm-auto">
-          <merchant-details
-            :merchant-id="merchantId"
-            :inkey="inkey"
-            :adminkey="adminkey"
-            :show-keys="showKeys"
-            @toggle-show-keys="toggleShowKeys"
-            @merchant-deleted="handleMerchantDeleted"
-          ></merchant-details>
-        </div>
-        <div class="col-12 col-sm-auto q-mx-sm">
-          <div class="row items-center no-wrap">
-            <q-toggle
-              :model-value="merchantActive"
-              @update:model-value="toggleMerchantState()"
-              size="md"
-              checked-icon="check"
-              color="primary"
-              unchecked-icon="clear"
-            />
-            <span
-              class="q-ml-sm"
-              v-text="merchantActive ? 'Accepting Orders': 'Orders Paused'"
-            ></span>
-          </div>
-        </div>
-        <div v-if="isAdmin" class="col-12 col-sm-auto q-ml-sm-auto">
-          <q-btn
-            label="Restart Nostr Connection"
-            color="grey"
-            outline
-            size="sm"
-            @click="restartNostrConnection"
-          >
-            <q-tooltip>
-              Restart the connection to the nostrclient extension
-            </q-tooltip>
-          </q-btn>
-        </div>
-      </div>
-      <div v-if="showKeys" class="q-mt-md">
-        <div class="row q-mb-md">
-          <div class="col">
-            <q-btn
-              unelevated
-              color="grey"
-              outline
-              @click="hideKeys"
-              class="float-left"
-              >Hide Keys</q-btn
-            >
-          </div>
-        </div>
-        <div class="row">
-          <div class="col">
-            <key-pair
-              :public-key="publicKey"
-              :private-key="privateKey"
-            ></key-pair>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-12 col-md-4">
-      <q-card flat bordered>
+      <q-card>
         <q-card-section>
-          <h6 class="text-subtitle1 q-my-none">Nostr Market Extension</h6>
+          <div class="row items-center q-col-gutter-sm">
+            <div class="col-12 col-sm-auto">
+              <merchant-details
+                :merchant-id="merchantId"
+                :inkey="inkey"
+                :adminkey="adminkey"
+                :show-keys="showKeys"
+                @toggle-show-keys="toggleShowKeys"
+                @merchant-deleted="handleMerchantDeleted"
+              ></merchant-details>
+            </div>
+            <div class="col-12 col-sm-auto q-mx-sm">
+              <div class="row items-center no-wrap">
+                <q-toggle
+                  :model-value="merchantActive"
+                  @update:model-value="toggleMerchantState()"
+                  size="md"
+                  checked-icon="check"
+                  color="primary"
+                  unchecked-icon="clear"
+                />
+                <span
+                  class="q-ml-sm"
+                  v-text="merchantActive ? 'Accepting Orders': 'Orders Paused'"
+                ></span>
+              </div>
+            </div>
+            <div v-if="isAdmin" class="col-12 col-sm-auto q-ml-sm-auto">
+              <q-btn
+                label="Restart Nostr Connection"
+                color="grey"
+                outline
+                size="sm"
+                @click="restartNostrConnection"
+              >
+                <q-tooltip>
+                  Restart the connection to the nostrclient extension
+                </q-tooltip>
+              </q-btn>
+            </div>
+          </div>
+        </q-card-section>
+        <q-card-section v-if="showKeys">
+          <div class="row q-mb-md">
+            <div class="col">
+              <q-btn
+                unelevated
+                color="grey"
+                outline
+                @click="hideKeys"
+                class="float-left"
+                >Hide Keys</q-btn
+              >
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <key-pair
+                :public-key="publicKey"
+                :private-key="privateKey"
+              ></key-pair>
+            </div>
+          </div>
+        </q-card-section>
+      </q-card>
+    </div>
+
+    <!-- Right Column - Nostr Market Info -->
+    <div class="col-12 col-md-4">
+      <q-card>
+        <q-img
+          src="/nostrmarket/static/market/images/nostr-cover.png"
+          :ratio="3"
+          fit="cover"
+        ></q-img>
+        <q-card-section>
+          <div class="text-h6 q-mb-sm">Nostr Market</div>
+          <div class="text-body2 text-grey">
+            A decentralized marketplace extension for LNbits implementing the
+            NIP-15 protocol. Create stalls, list products, and accept Lightning
+            payments while communicating with customers via encrypted Nostr
+            direct messages.
+          </div>
         </q-card-section>
         <q-card-section class="q-pa-none">
-          <q-separator></q-separator>
-          <q-list>
-            <q-expansion-item group="api" dense icon="info" label="About">
-              <q-card>
-                <q-card-section>
-                  A decentralized marketplace powered by Nostr and Lightning
-                  Network. Create stalls, add products, and start selling with
-                  Bitcoin.
-                </q-card-section>
-              </q-card>
-            </q-expansion-item>
-            <q-expansion-item
-              group="api"
-              dense
-              icon="link"
-              label="Market Client"
-            >
-              <q-card>
-                <q-card-section>
-                  <a :href="marketClientUrl" target="_blank"
-                    >Open Market Client</a
-                  >
-                </q-card-section>
-              </q-card>
-            </q-expansion-item>
-          </q-list>
+          <q-list> {% include "nostrmarket/_api_docs.html" %} </q-list>
         </q-card-section>
       </q-card>
     </div>
