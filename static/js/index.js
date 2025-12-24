@@ -5,6 +5,8 @@ window.app = Vue.createApp({
   mixins: [window.windowMixin],
   data: function () {
     return {
+      activeTab: 'merchant',
+      selectedStallFilter: null,
       merchant: {},
       shippingZones: [],
       activeChatCustomer: '',
@@ -295,6 +297,88 @@ window.app = Vue.createApp({
             LNbits.utils.notifyApiError(error)
           }
         })
+    },
+    publishNip15: async function () {
+      try {
+        const {data: stalls} = await LNbits.api.request(
+          'GET',
+          '/nostrmarket/api/v1/stall?pending=false',
+          this.g.user.wallets[0].inkey
+        )
+        for (const stall of stalls) {
+          await LNbits.api.request(
+            'PUT',
+            `/nostrmarket/api/v1/stall/${stall.id}`,
+            this.g.user.wallets[0].adminkey,
+            stall
+          )
+        }
+        // Fetch products from all stalls
+        let productCount = 0
+        for (const stall of stalls) {
+          const {data: products} = await LNbits.api.request(
+            'GET',
+            `/nostrmarket/api/v1/stall/product/${stall.id}?pending=false`,
+            this.g.user.wallets[0].inkey
+          )
+          for (const product of products) {
+            await LNbits.api.request(
+              'PATCH',
+              `/nostrmarket/api/v1/product/${product.id}`,
+              this.g.user.wallets[0].adminkey,
+              product
+            )
+            productCount++
+          }
+        }
+        this.$q.notify({
+          type: 'positive',
+          message: `Published ${stalls.length} stall(s) and ${productCount} product(s) to Nostr (NIP-15)`
+        })
+      } catch (error) {
+        LNbits.utils.notifyApiError(error)
+      }
+    },
+    refreshNip15: async function () {
+      LNbits.utils
+        .confirmDialog(
+          'This will sync your stalls and products from Nostr relays. Continue?'
+        )
+        .onOk(async () => {
+          try {
+            await LNbits.api.request(
+              'PUT',
+              '/nostrmarket/api/v1/restart',
+              this.g.user.wallets[0].adminkey
+            )
+            this.$q.notify({
+              type: 'positive',
+              message: 'Refreshing NIP-15 data from Nostr...'
+            })
+          } catch (error) {
+            LNbits.utils.notifyApiError(error)
+          }
+        })
+    },
+    deleteNip15: async function () {
+      LNbits.utils
+        .confirmDialog(
+          'WARNING: This will delete all your stalls and products from Nostr relays. This cannot be undone! Are you sure?'
+        )
+        .onOk(async () => {
+          this.$q.notify({
+            type: 'info',
+            message: 'Delete NIP-15 from Nostr not yet implemented'
+          })
+        })
+    },
+    goToProducts: function (stallId) {
+      this.selectedStallFilter = stallId
+      this.activeTab = 'products'
+    },
+    goToOrders: function (stallId) {
+      this.selectedStallFilter = stallId
+      this.activeTab = 'orders'
     }
   },
   created: async function () {
