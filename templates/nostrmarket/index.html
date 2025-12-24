@@ -1,7 +1,7 @@
 {% extends "base.html" %} {% from "macros.jinja" import window_vars with context
 %} {% block page %}
 <div class="row q-col-gutter-md">
-  <div class="col-12 col-md-7 q-gutter-y-md">
+  <div class="col-12 col-md-7 col-lg-8 q-gutter-y-md">
     <div v-if="merchant && merchant.id">
       <q-card>
         <div class="row items-center no-wrap">
@@ -168,7 +168,7 @@
     </q-card>
   </div>
 
-  <div class="col-12 col-md-5 q-gutter-y-md">
+  <div class="col-12 col-md-5 col-lg-4 q-gutter-y-md">
     <div v-if="g.user.admin" class="col-12 q-mb-lg">
       <q-card>
         <q-card-section class="q-pa-md">
@@ -342,6 +342,18 @@
         </q-card-section>
       </q-card>
     </div>
+    <div v-if="merchant && merchant.id" class="col-12">
+      <direct-messages
+        ref="directMessagesRef"
+        :inkey="g.user.wallets[0].inkey"
+        :adminkey="g.user.wallets[0].adminkey"
+        :active-chat-customer="activeChatCustomer"
+        :merchant-id="merchant.id"
+        @customer-selected="filterOrdersForCustomer"
+        @order-selected="showOrderDetails"
+      >
+      </direct-messages>
+    </div>
     <div class="col-12">
       <q-card>
         <q-expansion-item
@@ -369,18 +381,6 @@
           </q-card-section>
         </q-expansion-item>
       </q-card>
-    </div>
-    <div v-if="merchant && merchant.id" class="col-12">
-      <direct-messages
-        ref="directMessagesRef"
-        :inkey="g.user.wallets[0].inkey"
-        :adminkey="g.user.wallets[0].adminkey"
-        :active-chat-customer="activeChatCustomer"
-        :merchant-id="merchant.id"
-        @customer-selected="filterOrdersForCustomer"
-        @order-selected="showOrderDetails"
-      >
-      </direct-messages>
     </div>
   </div>
 
