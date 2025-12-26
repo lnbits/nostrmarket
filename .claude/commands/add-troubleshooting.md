@@ -9,6 +9,7 @@ This command adds a new troubleshooting entry to the documentation.
 1. Check if `docs/TROUBLESHOOTING.adoc` exists
 
 2. If the file does NOT exist, create it with this initial structure:
+
    ```asciidoc
    = Troubleshooting Guide
    :toc:
@@ -45,6 +46,7 @@ This command adds a new troubleshooting entry to the documentation.
 If called with: `/add-troubleshooting The make format command didn't run as missing dependencies`
 
 Add a row like:
+
 ```
 | `make format` fails with missing dependencies
 | Run `npm install` to install Node.js dependencies (prettier), then run `make format` again.

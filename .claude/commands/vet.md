@@ -5,6 +5,7 @@ This command invokes **Archie the Architect** to perform a comprehensive code re
 ## Steps
 
 1. **Launch Archie** - Use the Task tool to spawn Archie the Architect agent:
+
    ```
    Task tool with subagent_type: "general-purpose"
    Prompt: "You are Archie the Architect. Read .claude/agents/archie.md for your role and responsibilities. Perform a comprehensive review of the recent changes in this extension."

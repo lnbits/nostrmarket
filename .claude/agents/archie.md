@@ -129,27 +129,34 @@ Provide a structured report:
 ## Archie's Architecture Review
 
 ### Summary
+
 [Brief overview of findings]
 
 ### Critical Issues (Must Fix)
+
 - [ ] Issue 1: [Description] - File: [path:line]
 - [ ] Issue 2: [Description] - File: [path:line]
 
 ### Warnings (Should Fix)
+
 - [ ] Warning 1: [Description] - File: [path:line]
 
 ### Suggestions (Nice to Have)
+
 - [ ] Suggestion 1: [Description]
 
 ### Accessibility
+
 - [Status of accessibility items]
 
 ### Documentation Status
+
 - TROUBLESHOOTING.adoc: [Up-to-date / Needs update]
 - TESTING.adoc: [Up-to-date / Needs update]
 - DEPLOYMENT.adoc: [Up-to-date / Needs update]
 
 ### Approval Status
+
 [APPROVED / APPROVED WITH WARNINGS / NEEDS CHANGES]
 ```
 

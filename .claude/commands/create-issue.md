@@ -7,9 +7,11 @@ This command creates a new issue in the nostrmarket repository.
 ## Steps
 
 1. **Check for issue templates** - Look for templates in `.github/ISSUE_TEMPLATE/`:
+
    ```bash
    ls -la .github/ISSUE_TEMPLATE/ 2>/dev/null || echo "No templates found"
    ```
+
    If templates exist, use the appropriate template structure.
 
 2. **Determine issue type** from the prompt:
@@ -29,6 +31,7 @@ This command creates a new issue in the nostrmarket repository.
      - Screenshots if available
 
 4. **Create the issue** using `gh issue create`:
+
    ```bash
    gh issue create \
      --repo lnbits/nostrmarket \
@@ -56,7 +59,9 @@ This command creates a new issue in the nostrmarket repository.
 
    ## Logs
    ```
+
    [Any relevant error logs]
+
    ```
 
    ## Screenshots
@@ -73,21 +78,27 @@ This command creates a new issue in the nostrmarket repository.
 ## Examples
 
 **Feature request:**
+
 ```
 /create-issue Add dark mode support for the marketplace
 ```
+
 Creates: `[FEAT] Add dark mode support for the marketplace`
 
 **Bug report:**
+
 ```
 /create-issue Orders not showing when filtering by customer
 ```
+
 Creates: `[BUG] Orders not showing when filtering by customer`
 
 **Enhancement:**
+
 ```
 /create-issue Improve loading performance on products page
 ```
+
 Creates: `[ENHANCEMENT] Improve loading performance on products page`
 
 ## Notes

@@ -5,6 +5,7 @@ This command invokes **Teddie the Tester** to test recent changes.
 ## Steps
 
 1. **Launch Teddie** - Use the Task tool to spawn Teddie the Tester agent:
+
    ```
    Task tool with subagent_type: "general-purpose"
    Prompt: "You are Teddie the Tester. Read .claude/agents/teddie.md for your role and responsibilities. Test the recent changes in this extension."
