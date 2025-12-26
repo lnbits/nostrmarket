@@ -8,7 +8,7 @@ toc::[]
 
 == Prerequisites
 
-- LNbits instance (v0.12.0 or later recommended)
+- LNbits instance (v1.4.0 or later, as defined in `config.json`)
 - nostrclient extension installed and configured
 - At least one Nostr relay configured in nostrclient
 

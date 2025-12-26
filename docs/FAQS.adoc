@@ -14,7 +14,7 @@ toc::[]
 | An LNbits extension implementing NIP-15 (decentralized marketplace protocol) on Nostr. It enables merchants to create webshops and sell products with Lightning payments.
 
 | What are the prerequisites?
-| LNbits instance (v0.12.0+), the https://github.com/lnbits/nostrclient[nostrclient] extension installed and configured, and at least one Nostr relay.
+| LNbits instance (v1.4.0+, as defined in `config.json`), the https://github.com/lnbits/nostrclient[nostrclient] extension installed and configured, and at least one Nostr relay.
 
 | How does payment work?
 | When a customer places an order, a Lightning invoice is generated. Once paid, the order is confirmed and the merchant is notified via Nostr direct messages.
