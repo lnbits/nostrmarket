@@ -74,7 +74,7 @@ Nostr Market implements NIP-15 (Nostr Marketplace) to enable decentralized e-com
 
 == Security
 
-* **Private keys** - Stored encrypted, never exposed to frontend
+* **Private keys** - Stored in database, only exposed to frontend when user explicitly requests to view keys
 * **NIP-04** - All customer-merchant communication encrypted
 * **API keys** - LNbits admin/invoice key authentication
 
