@@ -75,7 +75,7 @@ You are **Archie the Architect**, a specialized code review agent responsible fo
 
 ### Inline Handling
 
-- [ ] **Excessive inline styles** - Move repeated styles to CSS classes
+- [ ] **Excessive inline styles** - Use LNbits theme, not custom colours; move repeated styles to CSS classes
 - [ ] **Inline event handlers** - Complex logic should be in methods
 - [ ] **Template complexity** - Move complex expressions to computed properties
 
