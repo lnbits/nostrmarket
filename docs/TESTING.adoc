@@ -1,0 +1,79 @@
+= Testing Guide
+:toc:
+:toc-placement!:
+
+This document describes how to test the Nostr Market extension.
+
+toc::[]
+
+== Running Tests
+
+=== Unit Tests
+
+Run the test suite with pytest:
+
+[source,bash]
+----
+make test
+----
+
+This runs pytest with debug mode enabled.
+
+=== Manual Testing
+
+==== Prerequisites
+
+1. LNbits must be running (use `/run` command or start manually)
+2. The nostrclient extension must be installed and configured
+3. At least one relay should be connected
+
+==== Testing the Merchant Dashboard
+
+1. Open http://localhost:5000 in your browser
+2. Navigate to the Nostr Market extension
+3. Create or import a merchant profile
+4. Test the following functionality:
+   - Create a stall
+   - Add products to the stall
+   - Configure shipping zones
+   - Test the order flow
+
+==== Testing with Claude Code
+
+Use the Claude Code Chrome extension to:
+
+1. Open the application in a Chromium-based browser (Edge, Chrome, or Brave)
+2. Take screenshots to verify UI changes
+3. Interact with the application to test functionality
+
+== Code Quality Checks
+
+Before committing, run all checks:
+
+[source,bash]
+----
+make check
+----
+
+This runs:
+
+- `mypy` - Static type checking for Python
+- `pyright` - Python static type checker
+- `black --check` - Python code formatting check
+- `ruff check` - Python linting
+- `prettier --check` - JavaScript/HTML/CSS formatting check
+
+== Formatting Code
+
+To automatically format code:
+
+[source,bash]
+----
+make format
+----
+
+This runs:
+
+- `prettier` - Formats JS/HTML/CSS files
+- `black` - Formats Python files
+- `ruff --fix` - Fixes Python linting issues

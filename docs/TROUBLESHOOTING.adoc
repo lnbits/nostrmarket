@@ -1,0 +1,70 @@
+= Troubleshooting Guide
+:toc:
+:toc-placement!:
+
+This document contains common problems and their solutions when working with the Nostr Market extension.
+
+toc::[]
+
+[cols="1,2", options="header"]
+|===
+| Problem | Solution
+
+| Nostr communication not working
+| Add an npub to the chat box and send a test DM. If messages fail, check relay connections in nostrclient.
+
+| Need to restart Nostr connection
+| Admin users can click "Restart Nostr Connection" button. Wait for reconnection, then merchants can re-publish products.
+
+| Nostrclient extension issues
+| Verify https://github.com/lnbits/nostrclient[nostrclient] is installed, activated, and has at least one relay connected (green status). See https://github.com/lnbits/nostrclient#troubleshoot[nostrclient Troubleshoot] for details.
+
+| `make format` fails with "prettier not found"
+| Run `npm install` first to install Node.js dependencies including prettier.
+
+| `make check` fails with mypy/pyright errors
+| Install Python dependencies with `uv sync`. Some type errors may require code fixes.
+
+| Extension not appearing in LNbits
+| Ensure the extension is symlinked correctly to `lnbits/lnbits/extensions/nostrmarket`. Restart LNbits.
+
+| WebSocket connection fails
+| Check that LNbits is running and accessible. Verify the WebSocket URL uses the correct protocol (ws/wss).
+
+| Orders not showing up
+| Check nostrclient connection status. Verify relays are online. Try restarting the Nostr connection.
+
+| Invoice not generating
+| Verify the wallet selected for the stall has sufficient balance. Check LNbits wallet settings.
+
+| Customer can't complete payment
+| Ensure the Lightning invoice hasn't expired. Check that the payment amount is within channel limits.
+
+| Products not publishing to Nostr
+| Ensure merchant profile is active. Check relay connections. Try republishing via the "Publish NIP-15" button.
+
+| Images not loading
+| Verify image URLs are accessible (HTTPS recommended). Check that image hosting allows cross-origin requests.
+
+| Shipping zones not saving
+| Ensure currency matches between zone and stall. Verify all required fields are filled.
+
+| secp256k1 build fails during install
+| Install Python autotools dependencies first: `sudo apt-get install -y automake autoconf libtool`
+
+| Vue template variables not rendering
+| Use `${...}` delimiters, not `{{...}}` (conflicts with Jinja2).
+
+| Props not working in Vue component
+| Use kebab-case in HTML (`public-key`) but camelCase in JS (`publicKey`).
+
+| Material icon not showing
+| Check icon name at https://fonts.google.com/icons (e.g., use `vpn_key` not `key`).
+
+| API call not returning data
+| Ensure you `await` the API call. Missing await is a common async/await mistake.
+
+| Component events not firing
+| Declare all emits in the component's `emits` array.
+
+|===

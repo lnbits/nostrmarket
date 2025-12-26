@@ -1,0 +1,85 @@
+= Frequently Asked Questions
+:toc:
+:toc-placement!:
+
+Common questions about the Nostr Market extension.
+
+toc::[]
+
+[cols="1,2", options="header"]
+|===
+| Question | Answer
+
+| What is Nostr Market?
+| An LNbits extension implementing NIP-15 (decentralized marketplace protocol) on Nostr. It enables merchants to create webshops and sell products with Lightning payments.
+
+| What are the prerequisites?
+| LNbits instance (v0.12.0+), the https://github.com/lnbits/nostrclient[nostrclient] extension installed and configured, and at least one Nostr relay.
+
+| How does payment work?
+| When a customer places an order, a Lightning invoice is generated. Once paid, the order is confirmed and the merchant is notified via Nostr direct messages.
+
+| What NIPs does this implement?
+| NIP-15 (Marketplace), NIP-33 (Parameterized Replaceable Events for stalls/products), NIP-04 (Encrypted DMs), and NIP-01 (Merchant profiles).
+
+| Does this use NIP-15 or NIP-99?
+| Currently uses NIP-15, but we are working on NIP-99 (Gamma Markets spec).
+
+| How do I create a merchant profile?
+| Navigate to Nostr Market in LNbits, then either "Generate New Key" for a new Nostr identity, or "Import Existing Key" if you have an nsec.
+
+| Can I use my existing Nostr identity?
+| Yes! Use "Import Existing Key" and paste your nsec (private key). This lets you use the same identity across different Nostr clients.
+
+| How do I connect to relays?
+| Relay configuration is handled by the nostrclient extension. Navigate to nostrclient settings and add your preferred relays.
+
+| Can I have multiple merchant profiles?
+| Yes, you can create multiple merchant profiles with different Nostr identities and switch between them.
+
+| What is a stall?
+| A virtual shop. Each stall can have its own products, shipping zones, and settings. You can create multiple stalls under one merchant profile.
+
+| How do I add products?
+| First create a stall, navigate to the Products tab, click "Add Product", and fill in the details (name, price, description, images).
+
+| What currencies are supported?
+| Products can be priced in satoshis (sat) or various fiat currencies. The actual payment is always in Lightning Bitcoin.
+
+| How do shipping zones work?
+| Shipping zones define regions and costs. Create zones first (Zones button), then assign them to stalls. Digital goods can use a "Free" zone.
+
+| How do I receive order notifications?
+| Orders arrive via Nostr direct messages (NIP-04 encrypted). You'll see notifications in the LNbits interface when new orders arrive.
+
+| Can I communicate with customers?
+| Yes! The Direct Messages tab allows encrypted communication with customers using NIP-04.
+
+| How do I mark an order as shipped?
+| Open the order details and click the "Mark as Shipped" button when shipping is processed.
+
+| Where can I see customer details?
+| In the order details you can see the customer's shipping address, public key, and chat history.
+
+| What is the Market Client?
+| A customer-facing marketplace view where buyers can browse stalls and products. Access it via the "Market Client" link or `/nostrmarket/market`.
+
+| How do I customize my marketplace?
+| Login to the Market Client, go to "Marketplace Info", edit settings (name, logo, banner, theme), and publish a kind 30019 event.
+
+| What is an naddr?
+| A shareable Nostr identifier (NIP-19) that encodes your marketplace configuration. Share the URL with `?naddr=<your-naddr>` to let others view your styled marketplace.
+
+| Can I add multiple merchants to my marketplace?
+| Yes, import merchants via the Marketplace Info section before publishing your marketplace event.
+
+| What Nostr event kinds are used?
+| Kind 0 (merchant profile), Kind 30017 (stall), Kind 30018 (product), Kind 30019 (marketplace), Kind 4 (encrypted DMs).
+
+| Where do I report bugs or request features?
+| Open an issue at https://github.com/lnbits/nostrmarket/issues
+
+| How do I contribute to the project?
+| Fork the repo, create a branch, make changes, run `make check`, and submit a PR to https://github.com/lnbits/nostrmarket/pulls
+
+|===

@@ -23,6 +23,7 @@ node_modules
 *.pyo
 *.pyc
 *.env
+.env.dev
 
 # Claude Code config
 CLAUDE.md

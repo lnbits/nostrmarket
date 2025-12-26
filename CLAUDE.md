@@ -31,7 +31,37 @@ make prettier    # Format JS/HTML/CSS files
 
 ## Local Development Setup
 
-To run checks locally, install dependencies:
+**Issues**: https://github.com/lnbits/nostrmarket/issues
+**PRs**: https://github.com/lnbits/nostrmarket/pulls
+
+### Extension Development with LNbits
+
+This extension must be run inside LNbits. To set up:
+
+1. Clone LNbits to a sibling directory:
+   ```bash
+   cd ..
+   git clone https://github.com/lnbits/lnbits.git
+   ```
+
+2. Create a symbolic link from LNbits extensions to this directory:
+   ```bash
+   cd lnbits/lnbits/extensions
+   ln -s ../../../nostrmarket nostrmarket
+   ```
+
+3. Configure your development environment:
+   ```bash
+   # Copy the example file
+   cp .env.dev.example .env.dev
+   # Edit .env.dev to point to your LNbits installation if needed
+   ```
+
+4. Use slash commands to manage the dev server:
+   - `/run` - Start LNbits dev server in background
+   - `/stop` - Stop the LNbits dev server
+
+### Installing Dependencies
 
 ```bash
 # Install Python autotools dependencies (needed for secp256k1)
@@ -289,6 +319,17 @@ def to_nostr_event(self, pubkey: str) -> NostrEvent:
 2. **Commit messages**: Use conventional commits (`feat:`, `fix:`, `chore:`, etc.)
 3. **Before pushing**: Always run `make check`
 4. **PR comments**: Add context about changes and any WIP items
+
+### Slash Commands
+
+Available Claude Code commands in `.claude/commands/`:
+
+- `/commit` - Run checks and commit changes with proper message
+- `/format` - Format code with prettier, black, and ruff
+- `/pr` - Create a pull request with summary and test plan
+- `/push` - Push changes and monitor GitHub Actions
+- `/run` - Start LNbits dev server in background
+- `/stop` - Stop the LNbits dev server
 
 ### Common Gotchas
 

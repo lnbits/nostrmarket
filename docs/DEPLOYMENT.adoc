@@ -1,0 +1,86 @@
+= Deployment Guide
+:toc:
+:toc-placement!:
+
+This document describes how to deploy the Nostr Market extension.
+
+toc::[]
+
+== Prerequisites
+
+- LNbits instance (v0.12.0 or later recommended)
+- nostrclient extension installed and configured
+- At least one Nostr relay configured in nostrclient
+
+== Installation
+
+=== From LNbits Extension Manager
+
+1. Open your LNbits admin interface
+2. Navigate to Extensions
+3. Search for "Nostr Market"
+4. Click Install
+
+=== Manual Installation
+
+1. Clone the repository into your LNbits extensions directory:
++
+[source,bash]
+----
+cd /path/to/lnbits/lnbits/extensions
+git clone https://github.com/lnbits/nostrmarket.git
+----
+
+2. Restart LNbits to load the extension
+
+=== Development Installation (Symbolic Link)
+
+For development, create a symbolic link:
+
+[source,bash]
+----
+cd /path/to/lnbits/lnbits/extensions
+ln -s /path/to/nostrmarket nostrmarket
+----
+
+== Configuration
+
+=== Nostrclient Setup
+
+The Nostr Market extension requires the nostrclient extension to communicate with Nostr relays.
+
+1. Install the nostrclient extension
+2. Configure at least one relay (e.g., `wss://relay.damus.io`)
+3. Verify connection status shows green
+
+=== Merchant Setup
+
+1. Navigate to Nostr Market in LNbits
+2. Either:
+   - Click "Generate New Key" to create a new Nostr identity
+   - Click "Import Existing Key" to use an existing nsec
+3. Configure your merchant profile (name, about, picture, etc.)
+4. Create stalls and add products
+
+== Production Considerations
+
+=== Relay Selection
+
+Choose reliable relays for production:
+
+- Consider running your own relay for reliability
+- Use multiple relays for redundancy
+- Test relay connectivity before going live
+
+=== Backup
+
+Important data to backup:
+
+- Merchant private key (nsec) - **Critical**: Store securely offline
+- LNbits database containing orders and customer data
+
+=== Security
+
+- Never expose your nsec (private key) publicly
+- Use HTTPS in production
+- Keep LNbits and extensions updated

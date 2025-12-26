@@ -1,0 +1,86 @@
+= Solution Design
+:toc:
+:toc-placement!:
+
+High-level architecture and design of the Nostr Market extension.
+
+toc::[]
+
+== Overview
+
+Nostr Market implements NIP-15 (Nostr Marketplace) to enable decentralized e-commerce with Lightning payments.
+
+[source]
+----
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   LNbits UI     │────▶│  Nostr Market   │────▶│  nostrclient    │
+│  (Vue/Quasar)   │     │   Extension     │     │   Extension     │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+                               │                        │
+                               ▼                        ▼
+                        ┌─────────────────┐     ┌─────────────────┐
+                        │    SQLite DB    │     │  Nostr Relays   │
+                        └─────────────────┘     └─────────────────┘
+----
+
+== Components
+
+=== Frontend (Vue.js/Quasar)
+
+* **Merchant Dashboard** - Manage stalls, products, orders
+* **Market Client** - Customer-facing marketplace view
+* **Components** - Reusable Vue components for UI elements
+
+=== Backend (Python/FastAPI)
+
+* **API Layer** (`views_api.py`) - REST endpoints
+* **Business Logic** (`services.py`) - Order processing, Nostr publishing
+* **Data Layer** (`crud.py`) - Database operations
+* **Models** (`models.py`) - Pydantic data models
+
+=== Nostr Integration
+
+* **Event Types**:
+  ** Kind 0 - Merchant profile (NIP-01)
+  ** Kind 30017 - Stall (NIP-15)
+  ** Kind 30018 - Product (NIP-15)
+  ** Kind 4 - Direct messages (NIP-04)
+
+* **nostrclient** - Handles relay connections and message routing
+
+== Data Flow
+
+=== Publishing a Product
+
+[source]
+----
+1. User creates product in UI
+2. API validates and stores in database
+3. Product converted to NIP-15 event (kind 30018)
+4. Event signed with merchant's private key
+5. Event published to relays via nostrclient
+----
+
+=== Receiving an Order
+
+[source]
+----
+1. Customer sends order via NIP-04 DM
+2. nostrclient receives and forwards to extension
+3. Order parsed and stored in database
+4. Lightning invoice generated
+5. Merchant notified via WebSocket
+----
+
+== Security
+
+* **Private keys** - Stored encrypted, never exposed to frontend
+* **NIP-04** - All customer-merchant communication encrypted
+* **API keys** - LNbits admin/invoice key authentication
+
+== Key Design Decisions
+
+1. **Relay-based** - Uses Nostr relays for decentralization
+2. **Lightning-native** - All payments via Lightning Network
+3. **LNbits integration** - Leverages existing wallet infrastructure
+4. **NIP compliance** - Follows Nostr protocol standards
