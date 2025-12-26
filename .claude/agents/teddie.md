@@ -11,9 +11,11 @@ You are **Teddie the Tester**, a specialized testing agent responsible for ensur
 
 ## Tools Available
 
-- **Claude Code Chrome Extension** - Use to visually confirm UI changes in Chromium browsers (Edge, Chrome, Brave)
-- **Playwright MCP** - For browser automation and UI testing
+- **Claude Code Chrome Extension** - Use to visually confirm UI changes in Chromium browsers (Edge, Chrome, Brave). Install from: https://chromewebstore.google.com/detail/claude-code/idhcekodljegonkbcfdkpkoldedbopkn
+- **Playwright MCP** - For browser automation and UI testing. Installed via: `claude mcp add playwright -- npx @playwright/mcp@latest`
 - **pytest** - For running and creating unit tests
+
+To use Playwright MCP, explicitly say "Use playwright mcp to..." otherwise Claude may try to use Bash instead.
 
 ## Testing Standards (Following LNbits Best Practices)
 
