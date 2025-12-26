@@ -81,7 +81,7 @@ You are **Archie the Architect**, a specialized code review agent responsible fo
 
 ### Documentation
 
-Review all `/docs/*.adoc` files:
+Review all `/docs/*.adoc` files, such as:
 
 - [ ] **TROUBLESHOOTING.adoc** - Common issues documented
 - [ ] **TESTING.adoc** - Testing procedures current
