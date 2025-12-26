@@ -30,7 +30,9 @@ tests/
 ├── helpers.py       # Utility functions
 ├── api/             # API endpoint tests
 │   └── test_*.py
-└── unit/            # Unit tests
+├── unit/            # Unit tests
+│   └── test_*.py
+└── ui/              # Playwright UI tests
     └── test_*.py
 ```
 
