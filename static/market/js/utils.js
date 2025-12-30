@@ -1,5 +1,43 @@
 var NostrTools = window.NostrTools
 
+;(function ensureRandomUUID() {
+    if (!globalThis.crypto) {
+        globalThis.crypto = {}
+    }
+    if (!globalThis.crypto.randomUUID) {
+        globalThis.crypto.randomUUID = function () {
+            const getRandomValues = globalThis.crypto.getRandomValues
+            if (getRandomValues) {
+                const bytes = new Uint8Array(16)
+                getRandomValues.call(globalThis.crypto, bytes)
+                bytes[6] = (bytes[6] & 0x0f) | 0x40
+                bytes[8] = (bytes[8] & 0x3f) | 0x80
+                const hex = Array.from(bytes, b =>
+                    b.toString(16).padStart(2, '0')
+                ).join('')
+                return (
+                    hex.slice(0, 8) +
+                    '-' +
+                    hex.slice(8, 12) +
+                    '-' +
+                    hex.slice(12, 16) +
+                    '-' +
+                    hex.slice(16, 20) +
+                    '-' +
+                    hex.slice(20)
+                )
+            }
+
+            let d = Date.now()
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                const r = (d + Math.random() * 16) % 16 | 0
+                d = Math.floor(d / 16)
+                return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
+            })
+        }
+    }
+})()
+
 var defaultRelays = [
     'wss://relay.damus.io',
     'wss://relay.snort.social',
@@ -44,13 +82,24 @@ function confirm(message) {
 
 
 async function hash(string) {
-    const utf8 = new TextEncoder().encode(string)
-    const hashBuffer = await crypto.subtle.digest('SHA-256', utf8)
-    const hashArray = Array.from(new Uint8Array(hashBuffer))
-    const hashHex = hashArray
-        .map(bytes => bytes.toString(16).padStart(2, '0'))
-        .join('')
-    return hashHex
+    const subtle = globalThis.crypto && globalThis.crypto.subtle
+    if (subtle && subtle.digest) {
+        const utf8 = new TextEncoder().encode(string)
+        const hashBuffer = await subtle.digest('SHA-256', utf8)
+        const hashArray = Array.from(new Uint8Array(hashBuffer))
+        return hashArray.map(bytes => bytes.toString(16).padStart(2, '0')).join('')
+    }
+
+    // Fallback for non-secure contexts where crypto.subtle is unavailable.
+    return fallbackHash(string)
+}
+
+function fallbackHash(string) {
+    let hash = 5381
+    for (let i = 0; i < string.length; i++) {
+        hash = ((hash << 5) + hash) + string.charCodeAt(i)
+    }
+    return (hash >>> 0).toString(16).padStart(8, '0')
 }
 
 function isJson(str) {
