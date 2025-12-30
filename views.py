@@ -15,11 +15,3 @@ async def index(request: Request, user: User = Depends(check_user_exists)):
         "nostrmarket/index.html",
         {"request": request, "user": user.json()},
     )
-
-
-@nostrmarket_ext.get("/market", response_class=HTMLResponse)
-async def market(request: Request):
-    return nostrmarket_renderer().TemplateResponse(
-        "nostrmarket/market.html",
-        {"request": request},
-    )
