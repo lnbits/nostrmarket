@@ -53,11 +53,15 @@
               :public-key="merchant.public_key"
               :private-key="merchant.private_key"
               :is-admin="g.user.admin"
+              :merchant-config="merchant.config"
               @toggle-show-keys="toggleShowKeys"
               @hide-keys="showKeys = false"
               @merchant-deleted="handleMerchantDeleted"
               @toggle-merchant-state="toggleMerchantState"
               @restart-nostr-connection="restartNostrConnection"
+              @import-key="showImportKeysDialog"
+              @generate-key="generateKeys"
+              @profile-updated="getMerchant"
             ></merchant-tab>
           </q-tab-panel>
 
@@ -410,6 +414,63 @@
       </q-card>
     </q-dialog>
   </div>
+
+  <!-- Generate Key Dialog -->
+  <q-dialog v-model="generateKeyDialog.show" position="top">
+    <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
+      <div class="text-h6 q-mb-md">Generate New Key</div>
+      <div class="q-mb-md">
+        <div class="text-subtitle2 q-mb-xs">Public Key (npub)</div>
+        <q-input :model-value="generateKeyDialog.npub" readonly dense outlined>
+          <template v-slot:append>
+            <q-btn
+              flat
+              dense
+              icon="content_copy"
+              @click="copyText(generateKeyDialog.npub, 'npub copied!')"
+            ></q-btn>
+          </template>
+        </q-input>
+      </div>
+      <div class="q-mb-md">
+        <div class="text-subtitle2 q-mb-xs text-warning">
+          <q-icon name="warning" size="xs"></q-icon>
+          Private Key (nsec)
+        </div>
+        <q-input
+          :model-value="generateKeyDialog.showNsec ? generateKeyDialog.nsec : '••••••••••••••••••••••••••••••••••••••••••••••'"
+          readonly
+          dense
+          outlined
+        >
+          <template v-slot:append>
+            <q-btn
+              flat
+              dense
+              :icon="generateKeyDialog.showNsec ? 'visibility_off' : 'visibility'"
+              @click="generateKeyDialog.showNsec = !generateKeyDialog.showNsec"
+            ></q-btn>
+            <q-btn
+              flat
+              dense
+              icon="content_copy"
+              @click="copyText(generateKeyDialog.nsec, 'nsec copied! Keep it safe!')"
+            ></q-btn>
+          </template>
+        </q-input>
+        <div class="text-caption text-negative q-mt-xs">
+          <q-icon name="error" size="xs"></q-icon>
+          Never share your private key!
+        </div>
+      </div>
+      <div class="row q-mt-lg">
+        <q-btn unelevated color="primary" @click="confirmGenerateKey"
+          >Create Merchant</q-btn
+        >
+        <q-btn v-close-popup flat color="grey" class="q-ml-auto">Cancel</q-btn>
+      </div>
+    </q-card>
+  </q-dialog>
 </div>
 {% endblock%}{% block scripts %} {{ window_vars(user) }}
 
@@ -427,10 +488,23 @@
     margin-left: auto;
     width: 100%;
   }
+
+  .profile-avatar {
+    border: 3px solid var(--q-dark-page);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .profile-avatar .q-avatar__content {
+    overflow: hidden;
+    border-radius: 50%;
+  }
 </style>
 
-<template id="key-pair"
-  >{% include("nostrmarket/components/key-pair.html") %}</template
+<template id="nostr-keys-dialog"
+  >{% include("nostrmarket/components/nostr-keys-dialog.html") %}</template
+>
+<template id="edit-profile-dialog"
+  >{% include("nostrmarket/components/edit-profile-dialog.html") %}</template
 >
 <template id="shipping-zones"
   >{% include("nostrmarket/components/shipping-zones.html") %}</template
@@ -464,7 +538,8 @@
 <script src="{{ url_for('nostrmarket_static', path='js/utils.js') }}"></script>
 <script src="{{ url_for('nostrmarket_static', path='js/index.js') }}"></script>
 
-<script src="{{ static_url_for('nostrmarket/static', 'components/key-pair.js') }}"></script>
+<script src="{{ static_url_for('nostrmarket/static', 'components/nostr-keys-dialog.js') }}"></script>
+<script src="{{ static_url_for('nostrmarket/static', 'components/edit-profile-dialog.js') }}"></script>
 <script src="{{ static_url_for('nostrmarket/static', 'components/shipping-zones.js') }}"></script>
 <script src="{{ static_url_for('nostrmarket/static', 'components/stall-details.js') }}"></script>
 <script src="{{ static_url_for('nostrmarket/static', 'components/stall-list.js') }}"></script>

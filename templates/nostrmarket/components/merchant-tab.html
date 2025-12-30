@@ -1,56 +1,277 @@
 <div>
   <div class="row q-col-gutter-md">
     <div class="col-12 col-md-8">
-      <div class="row items-center q-col-gutter-sm q-mb-md">
-        <div class="col-12 col-sm-auto">
-          <merchant-details
-            :merchant-id="merchantId"
-            :inkey="inkey"
-            :adminkey="adminkey"
-            :show-keys="showKeys"
-            @toggle-show-keys="toggleShowKeys"
-            @merchant-deleted="handleMerchantDeleted"
-          ></merchant-details>
-        </div>
-        <div class="col-12 col-sm-auto q-mx-sm">
-          <div class="row items-center no-wrap">
-            <q-toggle
-              :model-value="merchantActive"
-              @update:model-value="toggleMerchantState()"
-              size="md"
-              checked-icon="check"
-              color="primary"
-              unchecked-icon="clear"
-            />
-            <span
-              class="q-ml-sm"
-              v-text="merchantActive ? 'Accepting Orders': 'Orders Paused'"
-            ></span>
+      <q-card v-if="publicKey" flat bordered>
+        <q-card-section>
+          <div class="row items-center no-wrap q-mb-md">
+            <div class="col">
+              <span class="text-subtitle1">Merchant Profile</span>
+            </div>
           </div>
-        </div>
-      </div>
-      <div v-if="showKeys" class="q-mt-md">
-        <div class="row q-mb-md">
-          <div class="col">
+          <div class="row q-mb-md q-gutter-sm">
             <q-btn
-              unelevated
-              color="grey"
               outline
-              @click="hideKeys"
-              class="float-left"
-              >Hide Keys</q-btn
+              color="primary"
+              @click="showEditProfileDialog = true"
+              icon="edit"
+              >Edit</q-btn
             >
+            <q-btn
+              outline
+              color="primary"
+              icon="qr_code"
+              @click="showKeysDialog = true"
+            >
+              <q-tooltip>Show Keys</q-tooltip>
+            </q-btn>
+            <q-btn-dropdown
+              split
+              outline
+              color="primary"
+              icon="swap_horiz"
+              label="Switch"
+            >
+              <q-list>
+                <q-item-label header>Saved Profiles</q-item-label>
+                <q-item>
+                  <q-item-section avatar>
+                    <q-icon name="check" color="primary"></q-icon>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label
+                      ><span
+                        v-text="merchantConfig?.display_name || merchantConfig?.name || 'Current Profile'"
+                      ></span
+                    ></q-item-label>
+                    <q-item-label
+                      caption
+                      class="text-mono"
+                      style="font-size: 10px"
+                    >
+                      <span
+                        v-text="publicKey ? publicKey.slice(0, 16) + '...' : ''"
+                      ></span>
+                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-btn
+                      flat
+                      dense
+                      round
+                      icon="delete"
+                      color="negative"
+                      size="sm"
+                      @click.stop="removeMerchant"
+                    >
+                      <q-tooltip>Remove profile</q-tooltip>
+                    </q-btn>
+                  </q-item-section>
+                </q-item>
+                <q-separator></q-separator>
+                <q-item clickable v-close-popup @click="$emit('import-key')">
+                  <q-item-section avatar>
+                    <q-icon name="vpn_key" color="primary"></q-icon>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>Import Existing Key</q-item-label>
+                    <q-item-label caption>Use an existing nsec</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item clickable v-close-popup @click="$emit('generate-key')">
+                  <q-item-section avatar>
+                    <q-icon name="add" color="primary"></q-icon>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>Generate New Key</q-item-label>
+                    <q-item-label caption>Create a fresh nsec</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-btn-dropdown>
+            <q-btn-dropdown
+              split
+              outline
+              :color="merchantActive ? 'positive' : 'negative'"
+              :icon="merchantActive ? 'shopping_cart' : 'pause_circle'"
+              :label="merchantActive ? 'Orders On' : 'Orders Off'"
+              @click="toggleMerchantState"
+            >
+              <q-list>
+                <q-item>
+                  <q-item-section avatar>
+                    <q-icon
+                      :name="merchantActive ? 'check_circle' : 'pause_circle'"
+                      :color="merchantActive ? 'positive' : 'negative'"
+                    ></q-icon>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label v-if="merchantActive"
+                      >Accepting Orders</q-item-label
+                    >
+                    <q-item-label v-else>Orders Paused</q-item-label>
+                    <q-item-label caption v-if="merchantActive">
+                      New orders will be processed
+                    </q-item-label>
+                    <q-item-label caption v-else>
+                      New orders will be ignored
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-separator></q-separator>
+                <q-item clickable v-close-popup @click="toggleMerchantState">
+                  <q-item-section avatar>
+                    <q-icon
+                      :name="merchantActive ? 'pause_circle' : 'play_circle'"
+                      :color="merchantActive ? 'negative' : 'positive'"
+                    ></q-icon>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label v-if="merchantActive"
+                      >Pause Orders</q-item-label
+                    >
+                    <q-item-label v-else>Resume Orders</q-item-label>
+                    <q-item-label caption v-if="merchantActive">
+                      Stop accepting new orders
+                    </q-item-label>
+                    <q-item-label caption v-else>
+                      Start accepting new orders
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-btn-dropdown>
           </div>
+        </q-card-section>
+
+        <!-- Banner Section -->
+        <div class="q-px-md">
+          <div
+            v-if="merchantConfig && merchantConfig.banner"
+            class="banner-container rounded-borders"
+            :style="{
+              height: '120px',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundImage: 'url(' + merchantConfig.banner + ')'
+            }"
+          ></div>
+          <div
+            v-else
+            class="banner-placeholder bg-grey-3 text-center rounded-borders"
+            style="height: 120px"
+          ></div>
         </div>
-        <div class="row">
-          <div class="col">
-            <key-pair
-              :public-key="publicKey"
-              :private-key="privateKey"
-            ></key-pair>
+
+        <!-- Profile Section -->
+        <q-card-section class="q-pt-none q-ml-md" style="margin-top: -50px">
+          <div class="row">
+            <!-- Profile Image -->
+            <div class="col-auto">
+              <q-avatar size="100px" color="dark" class="profile-avatar">
+                <img
+                  v-if="merchantConfig && merchantConfig.picture"
+                  :src="merchantConfig.picture"
+                  @error="handleImageError"
+                  style="object-fit: cover"
+                />
+                <q-icon
+                  v-else
+                  name="person"
+                  size="60px"
+                  color="grey-5"
+                ></q-icon>
+              </q-avatar>
+            </div>
+
+            <!-- Name, About and NIP-05 -->
+            <div class="col q-pl-md" style="padding-top: 55px">
+              <div class="row items-center">
+                <div class="col">
+                  <div
+                    class="text-h6"
+                    v-if="merchantConfig && merchantConfig.display_name"
+                  >
+                    <span v-text="merchantConfig.display_name"></span>
+                  </div>
+                  <div class="text-caption text-grey" v-else>
+                    (No display name set)
+                  </div>
+                </div>
+                <!-- TODO: Unhide when following/followers is implemented -->
+                <div v-if="false" class="col-auto q-mr-sm">
+                  <div class="row q-gutter-md">
+                    <div class="text-caption text-grey-6">
+                      <span class="text-weight-bold">0</span> Following
+                      <q-tooltip>Not implemented yet</q-tooltip>
+                    </div>
+                    <div class="text-caption text-grey-6">
+                      <span class="text-weight-bold">0</span> Followers
+                      <q-tooltip>Not implemented yet</q-tooltip>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="text-body2 text-grey-8 q-mt-xs"
+                v-if="merchantConfig && merchantConfig.about"
+                style="max-width: 400px"
+              >
+                <span v-text="merchantConfig.about"></span>
+              </div>
+              <div class="row q-mt-xs q-gutter-sm">
+                <div
+                  class="text-caption text-grey-5"
+                  v-if="merchantConfig && merchantConfig.nip05"
+                >
+                  <q-icon name="verified" color="primary" size="14px"></q-icon>
+                  <span v-text="merchantConfig.nip05" class="q-ml-xs"></span>
+                </div>
+                <div
+                  class="text-caption text-grey-5"
+                  v-if="merchantConfig && merchantConfig.lud16"
+                >
+                  <q-icon name="bolt" color="warning" size="14px"></q-icon>
+                  <span v-text="merchantConfig.lud16" class="q-ml-xs"></span>
+                </div>
+              </div>
+            </div>
           </div>
+        </q-card-section>
+
+        <div class="row items-center q-px-md">
+          <q-separator class="col"></q-separator>
+          <q-btn fab icon="add" color="primary" class="q-ml-md" disable>
+            <q-tooltip>New Post (Coming soon)</q-tooltip>
+          </q-btn>
         </div>
-      </div>
+
+        <!-- Feed Section (Not Implemented) -->
+        <q-card-section>
+          <div class="text-center q-pa-lg" style="opacity: 0.5">
+            <q-icon name="chat" size="48px" class="q-mb-sm text-grey"></q-icon>
+            <div class="text-subtitle2 text-grey">Coming Soon</div>
+            <div class="text-caption text-grey">
+              Merchant posts will appear here
+            </div>
+          </div>
+        </q-card-section>
+      </q-card>
     </div>
   </div>
+
+  <!-- Edit Profile Dialog -->
+  <edit-profile-dialog
+    v-model="showEditProfileDialog"
+    :merchant-id="merchantId"
+    :merchant-config="merchantConfig"
+    :adminkey="adminkey"
+    @profile-updated="$emit('profile-updated')"
+  ></edit-profile-dialog>
+
+  <!-- Nostr Keys Dialog -->
+  <nostr-keys-dialog
+    v-model="showKeysDialog"
+    :public-key="publicKey"
+    :private-key="privateKey"
+  ></nostr-keys-dialog>
 </div>

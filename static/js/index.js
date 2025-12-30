@@ -19,6 +19,13 @@ window.app = Vue.createApp({
           privateKey: null
         }
       },
+      generateKeyDialog: {
+        show: false,
+        privateKey: null,
+        nsec: null,
+        npub: null,
+        showNsec: false
+      },
       wsConnection: null,
       nostrStatus: {
         connected: false,
@@ -42,9 +49,18 @@ window.app = Vue.createApp({
     }
   },
   methods: {
-    generateKeys: async function () {
+    generateKeys: function () {
       const privateKey = nostr.generatePrivateKey()
-      await this.createMerchant(privateKey)
+      const publicKey = nostr.getPublicKey(privateKey)
+      this.generateKeyDialog.privateKey = privateKey
+      this.generateKeyDialog.nsec = nostr.nip19.nsecEncode(privateKey)
+      this.generateKeyDialog.npub = nostr.nip19.npubEncode(publicKey)
+      this.generateKeyDialog.showNsec = false
+      this.generateKeyDialog.show = true
+    },
+    confirmGenerateKey: async function () {
+      this.generateKeyDialog.show = false
+      await this.createMerchant(this.generateKeyDialog.privateKey)
     },
     importKeys: async function () {
       this.importKeyDialog.show = false
@@ -56,11 +72,21 @@ window.app = Vue.createApp({
         if (privateKey.toLowerCase().startsWith('nsec')) {
           privateKey = nostr.nip19.decode(privateKey).data
         }
+        // Check if this key is already in use
+        const publicKey = nostr.getPublicKey(privateKey)
+        if (this.merchant?.public_key === publicKey) {
+          this.$q.notify({
+            type: 'warning',
+            message: 'This key is already your current profile'
+          })
+          return
+        }
       } catch (error) {
         this.$q.notify({
           type: 'negative',
           message: `${error}`
         })
+        return
       }
       await this.createMerchant(privateKey)
     },
