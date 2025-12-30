@@ -9,29 +9,24 @@
             </div>
           </div>
           <div class="row q-mb-md q-gutter-sm">
-            <q-btn
-              outline
-              color="primary"
-              @click="showEditProfileDialog = true"
-              icon="edit"
-              >Edit</q-btn
-            >
-            <q-btn
-              outline
-              color="primary"
-              icon="qr_code"
-              @click="showKeysDialog = true"
-            >
-              <q-tooltip>Show Keys</q-tooltip>
-            </q-btn>
             <q-btn-dropdown
               split
               outline
               color="primary"
-              icon="swap_horiz"
-              label="Switch"
+              icon="vpn_key"
+              label="Keys"
             >
               <q-list>
+                <q-item clickable v-close-popup @click="showKeysDialog = true">
+                  <q-item-section avatar>
+                    <q-icon name="vpn_key" color="primary"></q-icon>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>View Keys</q-item-label>
+                    <q-item-label caption>Show public/private keys</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-separator></q-separator>
                 <q-item-label header>Saved Profiles</q-item-label>
                 <q-item>
                   <q-item-section avatar>
@@ -88,6 +83,13 @@
                 </q-item>
               </q-list>
             </q-btn-dropdown>
+            <q-btn
+              outline
+              color="primary"
+              @click="showEditProfileDialog = true"
+              icon="edit"
+              label="Edit Profile"
+            ></q-btn>
             <q-btn-dropdown
               split
               outline
