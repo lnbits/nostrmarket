@@ -13,6 +13,12 @@
             align="left"
           >
             <q-tab
+              name="orders"
+              label="Orders"
+              icon="receipt_long"
+              style="min-width: 120px"
+            ></q-tab>
+            <q-tab
               name="merchant"
               label="Merchant"
               icon="person"
@@ -42,6 +48,23 @@
         <q-separator></q-separator>
 
         <q-tab-panels v-model="activeTab" animated>
+          <!-- Orders Tab -->
+          <q-tab-panel name="orders">
+            <q-card-section>
+              <div class="text-h6">Orders</div>
+            </q-card-section>
+            <q-separator></q-separator>
+            <q-card-section class="q-pt-none">
+              <order-list
+                ref="orderListRef"
+                :adminkey="g.user.wallets[0].adminkey"
+                :inkey="g.user.wallets[0].inkey"
+                :customer-pubkey-filter="orderPubkey"
+                @customer-selected="customerSelectedForOrder"
+              ></order-list>
+            </q-card-section>
+          </q-tab-panel>
+
           <!-- Merchant Tab -->
           <q-tab-panel name="merchant">
             <merchant-tab
@@ -98,21 +121,6 @@
 
           <!-- Messages Tab -->
         </q-tab-panels>
-      </q-card>
-      <q-card class="q-mt-md">
-        <q-card-section>
-          <div class="text-h6">Orders</div>
-        </q-card-section>
-        <q-separator></q-separator>
-        <q-card-section class="q-pt-none">
-          <order-list
-            ref="orderListRef"
-            :adminkey="g.user.wallets[0].adminkey"
-            :inkey="g.user.wallets[0].inkey"
-            :customer-pubkey-filter="orderPubkey"
-            @customer-selected="customerSelectedForOrder"
-          ></order-list>
-        </q-card-section>
       </q-card>
     </div>
     <q-card v-else>

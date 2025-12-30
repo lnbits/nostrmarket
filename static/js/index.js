@@ -5,7 +5,7 @@ window.app = Vue.createApp({
   mixins: [window.windowMixin],
   data: function () {
     return {
-      activeTab: 'merchant',
+      activeTab: 'orders',
       selectedStallFilter: null,
       merchant: {},
       shippingZones: [],
