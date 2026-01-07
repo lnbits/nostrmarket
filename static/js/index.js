@@ -410,6 +410,7 @@ window.app = Vue.createApp({
   },
   created: async function () {
     await this.getMerchant()
+    this.activeTab = await window.determineActiveTab(this)
     await this.checkNostrStatus()
     setInterval(async () => {
       if (
