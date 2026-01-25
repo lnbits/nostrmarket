@@ -1,12 +1,10 @@
-> IMPORTANT: Nostr market needs the nostr-client extension installed.
+Buy and sell products over Nostr using the NIP-15 marketplace protocol.
 
-Buy and sell things over Nostr, using NIP15 https://github.com/nostr-protocol/nips/blob/master/15.md
+Its functions include:
 
-Nostr was partly based on the the previous version of this extension "Diagon Alley", so lends itself very well to buying and sellinng over Nostr.
+- Managing products, sales, and customer communication as a merchant
+- Browsing and ordering products as a customer
+- Tracking order status and delivery
+- Communicating via NIP-04 encrypted direct messages
 
-The Nostr Market extension includes:
-
-- A merchant client to manage products, sales and communication with customers.
-- A customer client to find and order products from merchants, communicate with merchants and track status of ordered products.
-
-All communication happens over NIP04 encrypted DMs.
+A decentralized commerce solution for merchants and buyers who want to trade goods and services over Nostr with end-to-end encrypted communication.
