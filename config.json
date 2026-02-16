@@ -1,12 +1,15 @@
 {
-  "name": "Nostr Market",
+  "id": "nostrmarket",
   "version": "1.1.0",
+  "name": "Nostr Market",
+  "repo": "https://github.com/lnbits/nostrmarket",
   "short_description": "Nostr Webshop/market on LNbits",
-  "tile": "/nostrmarket/static/images/nostr-market.png",
+  "description": "",
+  "tile": "/nostrmarket/static/images/bitcoin-shop.png",
   "min_lnbits_version": "1.4.0",
   "contributors": [
     {
-      "name": "motorina0",
+      "name": "Vlad Stan",
       "uri": "https://github.com/motorina0",
       "role": "Contributor"
     },
@@ -18,6 +21,11 @@
     {
       "name": "talvasconcelos",
       "uri": "https://github.com/talvasconcelos",
+      "role": "Developer"
+    },
+    {
+      "name": "BenGWeeks",
+      "uri": "https://github.com/BenGWeeks",
       "role": "Developer"
     }
   ],
@@ -44,5 +52,9 @@
   ],
   "description_md": "https://raw.githubusercontent.com/lnbits/nostrmarket/main/description.md",
   "terms_and_conditions_md": "https://raw.githubusercontent.com/lnbits/nostrmarket/main/toc.md",
-  "license": "MIT"
+  "license": "MIT",
+  "paid_features": "",
+  "tags": ["Nostr", "Marketplace"],
+  "donate": "",
+  "hidden": false
 }
