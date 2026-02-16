@@ -31,7 +31,13 @@ window.app.component('merchant-tab', {
   },
   computed: {
     marketClientUrl: function () {
-      return '/nostrmarket/market'
+      if (!this.publicKey) {
+        return '/nostrmarket/market'
+      }
+
+      const url = new URL('/nostrmarket/market', window.location.origin)
+      url.searchParams.set('merchant', this.publicKey)
+      return url.pathname + url.search
     }
   },
   methods: {
