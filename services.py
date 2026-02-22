@@ -640,8 +640,9 @@ async def _handle_customer_profile_update(event: NostrEvent):
             event.pubkey,
             event.created_at,
             CustomerProfile(
-                name=profile["name"] if "name" in profile else "",
-                about=profile["about"] if "about" in profile else "",
+                name=profile.get("name", ""),
+                display_name=profile.get("display_name"),
+                about=profile.get("about", ""),
             ),
         )
     except Exception as ex:
