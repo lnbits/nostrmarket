@@ -117,7 +117,7 @@ draw.rectangle(
 )
 
 # Downscale with LANCZOS for antialiasing
-final = final.resize((final_size, final_size), Image.LANCZOS)
+final = final.resize((final_size, final_size), Image.Resampling.LANCZOS)
 
 final.save("nostr-market.png")
 print("Logo saved to nostr-market.png")

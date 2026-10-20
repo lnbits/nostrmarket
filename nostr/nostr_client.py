@@ -69,7 +69,7 @@ class NostrClient:
         return value
 
     async def publish_nostr_event(self, e: NostrEvent):
-        await self.send_req_queue.put(["EVENT", e.dict()])
+        await self.send_req_queue.put(["EVENT", e.model_dump()])
 
     async def subscribe_merchants(
         self,

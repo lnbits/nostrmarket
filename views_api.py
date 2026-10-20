@@ -839,7 +839,10 @@ async def api_update_order_status(
 
         data.paid = order.paid
         dm_content = json.dumps(
-            {"type": DirectMessageType.ORDER_PAID_OR_SHIPPED.value, **data.dict()},
+            {
+                "type": DirectMessageType.ORDER_PAID_OR_SHIPPED.value,
+                **data.model_dump(),
+            },
             separators=(",", ":"),
             ensure_ascii=False,
         )
@@ -862,7 +865,7 @@ async def api_update_order_status(
                 {
                     "type": f"dm:{dm.type}",
                     "customerPubkey": order.public_key,
-                    "dm": dm.dict(),
+                    "dm": dm.model_dump(),
                 }
             ),
         )
@@ -959,7 +962,7 @@ async def api_reissue_order_invoice(
             data.shipping_id = reissue_data.shipping_id
 
         order, invoice, receipt = await build_order_with_payment(
-            merchant.id, merchant.public_key, PartialOrder(**data.dict())
+            merchant.id, merchant.public_key, PartialOrder(**data.model_dump())
         )
 
         order_update = {
@@ -967,7 +970,7 @@ async def api_reissue_order_invoice(
             "total": order.total,
             "invoice_id": order.invoice_id,
             "shipping_id": order.shipping_id,
-            "extra_data": json.dumps(order.extra.dict()),
+            "extra_data": json.dumps(order.extra.model_dump()),
         }
 
         await update_order(
@@ -982,7 +985,7 @@ async def api_reissue_order_invoice(
         )
         response = {
             "type": DirectMessageType.PAYMENT_REQUEST.value,
-            **payment_req.dict(),
+            **payment_req.model_dump(),
         }
         dm_reply = json.dumps(response, separators=(",", ":"), ensure_ascii=False)
 
