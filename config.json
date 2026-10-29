@@ -1,12 +1,12 @@
 {
   "id": "nostrmarket",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "name": "Nostr Market",
   "repo": "https://github.com/lnbits/nostrmarket",
   "short_description": "Nostr Webshop/market on LNbits",
   "description": "",
   "tile": "/nostrmarket/static/images/bitcoin-shop.png",
-  "min_lnbits_version": "1.7.0",
+  "min_lnbits_version": "1.7.0-rc1",
   "contributors": [
     {
       "name": "Vlad Stan",
