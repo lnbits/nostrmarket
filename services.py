@@ -122,7 +122,7 @@ async def build_order_with_payment(
     extra.shipping_cost = shipping_zone.cost
 
     order = Order(
-        **data.dict(),
+        **data.model_dump(),
         stall_id=products[0].stall_id,
         invoice_id=payment.payment_hash,
         total=product_cost_sat + shipping_cost_sat,
@@ -202,7 +202,7 @@ async def notify_client_of_order_status(
         dm_content = json.dumps(
             {
                 "type": DirectMessageType.ORDER_PAID_OR_SHIPPED.value,
-                **order_status.dict(),
+                **order_status.model_dump(),
             },
             separators=(",", ":"),
             ensure_ascii=False,
@@ -281,7 +281,7 @@ async def send_dm(
             {
                 "type": f"dm:{dm.type}",
                 "customerPubkey": other_pubkey,
-                "dm": dm_reply.dict(),
+                "dm": dm_reply.model_dump(),
             }
         ),
     )
@@ -350,7 +350,7 @@ async def create_or_update_order_from_dm(
                 order.id,
                 **{
                     "stall_id": order.stall_id,
-                    "extra_data": json.dumps(order.extra.dict()),
+                    "extra_data": json.dumps(order.extra.model_dump()),
                 },
             )
         return
@@ -521,7 +521,7 @@ async def _persist_dm(
             {
                 "type": f"dm:{dm_type}",
                 "customerPubkey": from_pubkey,
-                "dm": new_dm.dict(),
+                "dm": new_dm.model_dump(),
             }
         ),
     )
@@ -545,7 +545,11 @@ async def reply_to_structured_dm(
     await websocket_updater(
         merchant.id,
         json.dumps(
-            {"type": f"dm:{dm_type}", "customerPubkey": dm.public_key, "dm": dm.dict()}
+            {
+                "type": f"dm:{dm_type}",
+                "customerPubkey": dm.public_key,
+                "dm": dm.model_dump(),
+            }
         ),
     )
 
@@ -586,7 +590,7 @@ async def _handle_new_order(
     assert payment_req
     response = {
         "type": DirectMessageType.PAYMENT_REQUEST.value,
-        **payment_req.dict(),
+        **payment_req.model_dump(),
     }
     return json.dumps(response, separators=(",", ":"), ensure_ascii=False)
 

@@ -49,7 +49,11 @@ async def update_merchant(
             UPDATE nostrmarket.merchants SET meta = :meta, time = {db.timestamp_now}
             WHERE id = :id AND user_id = :user_id
         """,
-        {"meta": json.dumps(config.dict()), "id": merchant_id, "user_id": user_id},
+        {
+            "meta": json.dumps(config.model_dump()),
+            "id": merchant_id,
+            "user_id": user_id,
+        },
     )
     return await get_merchant(user_id, merchant_id)
 
@@ -223,9 +227,9 @@ async def create_stall(merchant_id: str, data: Stall) -> Stall:
             "event_id": data.event_id,
             "event_created_at": data.event_created_at,
             "zones": json.dumps(
-                [z.dict() for z in data.shipping_zones]
+                [z.model_dump() for z in data.shipping_zones]
             ),  # todo: cost is float. should be int for sats
-            "meta": json.dumps(data.config.dict()),
+            "meta": json.dumps(data.config.model_dump()),
         },
     )
 
@@ -291,9 +295,9 @@ async def update_stall(merchant_id: str, stall: Stall) -> Stall | None:
             "event_id": stall.event_id,
             "event_created_at": stall.event_created_at,
             "zones": json.dumps(
-                [z.dict() for z in stall.shipping_zones]
+                [z.model_dump() for z in stall.shipping_zones]
             ),  # todo: cost is float. should be int for sats
-            "meta": json.dumps(stall.config.dict()),
+            "meta": json.dumps(stall.config.model_dump()),
             "merchant_id": merchant_id,
             "id": stall.id,
         },
@@ -356,7 +360,7 @@ async def create_product(merchant_id: str, data: Product) -> Product:
             "event_created_at": data.event_created_at,
             "image_urls": json.dumps(data.images),
             "category_list": json.dumps(data.categories),
-            "meta": json.dumps(data.config.dict()),
+            "meta": json.dumps(data.config.model_dump()),
         },
     )
     product = await get_product(merchant_id, product_id)
@@ -386,7 +390,7 @@ async def update_product(merchant_id: str, product: Product) -> Product:
             "event_created_at": product.event_created_at,
             "image_urls": json.dumps(product.images),
             "category_list": json.dumps(product.categories),
-            "meta": json.dumps(product.config.dict()),
+            "meta": json.dumps(product.config.model_dump()),
             "merchant_id": merchant_id,
             "id": product.id,
         },
@@ -556,9 +560,9 @@ async def create_order(merchant_id: str, o: Order) -> Order:
             "merchant_public_key": o.merchant_public_key,
             "public_key": o.public_key,
             "address": o.address,
-            "contact_data": json.dumps(o.contact.dict() if o.contact else {}),
-            "extra_data": json.dumps(o.extra.dict()),
-            "order_items": json.dumps([i.dict() for i in o.items]),
+            "contact_data": json.dumps(o.contact.model_dump() if o.contact else {}),
+            "extra_data": json.dumps(o.extra.model_dump()),
+            "order_items": json.dumps([i.model_dump() for i in o.items]),
             "shipping_id": o.shipping_id,
             "stall_id": o.stall_id,
             "invoice_id": o.invoice_id,
@@ -900,7 +904,7 @@ async def update_customer_profile(
         """,
         {
             "event_created_at": event_created_at,
-            "meta": json.dumps(profile.dict()),
+            "meta": json.dumps(profile.model_dump()),
             "public_key": public_key,
         },
     )
