@@ -172,11 +172,13 @@ async def sign_and_send_to_nostr(
 
 async def handle_order_paid(order_id: str, merchant_pubkey: str):
     try:
-        order = await update_order_paid_status(order_id, True)
-        assert order, f"Paid order cannot be found. Order id: {order_id}"
-
         merchant = await get_merchant_by_pubkey(merchant_pubkey)
-        assert merchant, f"Merchant cannot be found for order {order_id}"
+        if not merchant:
+            raise ValueError(f"Merchant cannot be found for order {order_id}")
+
+        order = await update_order_paid_status(merchant.id, order_id, True)
+        if not order:
+            raise ValueError(f"Paid order cannot be found. Order id: {order_id}")
 
         # todo: lock
         success, message = await update_products_for_order(merchant, order)
@@ -355,6 +357,9 @@ async def create_or_update_order_from_dm(
             )
         return
 
+    if dm.incoming:
+        return
+
     if type_ == DirectMessageType.PAYMENT_REQUEST:
         payment_request = PaymentRequest(**json_data)
         pr = next(
@@ -374,7 +379,7 @@ async def create_or_update_order_from_dm(
     if type_ == DirectMessageType.ORDER_PAID_OR_SHIPPED:
         order_update = OrderStatusUpdate(**json_data)
         if order_update.paid:
-            await update_order_paid_status(order_update.id, True)
+            await update_order_paid_status(merchant_id, order_update.id, True)
         if order_update.shipped:
             await update_order_shipped_status(merchant_id, order_update.id, True)
 

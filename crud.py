@@ -680,16 +680,17 @@ async def update_order(merchant_id: str, order_id: str, **kwargs) -> Order | Non
     return await get_order(merchant_id, order_id)
 
 
-async def update_order_paid_status(order_id: str, paid: bool) -> Order | None:
+async def update_order_paid_status(
+    merchant_id: str, order_id: str, paid: bool
+) -> Order | None:
     await db.execute(
-        "UPDATE nostrmarket.orders SET paid = :paid  WHERE id = :id",
-        {"paid": paid, "id": order_id},
+        """
+            UPDATE nostrmarket.orders SET paid = :paid
+            WHERE merchant_id = :merchant_id AND id = :id
+        """,
+        {"merchant_id": merchant_id, "paid": paid, "id": order_id},
     )
-    row: dict = await db.fetchone(
-        "SELECT * FROM nostrmarket.orders WHERE id = :id",
-        {"id": order_id},
-    )
-    return Order.from_row(row) if row else None
+    return await get_order(merchant_id, order_id)
 
 
 async def update_order_shipped_status(
@@ -704,11 +705,7 @@ async def update_order_shipped_status(
         {"shipped": shipped, "merchant_id": merchant_id, "id": order_id},
     )
 
-    row: dict = await db.fetchone(
-        "SELECT * FROM nostrmarket.orders WHERE id = :id",
-        {"id": order_id},
-    )
-    return Order.from_row(row) if row else None
+    return await get_order(merchant_id, order_id)
 
 
 async def delete_merchant_orders(merchant_id: str) -> None:
